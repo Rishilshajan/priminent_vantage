@@ -1,7 +1,7 @@
 "use client";
 
-import { AuthHeader } from "./student/AuthHeader";
-import { AuthFooter } from "./student/AuthFooter";
+import { AuthHeader } from "./AuthHeader";
+import { AuthFooter } from "./AuthFooter";
 import { StudentBenefits } from "./student/StudentBenefits";
 import { StudentSignUpForm } from "./student/StudentSignUpForm";
 
@@ -11,6 +11,7 @@ export function StudentSignUp() {
             <AuthHeader />
 
             <main className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+
                 {/* Background Decoration */}
                 <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-primary/5 rounded-full blur-3xl opacity-40 pointer-events-none"></div>
 

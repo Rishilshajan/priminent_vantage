@@ -16,6 +16,7 @@ export function HowItWorks() {
                 <div className="relative">
                     <div className="hidden md:block absolute top-8 left-[12%] right-[12%] h-1 bg-gradient-to-r from-primary/20 via-primary/50 to-primary/20 rounded-full"></div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
+
                         {/* Step 1 */}
                         <div className="group text-center">
                             <div className="w-16 h-16 mx-auto mb-6 bg-white border border-border rounded-2xl flex items-center justify-center shadow-sm transform transition-transform duration-300 group-hover:-translate-y-2 z-10 relative">

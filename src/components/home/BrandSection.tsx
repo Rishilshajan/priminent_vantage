@@ -11,7 +11,6 @@ export function BrandSection() {
         { name: "Pfizer", font: "tracking-tight" },
     ];
 
-    // Duplicate list for seamless scrolling
     const marqueeBrands = [...brands, ...brands];
 
     return (

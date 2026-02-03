@@ -14,8 +14,6 @@ export async function signup(formData: FormData) {
     const lastName = formData.get('lastName') as string
     const phone = formData.get('phone') as string
 
-    // In a real app you might want to validate again here or use Zod
-
     const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -38,6 +36,7 @@ export async function signup(formData: FormData) {
     return { success: true, message: "Check your email for the confirmation link." }
 }
 
+
 export async function login(formData: FormData) {
     const supabase = await createClient()
 
@@ -57,6 +56,7 @@ export async function login(formData: FormData) {
     redirect('/dashboard')
 }
 
+
 export async function signInWithGoogle() {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -69,4 +69,20 @@ export async function signInWithGoogle() {
     if (data.url) {
         redirect(data.url)
     }
+}
+
+
+export async function resetPasswordForEmail(formData: FormData) {
+    const supabase = await createClient()
+    const email = formData.get('email') as string
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'http://localhost:3000/auth/callback?next=/update-password',
+    })
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    return { success: true }
 }

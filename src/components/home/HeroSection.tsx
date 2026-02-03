@@ -66,7 +66,7 @@ export function HeroSection() {
             setActiveIndex((prev) => (prev + 1) % carouselItems.length);
         }, 5000);
         return () => clearInterval(interval);
-    }, [activeIndex]); // Reset timer on interaction
+    }, [activeIndex]);
 
     const nextSlide = () => {
         setActiveIndex((prev) => (prev + 1) % carouselItems.length);
@@ -78,6 +78,7 @@ export function HeroSection() {
 
     return (
         <header className="relative pt-16 pb-20 lg:pt-16 lg:pb-32 overflow-hidden">
+
             {/* Background Elements */}
             <div className="absolute inset-0 bg-background -z-20"></div>
             <div className="absolute top-0 right-0 w-1/2 h-full bg-muted/30 skew-x-12 origin-top -z-10 hidden lg:block border-l border-border"></div>
@@ -85,6 +86,7 @@ export function HeroSection() {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                 <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+
                     {/* Left Content */}
                     <div className="mb-12 lg:mb-0 animate-fade-in-up">
                         <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 border border-primary/20">
@@ -121,6 +123,7 @@ export function HeroSection() {
 
                             {/* Card Container */}
                             <div className="relative w-full h-full">
+
                                 {/* Background Cards Stack Effect */}
                                 <div className="absolute inset-0 bg-muted rounded-2xl transform translate-x-4 translate-y-4 opacity-50 z-0"></div>
                                 <div className="absolute inset-0 bg-muted/80 rounded-2xl transform translate-x-2 translate-y-2 opacity-80 z-0"></div>
