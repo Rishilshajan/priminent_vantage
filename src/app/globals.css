@@ -1,0 +1,771 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /* Priminent Brand Colors */
+  --color-primary-purple: #4e2a84;
+  --color-primary-purple-dark: #3a1f63;
+  --color-primary-purple-light: #6b3ba3;
+  --color-primary-purple-lighter: #e8e1f0;
+
+  /* Brand text and background colors */
+  --color-text-primary: #1c1e21;
+  --color-text-secondary: #65676b;
+  --color-light-gray-bg: #f0f2f5;
+  --color-border: #dadde1;
+
+  /* System Colors */
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  /* Base colors */
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 3.9%);
+
+  /* Card colors */
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 3.9%);
+
+  /* Popover colors */
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 3.9%);
+
+  /* Primary brand colors using Priminent purple */
+  --primary: hsl(259 48% 34%);
+  /* #4E2A84 */
+  --primary-foreground: hsl(0 0% 98%);
+
+  /* Secondary colors */
+  --secondary: hsl(210 40% 98%);
+  --secondary-foreground: hsl(215 13% 27%);
+
+  /* Muted colors */
+  --muted: hsl(210 40% 98%);
+  --muted-foreground: hsl(215 13% 37%);
+
+  /* Accent colors */
+  --accent: hsl(210 40% 98%);
+  --accent-foreground: hsl(215 13% 27%);
+
+  /* Destructive colors */
+  --destructive: hsl(0 72% 50%);
+  --destructive-foreground: hsl(0 0% 98%);
+
+  /* Border and input */
+  --border: hsl(214 32% 91%);
+  --input: hsl(214 32% 91%);
+  --ring: hsl(259 48% 34%);
+  /* Match primary */
+}
+
+.dark {
+  /* Base colors */
+  --background: hsl(0 0% 3.9%);
+  --foreground: hsl(0 0% 98%);
+
+  /* Card colors */
+  --card: hsl(0 0% 14.9%);
+  --card-foreground: hsl(0 0% 98%);
+
+  /* Popover colors */
+  --popover: hsl(0 0% 14.9%);
+  --popover-foreground: hsl(0 0% 98%);
+
+  /* Primary colors */
+  --primary: hsl(259 48% 34%);
+  --primary-foreground: hsl(0 0% 98%);
+
+  /* Secondary colors */
+  --secondary: hsl(217 32% 17%);
+  --secondary-foreground: hsl(0 0% 98%);
+
+  /* Muted colors */
+  --muted: hsl(217 32% 17%);
+  --muted-foreground: hsl(215 20% 65%);
+
+  /* Accent colors */
+  --accent: hsl(217 32% 17%);
+  --accent-foreground: hsl(0 0% 98%);
+
+  /* Destructive colors */
+  --destructive: hsl(0 62% 60%);
+  --destructive-foreground: hsl(0 0% 98%);
+
+  /* Border and input */
+  --border: hsl(217 32% 17%);
+  --input: hsl(217 32% 17%);
+  --ring: hsl(220 91% 52%);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  button,
+  [role="button"],
+  a {
+    @apply cursor-pointer;
+  }
+
+  button:disabled,
+  [role="button"]:disabled {
+    @apply cursor-not-allowed;
+  }
+}
+
+@layer utilities {
+  .font-poppins {
+    font-family: var(--font-poppins), system-ui, sans-serif;
+  }
+
+  /* Typography Utilities - Consistent Text Hierarchy */
+  .text-hero {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold leading-tight;
+    font-family: var(--font-poppins);
+  }
+
+  .text-section-title {
+    @apply text-4xl md:text-5xl font-bold leading-tight;
+    font-family: var(--font-poppins);
+  }
+
+  .text-card-title {
+    @apply text-xl md:text-2xl font-bold;
+    font-family: var(--font-poppins);
+  }
+
+  .text-body-large {
+    @apply text-lg leading-relaxed;
+    font-family: var(--font-poppins);
+  }
+
+  .text-body {
+    @apply text-base leading-relaxed;
+    font-family: var(--font-poppins);
+  }
+
+  .text-body-small {
+    @apply text-sm leading-relaxed;
+    font-family: var(--font-poppins);
+  }
+
+  /* Brand Color Utilities */
+  .text-brand-primary {
+    color: var(--color-primary-purple);
+  }
+
+  .bg-brand-primary {
+    background-color: var(--color-primary-purple);
+  }
+
+  .border-brand-primary {
+    border-color: var(--color-primary-purple);
+  }
+
+  .text-brand-primary-dark {
+    color: var(--color-primary-purple-dark);
+  }
+
+  .bg-brand-primary-dark {
+    background-color: var(--color-primary-purple-dark);
+  }
+
+  .text-brand-primary-light {
+    color: var(--color-primary-purple-light);
+  }
+
+  .bg-brand-primary-light {
+    background-color: var(--color-primary-purple-light);
+  }
+
+  .bg-brand-primary-hover {
+    background-color: var(--color-primary-purple-dark);
+  }
+
+  .hover\:bg-brand-primary-hover:hover {
+    background-color: var(--color-primary-purple-dark);
+  }
+
+  /* Brand text colors for consistent typography */
+  .text-brand-text-primary {
+    color: var(--color-text-primary);
+  }
+
+  .text-brand-text-secondary {
+    color: var(--color-text-secondary);
+  }
+
+  .bg-brand-light-gray {
+    background-color: var(--color-light-gray-bg);
+  }
+
+  .bg-brand-border {
+    background-color: var(--color-border);
+  }
+
+  .border-brand-border {
+    border-color: var(--color-border);
+  }
+
+  /* Consistent Spacing Utilities */
+  .section-padding {
+    @apply py-16 md:py-20;
+  }
+
+  .container-padding {
+    @apply px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16;
+  }
+
+  .card-padding {
+    @apply p-6 md:p-8;
+  }
+
+  /* Responsive Typography Utilities */
+  .text-hero {
+    @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight;
+  }
+
+  .text-section-title {
+    @apply text-2xl sm:text-3xl md:text-4xl font-bold leading-tight;
+  }
+
+  .text-card-title {
+    @apply text-lg sm:text-xl md:text-2xl font-semibold;
+  }
+
+  .text-body-large {
+    @apply text-base sm:text-lg leading-relaxed;
+  }
+
+  .text-body {
+    @apply text-sm sm:text-base leading-relaxed;
+  }
+
+  .text-body-small {
+    @apply text-xs sm:text-sm leading-relaxed;
+  }
+
+  /* Enhanced Focus States */
+  .focus-brand {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-purple)] focus-visible:ring-offset-2;
+  }
+
+  /* Enhanced Hover Effects */
+  .hover-lift {
+    @apply hover:-translate-y-1 hover:shadow-lg transition-all duration-300;
+  }
+
+  .hover-scale {
+    @apply hover:scale-105 transition-transform duration-300;
+  }
+
+  /* Improved Interactive States */
+  .interactive-card {
+    @apply hover:shadow-xl hover:-translate-y-2 focus-within:shadow-xl focus-within:-translate-y-2 transition-all duration-300 cursor-pointer;
+  }
+
+  .interactive-button {
+    @apply hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer;
+  }
+
+  /* Touch-friendly minimum sizes */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Mobile-first responsive utilities */
+  .mobile-padding {
+    @apply px-4 sm:px-6;
+  }
+
+  .mobile-text-scale {
+    @apply text-2xl sm:text-3xl md:text-4xl;
+  }
+
+  .mobile-grid {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+}
+
+/* Performance-optimized CSS animations to replace Framer Motion */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* Utility classes for performance-optimized animations */
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.6s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.6s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.animate-hidden {
+  opacity: 0;
+}
+
+/* Animation keyframes for slide-in-left */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Additional animations for Programs page */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-rotate-slow {
+  animation: rotate 20s linear infinite;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Animation delay utilities */
+.animate-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animate-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animate-delay-300 {
+  animation-delay: 0.3s;
+}
+
+.animate-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.animate-delay-500 {
+  animation-delay: 0.5s;
+}
+
+/* Accessibility: Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-rotate-slow,
+  .animate-float,
+  .animate-fade-in-up,
+  .animate-fade-in-down,
+  .animate-slide-in-left,
+  .animate-scale-in {
+    animation: none;
+  }
+
+  .animate-hidden {
+    opacity: 1;
+  }
+}
+
+/* Intersection Observer triggered animations */
+.fade-in-observer {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1),
+    transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.fade-in-observer.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scale-in-observer {
+  opacity: 0;
+  transform: scale(0.95);
+  transition:
+    opacity 0.5s cubic-bezier(0.25, 0.1, 0.25, 1),
+    transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.scale-in-observer.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Optimized animation classes for SimpleAnimatedSection */
+.animate-section {
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1),
+    transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transition-delay: var(--animation-delay, 0ms);
+}
+
+.animate-section--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* GPU-accelerated animations with will-change optimization */
+.animate-section {
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Respect user preferences for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-section {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Optimized floating particles with pure CSS animations */
+.floating-particle {
+  position: absolute;
+  bottom: 1rem;
+  width: 0.375rem;
+  height: 0.375rem;
+  background-color: var(--color-primary-purple);
+  border-radius: 9999px;
+  opacity: 0.4;
+  animation: floatPulse 4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.floating-particle--1 {
+  left: 30%;
+  animation-delay: 0s;
+  animation-duration: 4s;
+}
+
+.floating-particle--2 {
+  left: 50%;
+  animation-delay: 1.5s;
+  animation-duration: 5s;
+}
+
+.floating-particle--3 {
+  left: 70%;
+  animation-delay: 3s;
+  animation-duration: 6s;
+}
+
+@keyframes floatPulse {
+
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: translateY(-8px) scale(1.1);
+  }
+}
+
+/* Disable floating particles on reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .floating-particle {
+    animation: none;
+    opacity: 0.4;
+    transform: none;
+  }
+}
+
+/* Animated gradient text */
+@keyframes gradient-x {
+
+  0%,
+  100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 3s ease infinite;
+}
+
+/* Text outline utility */
+.text-outline-white {
+  text-shadow:
+    -1px -1px 0 white,
+    1px -1px 0 white,
+    -1px 1px 0 white,
+    1px 1px 0 white;
+}
+
+/* Brand Gradient Animated Underlines */
+.brand-underline {
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #4e2a84, #8b5cf6, #a855f7, #4e2a84);
+  background-size: 200% 100%;
+  border-radius: 3px;
+  animation: gradientShift 3s ease-in-out infinite;
+  box-shadow:
+    0 0 20px rgba(78, 42, 132, 0.6),
+    0 0 40px rgba(78, 42, 132, 0.4),
+    0 0 60px rgba(78, 42, 132, 0.2);
+}
+
+.brand-underline-1 {
+  animation-delay: 0s;
+}
+
+.brand-underline-2 {
+  animation-delay: 1.5s;
+}
+
+@keyframes gradientShift {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+    transform: scaleX(1);
+    opacity: 1;
+  }
+
+  25% {
+    background-position: 100% 50%;
+    transform: scaleX(1.05);
+    opacity: 0.9;
+  }
+
+  50% {
+    background-position: 200% 50%;
+    transform: scaleX(1);
+    opacity: 1;
+  }
+
+  75% {
+    background-position: 100% 50%;
+    transform: scaleX(1.05);
+    opacity: 0.9;
+  }
+}
+
+/* Enhanced fade in animation */
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.delay-600 {
+  animation-delay: 600ms;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ultra High Contrast Focus Style */
+.focus-brand:focus {
+  outline: 4px solid #4e2a84;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 8px rgba(78, 42, 132, 0.2);
+}
+
+/* Custom container padding */
+.container-padding {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-padding {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-padding {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+/* High contrast text shadows for better readability */
+.drop-shadow-2xl {
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.8));
+}
+
+.drop-shadow-xl {
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.7));
+}
+
+.drop-shadow-lg {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+}
+
+/* Responsive underline adjustments */
+@media (max-width: 768px) {
+  .brand-underline {
+    height: 4px;
+    bottom: -6px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .brand-underline {
+    height: 8px;
+    bottom: -10px;
+  }
+}
+
+/* Marquee Animation */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Pause on hover */
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
