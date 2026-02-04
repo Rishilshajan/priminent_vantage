@@ -1,6 +1,6 @@
 import { Search, Bell, HelpCircle, Menu } from "lucide-react"
 
-export function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
+export function AdminHeader({ onMenuClick, title = "Super Admin Access Code Dashboard" }: { onMenuClick?: () => void, title?: string }) {
     return (
         <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between px-4 md:px-8 shrink-0">
             <div className="flex items-center gap-3">
@@ -11,7 +11,7 @@ export function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
                     <Menu className="size-6" />
                 </button>
                 <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white truncate">
-                    <span className="hidden md:inline">Admin Dashboard</span>
+                    <span className="hidden md:inline">{title}</span>
                     <span className="md:hidden">Admin Dashboard</span>
                 </h2>
             </div>
