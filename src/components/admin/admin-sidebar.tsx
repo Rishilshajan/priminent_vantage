@@ -10,7 +10,8 @@ import {
     FileText,
     Settings,
     LogOut,
-    Monitor
+    Monitor,
+    Users
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -46,8 +47,13 @@ export function AdminSidebar({ user, isOpen, onClose }: { user: any, isOpen: boo
             icon: LayoutDashboard // Material: dashboard
         },
         {
+            href: "/dashboard/candidates",
+            label: "Candidates Overview",
+            icon: Users // Material: groups
+        },
+        {
             href: "/dashboard/organization",
-            label: "Organization Mgmt",
+            label: "Organization Management",
             icon: Building2 // Material: corporate_fare
         },
         {
