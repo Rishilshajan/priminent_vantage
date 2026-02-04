@@ -56,7 +56,7 @@ export function AdminSidebar({ user, isOpen, onClose }: { user: any, isOpen: boo
             icon: Key // Material: password
         },
         {
-            href: "/dashboard/logs",
+            href: "/dashboard/system-logs",
             label: "System Logs",
             icon: FileText // Material: receipt_long
         },
