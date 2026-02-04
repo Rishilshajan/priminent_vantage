@@ -89,7 +89,7 @@ export function HeroSection() {
 
                     {/* Left Content */}
                     <div className="mb-12 lg:mb-0 animate-fade-in-up">
-                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 border border-primary/20">
+                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4 border border-primary/20">
                             <Rocket className="w-4 h-4 mr-2" />
                             Kickstart your career journey
                         </div>
