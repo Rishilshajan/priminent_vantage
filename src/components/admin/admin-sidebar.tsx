@@ -12,7 +12,8 @@ import {
     LogOut,
     Monitor,
     Users,
-    BarChart3
+    BarChart3,
+    GraduationCap
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -56,6 +57,11 @@ export function AdminSidebar({ user, isOpen, onClose }: { user: any, isOpen: boo
             href: "/dashboard/organization",
             label: "Organization Management",
             icon: Building2 // Material: corporate_fare
+        },
+        {
+            href: "/dashboard/educators",
+            label: "Educators",
+            icon: GraduationCap // Material: person_pin_circle
         },
         {
             href: "/dashboard/access-codes",
