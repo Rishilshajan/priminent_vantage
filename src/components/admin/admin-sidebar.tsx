@@ -11,7 +11,8 @@ import {
     Settings,
     LogOut,
     Monitor,
-    Users
+    Users,
+    BarChart3
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -66,6 +67,11 @@ export function AdminSidebar({ user, isOpen, onClose }: { user: any, isOpen: boo
             label: "System Logs",
             icon: FileText // Material: receipt_long
         },
+        {
+            href: "/dashboard/reports",
+            label: "Reports",
+            icon: BarChart3 // Material: bar_chart
+        }
         // Settings commonly separate
     ]
 
@@ -88,7 +94,7 @@ export function AdminSidebar({ user, isOpen, onClose }: { user: any, isOpen: boo
                         <Monitor className="size-6" />
                     </div>
                     <div className="flex flex-col">
-                        <h1 className="text-slate-900 dark:text-white text-base font-bold leading-none">Prominent</h1>
+                        <h1 className="text-slate-900 dark:text-white text-base font-bold leading-none">Priminent</h1>
                         <p className="text-primary text-xs font-semibold uppercase tracking-wider">Vantage</p>
                     </div>
                 </div>
