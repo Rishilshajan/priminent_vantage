@@ -20,7 +20,7 @@ export function RequestAccessCard() {
             </p>
 
             <Button size="lg" className="w-full h-14 text-lg font-bold shadow-lg shadow-primary/30 group mb-8" asChild>
-                <Link href="/contact">
+                <Link href="/enterprise/request-access">
                     Request Access
                     <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
                 </Link>
