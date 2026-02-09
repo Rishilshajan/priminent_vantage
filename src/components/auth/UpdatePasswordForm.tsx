@@ -44,7 +44,7 @@ export function UpdatePasswordForm() {
         if (error) {
             alert(error.message); // Ideally replace with toast
         } else {
-            router.push("/update-password/success");
+            router.push("/reset-password/update/success");
         }
     };
 

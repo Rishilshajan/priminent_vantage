@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { login, signInWithGoogle } from "@/app/auth/actions"; // Import login action
+import { login, signInWithGoogle } from "@/actions/auth.actions"; // Import login action
 import { PasswordInput } from "@/components/ui/password-input";
 
 const loginSchema = z.object({
