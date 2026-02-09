@@ -54,16 +54,25 @@ export default function RequestDetailsView({ profile, requestData: data }: Reque
 
     // Initialize history from database or default
     const [history, setHistory] = useState(() => {
+        const now = new Date().toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).toUpperCase().replace(',', '')
+
         const initialHistory = (data.review_history && data.review_history.length > 0) ? data.review_history : [
             { event: "System Intake", date: formatDate(data.created_at), type: "success" as const },
-            { event: "Admin Review Started", date: "Just now", type: "warning" as const }
+            { event: "Admin Review Started", date: now, type: "warning" as const }
         ]
 
         // If it's a re-entry (has history beyond the first two), add a 'Session Resumed' entry
         if (data.review_history && data.review_history.length > 0) {
             return [
                 ...data.review_history,
-                { event: `Review Session Resumed by ${profile.first_name || 'Admin'}`, date: "Just now", type: "warning" as const }
+                { event: `Review Session Resumed by ${profile.first_name || 'Admin'}`, date: now, type: "warning" as const }
             ]
         }
 
@@ -78,10 +87,18 @@ export default function RequestDetailsView({ profile, requestData: data }: Reque
 
     const handleSaveProgress = async () => {
         setIsSaving(true)
+        const now = new Date().toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).toUpperCase().replace(',', '')
 
         const newEvent = {
             event: `Review Progress Updated by ${profile.first_name || 'Admin'}`,
-            date: "Just now",
+            date: now,
             type: "warning" as const
         }
 
@@ -103,21 +120,39 @@ export default function RequestDetailsView({ profile, requestData: data }: Reque
     }
 
     const handleApprove = async () => {
+        if (!isDomainVerified) {
+            alert("Verification Required: You cannot approve this request because the organization domain has not been verified. Please ensure the work email matches the company website domain.")
+            return
+        }
+
+        const now = new Date().toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).toUpperCase().replace(',', '')
+
         const newHistory = [
             ...history,
-            { event: `Accepted & Issued Access Code by ${profile.first_name || 'Admin'}`, date: "Just now", type: "success" as const }
+            { event: `Accepted & Issued Access Code by ${profile.first_name || 'Admin'}`, date: now, type: "success" as const }
         ]
         setHistory(newHistory)
 
         setIsSaving(true)
         const result = await saveEnterpriseReview(data.id, {
             status: 'approved',
-            history: newHistory
+            history: newHistory,
+            domainVerified: isDomainVerified
         })
         setIsSaving(false)
 
         if (result.success) {
-            alert("Request approved and status updated!")
+            alert("Request approved and status updated! Access code has been generated and logged.")
+            window.location.reload()
+        } else {
+            alert(result.error || "Failed to approve request")
         }
     }
 
@@ -141,6 +176,15 @@ export default function RequestDetailsView({ profile, requestData: data }: Reque
         )
 
         if (result.success) {
+            const now = new Date().toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).toUpperCase().replace(',', '')
+
             setDialogOpen(false)
             setHistory((prev: any[]) => [
                 ...prev,
@@ -148,7 +192,7 @@ export default function RequestDetailsView({ profile, requestData: data }: Reque
                     event: dialogType === "reject"
                         ? `Rejected by ${profile.first_name || 'Admin'}`
                         : `Clarification Requested by ${profile.first_name || 'Admin'}`,
-                    date: "Just now",
+                    date: now,
                     type: dialogType === "reject" ? "success" as const : "warning" as const
                 }
             ])
@@ -194,6 +238,7 @@ export default function RequestDetailsView({ profile, requestData: data }: Reque
                         <div className="grid grid-cols-12 gap-8">
                             <div className="col-span-12 xl:col-span-8 space-y-8">
                                 <CompanyInfoCard
+                                    requestId={data.id}
                                     legalName={data.company_name}
                                     country={data.country}
                                     website={data.website.replace(/^https?:\/\//, '')}
@@ -204,6 +249,7 @@ export default function RequestDetailsView({ profile, requestData: data }: Reque
                                     hiringRegions={data.hiring_regions ? [data.hiring_regions] : []}
                                 />
                                 <AdminInfoCard
+                                    requestId={data.id}
                                     fullName={data.admin_name}
                                     jobTitle={data.admin_title}
                                     email={data.admin_email}

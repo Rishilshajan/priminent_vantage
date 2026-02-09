@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { AdminHeader } from "@/components/admin/admin-header"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { LogFilterBar, LogFilters } from "./logs-filter-bar"
@@ -10,12 +11,18 @@ import { Download, Bell, Menu } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { SystemLog, logSystemEvent } from "@/lib/logger"
 
-export default function SystemLogsView({ profile }: { profile: any }) {
+export function SystemLogsContent({ profile }: { profile: any }) {
+    const searchParams = useSearchParams()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
     const [logs, setLogs] = useState<SystemLog[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [filters, setFilters] = useState<LogFilters>({ search: '', dateRange: '', level: '' })
+    const [filters, setFilters] = useState<LogFilters>({
+        search: '',
+        dateRange: '',
+        level: '',
+        category: searchParams.get('category') || ''
+    })
 
     const fetchLogs = useCallback(async () => {
         setIsLoading(true)
@@ -29,6 +36,10 @@ export default function SystemLogsView({ profile }: { profile: any }) {
         // Apply filters
         if (filters.level) {
             query = query.eq('level', filters.level)
+        }
+
+        if (filters.category) {
+            query = query.eq('action_category', filters.category)
         }
 
         if (filters.search) {
@@ -99,8 +110,14 @@ export default function SystemLogsView({ profile }: { profile: any }) {
                                 setIsLoading(true)
                                 await logSystemEvent({
                                     level: 'INFO',
-                                    action_code: 'TEST_LOG_GENERATED',
-                                    actor_name: 'Test Actor',
+                                    action: {
+                                        code: 'TEST_LOG_GENERATED',
+                                        category: 'SYSTEM'
+                                    },
+                                    actor: {
+                                        name: 'Test Actor',
+                                        type: 'system'
+                                    },
                                     message: 'This is a test log entry generated from the UI.',
                                     params: { test: true, timestamp: new Date().toISOString() }
                                 })
@@ -130,7 +147,7 @@ export default function SystemLogsView({ profile }: { profile: any }) {
                 <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-slate-900 relative">
                     <LogFilterBar
                         onFilter={setFilters}
-                        isFiltering={!!(filters.search || filters.level || filters.dateRange)}
+                        isFiltering={!!(filters.search || filters.level || filters.dateRange || filters.category)}
                     />
 
                     <div className="flex-1 flex overflow-hidden">
@@ -150,5 +167,13 @@ export default function SystemLogsView({ profile }: { profile: any }) {
                 </div>
             </main>
         </div>
+    )
+}
+
+export default function SystemLogsView(props: { profile: any }) {
+    return (
+        <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
+            <SystemLogsContent {...props} />
+        </Suspense>
     )
 }

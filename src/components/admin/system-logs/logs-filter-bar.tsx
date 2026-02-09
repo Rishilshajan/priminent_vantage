@@ -6,6 +6,7 @@ export interface LogFilters {
     search: string
     dateRange: string // Keeping simple as string for now, could be {start, end}
     level: LogLevel | ''
+    category: string
 }
 
 interface LogFilterBarProps {
@@ -17,7 +18,8 @@ export function LogFilterBar({ onFilter, isFiltering }: LogFilterBarProps) {
     const [filters, setFilters] = useState<LogFilters>({
         search: '',
         dateRange: '',
-        level: ''
+        level: '',
+        category: ''
     })
 
     const handleApply = () => {
@@ -25,7 +27,7 @@ export function LogFilterBar({ onFilter, isFiltering }: LogFilterBarProps) {
     }
 
     const handleClear = () => {
-        const resetHandlers = { search: '', dateRange: '', level: '' as const }
+        const resetHandlers = { search: '', dateRange: '', level: '' as const, category: '' }
         setFilters(resetHandlers)
         onFilter(resetHandlers)
     }
@@ -55,18 +57,31 @@ export function LogFilterBar({ onFilter, isFiltering }: LogFilterBarProps) {
                     />
                 </div>
             </div>
-            <div className="md:col-span-3">
+            <div className="md:col-span-2">
                 <select
                     className="w-full px-4 py-2 rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
                     value={filters.level}
                     onChange={(e) => setFilters({ ...filters, level: e.target.value as LogLevel | '' })}
                 >
-                    <option value="">All Log Levels</option>
+                    <option value="">Levels</option>
                     <option value="SUCCESS">Success</option>
                     <option value="WARNING">Warning</option>
                     <option value="ERROR">Error</option>
-                    <option value="INFO">Information</option>
+                    <option value="INFO">Info</option>
                     <option value="CRITICAL">Critical</option>
+                </select>
+            </div>
+            <div className="md:col-span-2">
+                <select
+                    className="w-full px-4 py-2 rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                    value={filters.category}
+                    onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+                >
+                    <option value="">Categories</option>
+                    <option value="SECURITY">Security</option>
+                    <option value="ORGANIZATION">Org</option>
+                    <option value="CONTENT">Content</option>
+                    <option value="SYSTEM">System</option>
                 </select>
             </div>
             <div className="md:col-span-2 flex justify-end gap-2">

@@ -1,9 +1,75 @@
-import { Database, Calendar, Plus, Copy, RefreshCw, Ban, History, ChevronLeft, ChevronRight } from "lucide-react"
+"use client"
 
-export function AccessCodeTable() {
+import { useState } from "react"
+import { Database, Calendar, Plus, Copy, RefreshCw, Ban, History, ChevronLeft, ChevronRight, HelpCircle } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+export function AccessCodeTable({ codes = [] }: { codes: any[] }) {
+    const [statusFilter, setStatusFilter] = useState("All Statuses")
+    const [industryFilter, setIndustryFilter] = useState("All Industries")
+    const [currentPage, setCurrentPage] = useState(1)
+    const itemsPerPage = 8
+
+    // Handle Copy to Clipboard
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text)
+        // Simple alert or toast could go here
+    }
+
+    // Filter Logic
+    const filteredCodes = codes.filter(code => {
+        const matchesStatus = statusFilter === "All Statuses" ||
+            (statusFilter === "Active" && code.status === "active") ||
+            (statusFilter === "Expired" && code.status === "expired") ||
+            (statusFilter === "Revoked" && code.status === "revoked") ||
+            (statusFilter === "Used" && code.status === "used");
+
+        const industry = code.enterprise_requests?.industry || "Other";
+        const matchesIndustry = industryFilter === "All Industries" ||
+            industry.toLowerCase() === industryFilter.toLowerCase();
+
+        return matchesStatus && matchesIndustry;
+    });
+
+    const totalPages = Math.ceil(filteredCodes.length / itemsPerPage) || 1
+    const pagedCodes = filteredCodes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+    const getStatusStyle = (status: string, expiresAt: string) => {
+        const isExpiring = status === 'active' && new Date(expiresAt) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        if (isExpiring) return "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800"
+
+        switch (status) {
+            case 'active':
+                return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+            case 'used':
+                return "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+            case 'expired':
+                return "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/30"
+            case 'revoked':
+                return "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700"
+            default:
+                return "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+        }
+    }
+
+    const getStatusLabel = (status: string, expiresAt: string) => {
+        const isExpiring = status === 'active' && new Date(expiresAt) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        if (isExpiring) return 'EXPIRING';
+        return status.toUpperCase();
+    }
+
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return 'N/A';
+        return new Date(dateStr).toISOString().split('T')[0];
+    }
+
+    // Get unique industries for filter
+    const industries = Array.from(new Set(codes.map(c => c.enterprise_requests?.industry).filter(Boolean)));
+
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/50">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/50 transition-all">
                 <div>
                     <h3 className="font-bold text-slate-900 dark:text-white">Enterprise Access Codes</h3>
                     <p className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-widest font-semibold flex items-center gap-1">
@@ -12,30 +78,39 @@ export function AccessCodeTable() {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <select className="text-xs font-semibold border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-3 py-1.5 focus:ring-primary outline-none">
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                        className="text-xs font-semibold border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-3 py-1.5 focus:ring-primary outline-none cursor-pointer transition-all hover:border-primary/30"
+                    >
                         <option>All Statuses</option>
                         <option>Active</option>
+                        <option>Used</option>
                         <option>Expired</option>
                         <option>Revoked</option>
                     </select>
-                    <select className="text-xs font-semibold border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-3 py-1.5 focus:ring-primary outline-none">
+                    <select
+                        value={industryFilter}
+                        onChange={(e) => { setIndustryFilter(e.target.value); setCurrentPage(1); }}
+                        className="text-xs font-semibold border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg px-3 py-1.5 focus:ring-primary outline-none cursor-pointer transition-all hover:border-primary/30"
+                    >
                         <option>All Industries</option>
-                        <option>Technology</option>
-                        <option>Healthcare</option>
-                        <option>Finance</option>
+                        {industries.map(ind => (
+                            <option key={ind} value={ind}>{ind}</option>
+                        ))}
                     </select>
-                    <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all">
+                    <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-all hover:border-primary/40">
                         <Calendar className="size-3.5" />
                         Date Range
                     </button>
-                    <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-primary text-white rounded-lg hover:opacity-90 transition-all">
+                    <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-primary text-white rounded-lg hover:opacity-90 shadow-sm shadow-primary/20 transition-all">
                         <Plus className="size-3.5" />
                         Generate New Code
                     </button>
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto flex-1">
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
                         <tr>
@@ -43,210 +118,148 @@ export function AccessCodeTable() {
                             <th className="px-6 py-3 whitespace-nowrap">Organization</th>
                             <th className="px-6 py-3 whitespace-nowrap">Created</th>
                             <th className="px-6 py-3 whitespace-nowrap">Expiry</th>
-                            <th className="px-6 py-3 whitespace-nowrap">Redemptions</th>
+                            <th className="px-6 py-3 whitespace-nowrap">Enrollments</th>
                             <th className="px-6 py-3 whitespace-nowrap">Status</th>
                             <th className="px-6 py-3 text-right whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {/* Row 1 */}
-                        <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">ABC-123-XYZ</span>
-                                    <button className="text-slate-400 hover:text-primary transition-colors">
-                                        <Copy className="size-4" />
-                                    </button>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4">
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-semibold text-slate-900 dark:text-white">Quantum Dynamics</span>
-                                    <span className="text-[10px] text-slate-500 uppercase tracking-tighter">Technology</span>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">2023-10-15</td>
-                            <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">2024-10-15</td>
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-emerald-500 w-3/4"></div>
-                                    </div>
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">1,240</span>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4">
-                                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-                                    <span className="size-1.5 rounded-full bg-emerald-500"></span>
-                                    ACTIVE
-                                </span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                    <button className="p-1.5 text-slate-500 hover:bg-primary/10 hover:text-primary rounded transition-all" title="Regenerate">
-                                        <RefreshCw className="size-4" />
-                                    </button>
-                                    <button className="p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded transition-all" title="Revoke">
-                                        <Ban className="size-4" />
-                                    </button>
-                                    <button className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-all" title="Audit Log">
-                                        <History className="size-4" />
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        {pagedCodes.length > 0 ? (
+                            pagedCodes.map((code) => {
+                                const companyName = code.enterprise_requests?.company_name || "Unknown Organization";
+                                const industry = code.enterprise_requests?.industry || "Uncategorized";
+                                const redemptionPercent = Math.min((code.used_count / (code.usage_limit || 1)) * 100, 100);
+                                const isRevoked = code.status === 'revoked';
+                                const isExpiring = code.status === 'active' && new Date(code.expires_at) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-                        {/* Row 2 */}
-                        <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">HLX-492-WQV</span>
-                                    <button className="text-slate-400 hover:text-primary transition-colors">
-                                        <Copy className="size-4" />
-                                    </button>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4">
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-semibold text-slate-900 dark:text-white">Hooli Ltd</span>
-                                    <span className="text-[10px] text-slate-500 uppercase tracking-tighter">Media</span>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">2023-11-01</td>
-                            <td className="px-6 py-4 text-sm text-amber-600 font-medium">2023-11-15</td>
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-amber-500 w-1/3"></div>
+                                return (
+                                    <tr key={code.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={cn(
+                                                        "font-mono font-bold px-2 py-0.5 rounded text-[11px] border tracking-widest transition-all",
+                                                        isRevoked
+                                                            ? "text-slate-400 dark:text-slate-600 bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-800 line-through"
+                                                            : "text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                                                    )}>
+                                                        ***-***-***
+                                                    </span>
+                                                    <span title="Actual code is private and sent via email for security.">
+                                                        <HelpCircle className="size-3 text-slate-300 cursor-help" />
+                                                    </span>
+                                                </div>
+                                                <span className="text-[9px] text-slate-400 font-mono uppercase tracking-tighter">
+                                                    Ref ID: {code.code_hash.substring(0, 8)}...
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className={cn("text-sm font-semibold transition-all", isRevoked ? "text-slate-400 opacity-60" : "text-slate-900 dark:text-white")}>{companyName}</span>
+                                                <span className="text-[10px] text-slate-500 uppercase tracking-tighter font-medium">{industry}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{formatDate(code.created_at)}</td>
+                                        <td className={cn(
+                                            "px-6 py-4 text-sm font-medium transition-all",
+                                            isExpiring ? "text-amber-600" : "text-slate-600 dark:text-slate-400"
+                                        )}>
+                                            {formatDate(code.expires_at)}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shrink-0">
+                                                    <div
+                                                        className={cn(
+                                                            "h-full transition-all duration-1000",
+                                                            isRevoked ? "bg-slate-300 dark:bg-slate-700" :
+                                                                isExpiring ? "bg-amber-500" : "bg-emerald-500"
+                                                        )}
+                                                        style={{ width: `${redemptionPercent}%` }}
+                                                    ></div>
+                                                </div>
+                                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{code.used_count.toLocaleString()}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={cn(
+                                                "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all",
+                                                getStatusStyle(code.status, code.expires_at)
+                                            )}>
+                                                <span className={cn(
+                                                    "size-1.5 rounded-full transition-all animate-pulse",
+                                                    code.status === 'active' ? (isExpiring ? "bg-amber-500" : "bg-emerald-500") :
+                                                        code.status === 'used' ? "bg-slate-400" :
+                                                            code.status === 'expired' ? "bg-red-500" : "bg-slate-300"
+                                                )}></span>
+                                                {getStatusLabel(code.status, code.expires_at)}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                <button className="p-1.5 text-slate-500 hover:bg-primary/10 hover:text-primary rounded transition-all" title="Regenerate">
+                                                    <RefreshCw className="size-4" />
+                                                </button>
+                                                {!isRevoked && (
+                                                    <button className="p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded transition-all" title="Revoke">
+                                                        <Ban className="size-4" />
+                                                    </button>
+                                                )}
+                                                <button className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-all" title="Audit Log">
+                                                    <History className="size-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )
+                            })
+                        ) : (
+                            <tr>
+                                <td colSpan={7} className="px-6 py-24 text-center text-slate-500">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <HelpCircle className="size-10 text-slate-300" />
+                                        <div className="space-y-1">
+                                            <p className="font-bold text-slate-900 dark:text-white">No access codes found</p>
+                                            <p className="text-xs text-slate-500">Adjust your filters or generate a new code to get started.</p>
+                                        </div>
                                     </div>
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">42</span>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4">
-                                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
-                                    <span className="size-1.5 rounded-full bg-amber-500"></span>
-                                    EXPIRING
-                                </span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                    <button className="p-1.5 text-slate-500 hover:bg-primary/10 hover:text-primary rounded transition-all" title="Regenerate">
-                                        <RefreshCw className="size-4" />
-                                    </button>
-                                    <button className="p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded transition-all" title="Revoke">
-                                        <Ban className="size-4" />
-                                    </button>
-                                    <button className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-all" title="Audit Log">
-                                        <History className="size-4" />
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-
-                        {/* Row 3 */}
-                        <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/30 px-2 py-1 rounded text-sm line-through">SKY-009-NET</span>
-                                    <button className="text-slate-300 cursor-not-allowed">
-                                        <Copy className="size-4" />
-                                    </button>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4">
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-semibold text-slate-900 dark:text-white opacity-60">Cyberdyne Systems</span>
-                                    <span className="text-[10px] text-slate-500 uppercase tracking-tighter">Manufacturing</span>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-slate-400">2023-01-20</td>
-                            <td className="px-6 py-4 text-sm text-slate-400">2023-01-20</td>
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-2 opacity-50">
-                                    <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-slate-400 w-full"></div>
-                                    </div>
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">500</span>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4">
-                                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                                    <span className="size-1.5 rounded-full bg-slate-400"></span>
-                                    REVOKED
-                                </span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                    <button className="p-1.5 text-slate-500 hover:bg-primary/10 hover:text-primary rounded transition-all" title="Regenerate">
-                                        <RefreshCw className="size-4" />
-                                    </button>
-                                    <button className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-all" title="Audit Log">
-                                        <History className="size-4" />
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-
-                        {/* Row 4 */}
-                        <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-sm">VNT-882-PLM</span>
-                                    <button className="text-slate-400 hover:text-primary transition-colors">
-                                        <Copy className="size-4" />
-                                    </button>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4">
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-semibold text-slate-900 dark:text-white">Massive Dynamic</span>
-                                    <span className="text-[10px] text-slate-500 uppercase tracking-tighter">Research</span>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">2023-09-12</td>
-                            <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">2024-09-12</td>
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-emerald-500 w-1/4"></div>
-                                    </div>
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">2,105</span>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4">
-                                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-                                    <span className="size-1.5 rounded-full bg-emerald-500"></span>
-                                    ACTIVE
-                                </span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                    <button className="p-1.5 text-slate-500 hover:bg-primary/10 hover:text-primary rounded transition-all" title="Regenerate">
-                                        <RefreshCw className="size-4" />
-                                    </button>
-                                    <button className="p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600 rounded transition-all" title="Revoke">
-                                        <Ban className="size-4" />
-                                    </button>
-                                    <button className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-all" title="Audit Log">
-                                        <History className="size-4" />
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <p className="text-xs text-slate-500 font-medium">Showing <span className="text-slate-900 dark:text-white">1 - 4</span> of 842 records</p>
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30 dark:bg-slate-900/30">
+                <p className="text-xs text-slate-500 font-medium">
+                    Showing <span className="text-slate-900 dark:text-white font-bold">{filteredCodes.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, filteredCodes.length)}</span> of {filteredCodes.length} records
+                </p>
                 <div className="flex gap-1">
-                    <button className="size-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
+                    <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="size-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    >
                         <ChevronLeft className="size-4" />
                     </button>
-                    <button className="size-8 flex items-center justify-center rounded bg-primary text-white font-bold text-xs">1</button>
-                    <button className="size-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs">2</button>
-                    <button className="size-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs">3</button>
-                    <button className="size-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={cn(
+                                "size-8 flex items-center justify-center rounded font-bold text-xs transition-all",
+                                currentPage === page ? "bg-primary text-white shadow-sm shadow-primary/20" : "border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                            )}
+                        >
+                            {page}
+                        </button>
+                    ))}
+                    <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="size-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    >
                         <ChevronRight className="size-4" />
                     </button>
                 </div>

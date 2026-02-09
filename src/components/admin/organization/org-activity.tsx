@@ -1,11 +1,14 @@
 import { CheckCircle2, ClipboardCheck, PlusSquare } from "lucide-react"
+import Link from "next/link"
 
 export function OrgActivity() {
     return (
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-slate-900 dark:text-white">Request Lifecycle Activity</h3>
-                <button className="text-primary text-xs font-bold hover:underline">View History</button>
+                <Link href="/admin/system-logs?category=ORGANIZATION">
+                    <button className="text-primary text-xs font-bold hover:underline cursor-pointer">View History</button>
+                </Link>
             </div>
             <div className="space-y-4">
                 <div className="flex items-start gap-3">

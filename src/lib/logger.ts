@@ -33,6 +33,29 @@ export interface CreateSystemLogParams {
     tags?: string[]
 }
 
+export interface SystemLog {
+    id: string
+    timestamp: string
+    level: LogLevel
+    message: string | null
+    actor_type: 'user' | 'system' | 'api_key'
+    actor_id: string | null
+    actor_name: string | null
+    actor_email?: string | null
+    actor_role?: string | null
+    actor_ip?: string | null
+    actor_user_agent?: string | null
+    org_id?: string | null
+    org_name?: string | null
+    action_code: string
+    action_category: 'SECURITY' | 'ORGANIZATION' | 'CONTENT' | 'SYSTEM'
+    target_resource_type?: string | null
+    target_resource_id?: string | null
+    params: Record<string, any>
+    result: Record<string, any>
+    tags: string[]
+}
+
 /**
  * Logs a system event from a Client Component.
  * Uses the browser-side Supabase client.

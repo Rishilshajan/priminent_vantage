@@ -4,6 +4,27 @@ import { Resend } from 'resend';
 import { createClient } from "@/lib/supabase/server";
 import { logServerEvent } from "@/lib/logger-server";
 import { z } from "zod";
+import { createHash, randomBytes } from "node:crypto";
+
+/**
+ * Generates a random 9-character alphanumeric access code (Format: XXX-XXX-XXX)
+ */
+function generateAccessCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 9; i++) {
+        if (i > 0 && i % 3 === 0) code += '-';
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+}
+
+/**
+ * Securely hashes an access code for storage
+ */
+function hashAccessCode(code: string) {
+    return createHash('sha256').update(code).digest('hex');
+}
 
 // Define validation schema
 const EnterpriseRequestSchema = z.object({
@@ -157,10 +178,16 @@ export async function saveEnterpriseReview(requestId: string, reviewData: {
     checklist?: any;
     history?: any;
     status?: string;
+    domainVerified?: boolean; // New prop to check verification status
 }) {
     const supabase = await createClient();
 
     try {
+        // Validation: Block approval if domain is not verified
+        if (reviewData.status === 'approved' && !reviewData.domainVerified) {
+            return { error: "Cannot approve request: Organization domain must be verified first." };
+        }
+
         const updateData: any = {};
         if (reviewData.notes !== undefined) updateData.admin_notes = reviewData.notes;
         if (reviewData.checklist !== undefined) updateData.checklist_state = reviewData.checklist;
@@ -191,6 +218,75 @@ export async function saveEnterpriseReview(requestId: string, reviewData: {
             return { error: "No records were updated. You might lack permissions or the request ID is invalid." };
         }
 
+        // Logic for Access Code Generation on Approval
+        if (reviewData.status === 'approved') {
+            // Check if an access code already exists for this request
+            const { data: existingCode } = await supabase
+                .from('enterprise_access_codes')
+                .select('id, status')
+                .eq('request_id', requestId)
+                .maybeSingle();
+
+            if (!existingCode) {
+                const accessCode = generateAccessCode();
+                const codeHash = hashAccessCode(accessCode);
+
+                const { error: codeError } = await supabase
+                    .from('enterprise_access_codes')
+                    .insert({
+                        request_id: requestId,
+                        code_hash: codeHash,
+                        status: 'active'
+                    });
+
+                if (codeError) {
+                    console.error("Error generating access code:", codeError);
+                    await logServerEvent({
+                        level: 'ERROR',
+                        action: { code: 'ACCESS_CODE_GEN_FAILED', category: 'SYSTEM' },
+                        message: `Failed to generate access code for approved request ${requestId}`,
+                        params: { requestId, error: codeError }
+                    });
+                } else {
+                    await logServerEvent({
+                        level: 'SUCCESS',
+                        action: {
+                            code: 'ACCESS_CODE_GENERATED',
+                            category: 'ORGANIZATION'
+                        },
+                        message: `Access code generated for organization (Internal)`,
+                        params: { requestId, code: accessCode }
+                    });
+
+                    // Fetch recipient details
+                    const { data: request } = await supabase
+                        .from('enterprise_requests')
+                        .select('admin_email, admin_name, company_name')
+                        .eq('id', requestId)
+                        .single();
+
+                    if (request) {
+                        await sendAccessCodeEmail(
+                            request.admin_email,
+                            request.admin_name,
+                            request.company_name,
+                            accessCode
+                        );
+                    }
+                }
+            } else {
+                await logServerEvent({
+                    level: 'INFO',
+                    action: {
+                        code: 'ACCESS_CODE_REUSE',
+                        category: 'ORGANIZATION'
+                    },
+                    message: `Skipped code generation: Access code already exists for request ${requestId}`,
+                    params: { requestId, existingStatus: existingCode.status }
+                });
+            }
+        }
+
         // Log specific status changes or general progress
         await logServerEvent({
             level: 'SUCCESS',
@@ -201,7 +297,7 @@ export async function saveEnterpriseReview(requestId: string, reviewData: {
                 category: 'ORGANIZATION'
             },
             message: reviewData.status ? `Enterprise request status updated to ${reviewData.status} (Internal)` : 'Enterprise review progress saved (Internal)',
-            params: { requestId, status: reviewData.status, emailSent: false }
+            params: { requestId, status: reviewData.status, emailSent: reviewData.status === 'approved' }
         });
 
         return { success: true };
@@ -337,5 +433,417 @@ export async function handleEnterpriseAction(
     } catch (err: any) {
         console.error("Action handler error:", err);
         return { error: err.message || "An unexpected error occurred during the action." };
+    }
+}
+
+/**
+ * Fetches all enterprise requests from Supabase.
+ */
+export async function getEnterpriseRequests() {
+    const supabase = await createClient();
+
+    try {
+        const { data, error } = await supabase
+            .from('enterprise_requests')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return { data };
+    } catch (err: any) {
+        console.error("Error fetching enterprise requests:", err);
+        return { error: err.message || "Failed to fetch requests" };
+    }
+}
+
+/**
+ * Calculates metrics for the enterprise dashboard.
+ */
+/**
+ * Validates an enterprise access code and work email.
+ */
+export async function validateAccessCode(code: string, email: string) {
+    const supabase = await createClient();
+    const hashedCode = hashAccessCode(code);
+
+    try {
+        // 1. Fetch the code record
+        const { data: codeRecord, error: fetchError } = await supabase
+            .from('enterprise_access_codes')
+            .select('*, enterprise_requests(admin_email, company_name, status)')
+            .eq('code_hash', hashedCode)
+            .single();
+
+        if (fetchError || !codeRecord) {
+            await logServerEvent({
+                level: 'WARNING',
+                action: { code: 'ACCESS_CODE_INVALID', category: 'SECURITY' },
+                message: `Invalid access code attempt for email ${email}`,
+                params: { email }
+            });
+            return { error: "Invalid access code. Please check your email for the correct code." };
+        }
+
+        // 2. Check status and expiry
+        const now = new Date();
+        const expiresAt = new Date(codeRecord.expires_at);
+
+        if (codeRecord.status !== 'active') {
+            return { error: `This access code is ${codeRecord.status}.` };
+        }
+
+        if (now > expiresAt) {
+            return { error: "This access code has expired (7-day limit)." };
+        }
+
+        // 3. Domain validation (Security feature)
+        const request = codeRecord.enterprise_requests;
+        const getDomain = (e: string) => e.split('@')[1]?.toLowerCase();
+
+        if (getDomain(email) !== getDomain(request.admin_email)) {
+            await logServerEvent({
+                level: 'WARNING',
+                action: { code: 'ACCESS_CODE_DOMAIN_MISMATCH', category: 'SECURITY' },
+                message: `Domain mismatch for code validation: ${email} attempted to use code for ${request.admin_email}`,
+                params: { email, target: request.admin_email }
+            });
+            return { error: "Permission Denied: This code is locked to organization-specific work emails." };
+        }
+
+        // 4. Success - Return request metadata for the setup flow
+        await logServerEvent({
+            level: 'SUCCESS',
+            action: { code: 'ACCESS_CODE_VALIDATED', category: 'SECURITY' },
+            message: `Access code validated for ${email}`,
+            params: { requestId: codeRecord.request_id }
+        });
+
+        return {
+            success: true,
+            requestId: codeRecord.request_id,
+            companyName: request.company_name,
+            adminEmail: email
+        };
+    } catch (err: any) {
+        console.error("Validation error:", err);
+        return { error: "An unexpected error occurred during validation." };
+    }
+}
+
+/**
+ * Finalizes the enterprise onboarding by creating the account and organization.
+ */
+export async function completeEnterpriseSetup(setupData: {
+    requestId: string;
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    industry?: string;
+    companySize?: string;
+    website?: string;
+}) {
+    const supabase = await createClient();
+
+    try {
+        // 1. Verify access code still valid for this request
+        const { data: codeRecord, error: codeError } = await supabase
+            .from('enterprise_access_codes')
+            .select('id, status, request_id')
+            .eq('request_id', setupData.requestId)
+            .eq('status', 'active')
+            .single();
+
+        if (codeError || !codeRecord) {
+            return { error: "Access session expired or invalid. Please re-validate your code." };
+        }
+
+        // 2. Create/Get the Organization
+        const { data: requestData } = await supabase
+            .from('enterprise_requests')
+            .select('company_name, admin_email')
+            .eq('id', setupData.requestId)
+            .single();
+
+        if (!requestData) {
+            return { error: "Original request not found." };
+        }
+
+        const domain = setupData.email.split('@')[1].toLowerCase();
+
+        const { data: org, error: orgError } = await supabase
+            .from('organizations')
+            .insert({
+                request_id: setupData.requestId,
+                name: requestData.company_name,
+                domain: domain,
+                industry: setupData.industry,
+                size: setupData.companySize,
+                website: setupData.website,
+                status: 'active'
+            })
+            .select()
+            .single();
+
+        if (orgError) {
+            console.error("Org Creation Error:", orgError);
+            if (orgError.code === '23505') return { error: "An organization with this domain already exists." };
+            return { error: "Failed to create organization record." };
+        }
+
+        // 3. Create Admin Account in Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: setupData.email,
+            password: setupData.password,
+            options: {
+                data: {
+                    first_name: setupData.firstName,
+                    last_name: setupData.lastName,
+                    role: 'enterprise'
+                }
+            }
+        });
+
+        if (authError) {
+            return { error: `Account creation failed: ${authError.message}` };
+        }
+
+        const userId = authData.user?.id;
+        if (!userId) return { error: "Failed to establish user context." };
+
+        // 4. Link Admin to Organization
+        await supabase.from('organization_members').insert({
+            org_id: org.id,
+            user_id: userId,
+            role: 'admin'
+        });
+
+        // 5. Update Entry status in request and access code
+        await supabase.from('enterprise_access_codes').update({
+            status: 'used',
+            used_count: 1
+        }).eq('id', codeRecord.id);
+
+        await supabase.from('enterprise_requests').update({
+            status: 'completed'
+        }).eq('id', setupData.requestId);
+
+        await logServerEvent({
+            level: 'SUCCESS',
+            action: { code: 'ENTERPRISE_SETUP_COMPLETE', category: 'ORGANIZATION' },
+            message: `Onboarding completed for ${requestData.company_name}`,
+            params: { orgId: org.id, adminId: userId }
+        });
+
+        return { success: true };
+    } catch (err: any) {
+        console.error("Setup Completion error:", err);
+        return { error: "An unexpected error occurred during final setup." };
+    }
+}
+
+export async function getEnterpriseStats() {
+    const supabase = await createClient();
+
+    try {
+        // Fetch all needed stats in parallel or sequentially
+        const { count: totalRequests } = await supabase
+            .from('enterprise_requests')
+            .select('*', { count: 'exact', head: true });
+
+        const { count: pendingRequests } = await supabase
+            .from('enterprise_requests')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'pending');
+
+        const { count: approvedOrgs } = await supabase
+            .from('enterprise_requests')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'approved');
+
+        // Requests this week
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        const { count: requestsThisWeek } = await supabase
+            .from('enterprise_requests')
+            .select('*', { count: 'exact', head: true })
+            .gte('created_at', oneWeekAgo.toISOString());
+
+        // Monthly Onboardings (Only APPROVED status this month)
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        const { count: monthlyOnboardings } = await supabase
+            .from('enterprise_requests')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'approved')
+            .gte('created_at', firstDayOfMonth.toISOString());
+
+        return {
+            totalRequests: totalRequests || 0,
+            pendingRequests: pendingRequests || 0,
+            approvedOrgs: approvedOrgs || 0,
+            requestsThisWeek: requestsThisWeek || 0,
+            monthlyOnboardings: monthlyOnboardings || 0,
+            // Placeholder for average response time and conversion rate until we have historical data
+            avgResponseTime: "4.2h",
+            conversionRate: "68.4%"
+        };
+    } catch (err: any) {
+        console.error("Error fetching enterprise stats:", err);
+        return { error: err.message || "Failed to fetch statistics" };
+    }
+}
+
+/**
+ * Updates specific fields of an enterprise request.
+ */
+export async function updateEnterpriseRequest(requestId: string, updateData: any) {
+    const supabase = await createClient();
+
+    try {
+        const { data, error } = await supabase
+            .from('enterprise_requests')
+            .update(updateData)
+            .eq('id', requestId)
+            .select();
+
+        if (error) throw error;
+
+        await logServerEvent({
+            level: 'SUCCESS',
+            action: {
+                code: 'ENTERPRISE_REQUEST_UPDATED',
+                category: 'ORGANIZATION'
+            },
+            message: `Enterprise request ${requestId} updated directly by admin`,
+            params: { requestId, fieldsUpdated: Object.keys(updateData) }
+        });
+
+        return { success: true, data };
+    } catch (err: any) {
+        console.error("Error updating enterprise request:", err);
+        return { error: err.message || "Failed to update request" };
+    }
+}
+
+/**
+ * Sends the access code email to the approved organization's primary admin.
+ */
+async function sendAccessCodeEmail(email: string, adminName: string, companyName: string, accessCode: string) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const accessLink = `${process.env.NEXT_PUBLIC_APP_URL}/enterprise/access?code=${accessCode}&email=${encodeURIComponent(email)}`;
+
+    try {
+        const { error } = await resend.emails.send({
+            from: 'Priminent Vantage <onboarding@resend.dev>',
+            to: email,
+            subject: `Action Required: Your Access Code for ${companyName}`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #334155;">
+                    <div style="text-align: center; margin-bottom: 32px;">
+                        <h1 style="color: #0f172a; font-size: 24px; font-weight: bold; margin: 0;">Organization Approved</h1>
+                        <p style="color: #64748b; font-size: 14px; margin-top: 8px;">Welcome to Priminent Vantage Enterprise</p>
+                    </div>
+                    
+                    <p>Dear ${adminName},</p>
+                    <p>We are pleased to inform you that your enterprise request for <strong>${companyName}</strong> has been approved. You can now proceed with setting up your organization dashboard.</p>
+                    
+                    <div style="background-color: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 12px; padding: 32px; text-align: center; margin: 32px 0;">
+                        <p style="text-transform: uppercase; font-size: 11px; font-weight: bold; color: #64748b; letter-spacing: 0.1em; margin-bottom: 12px;">Your Unique Access Code</p>
+                        <div style="font-family: monospace; font-size: 32px; font-weight: bold; color: #020617; letter-spacing: 0.2em;">${accessCode}</div>
+                        <p style="font-size: 12px; color: #ef4444; font-weight: bold; margin-top: 16px;">Expires in 7 days</p>
+                    </div>
+
+                    <div style="text-align: center; margin: 32px 0;">
+                        <a href="${accessLink}" style="background-color: #020617; color: #ffffff; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block;">Complete Setup Now</a>
+                    </div>
+
+                    <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin-bottom: 32px;">
+                        <p style="margin: 0; font-size: 12px; color: #92400e; line-height: 1.6;">
+                            <strong>Security Note:</strong> This is a one-time use code. You will be required to use your work email (${email}) to validate this code.
+                        </p>
+                    </div>
+
+                    <p style="font-size: 13px; line-height: 1.5;">If you encounter any issues during setup, please reply directly to this email.</p>
+                    
+                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0;" />
+                    <p style="font-size: 10px; color: #94a3b8; text-align: center;">&copy; 2026 Priminent Vantage. All rights reserved.</p>
+                </div>
+            `
+        });
+
+        if (error) {
+            console.error("Resend Access Code Email Error:", error);
+            await logServerEvent({
+                level: 'ERROR',
+                action: { code: 'ACCESS_CODE_EMAIL_FAILED', category: 'SYSTEM' },
+                message: `Failed to send access code email to ${email}`,
+                params: { email, error }
+            });
+        } else {
+            await logServerEvent({
+                level: 'SUCCESS',
+                action: { code: 'ACCESS_CODE_SENT', category: 'SYSTEM' },
+                message: `Access code email successfully sent to ${email}`,
+                params: { email }
+            });
+        }
+    } catch (err: any) {
+        console.error("Email delivery exception:", err);
+    }
+}
+/**
+ * Fetches all access codes and associated metrics for the admin dashboard.
+ */
+export async function getAccessCodesData() {
+    const supabase = await createClient();
+
+    try {
+        // 1. Fetch access codes with organization/request info
+        const { data: codes, error: fetchError } = await supabase
+            .from('enterprise_access_codes')
+            .select('*, enterprise_requests(company_name, industry, company_size, admin_email)')
+            .order('created_at', { ascending: false });
+
+        if (fetchError) throw fetchError;
+
+        // 2. Fetch recent activity (logs related to Access Codes)
+        const { data: activityLogs } = await supabase
+            .from('system_logs')
+            .select('*')
+            .filter('action_code', 'in', '("ACCESS_CODE_GENERATED", "ACCESS_CODE_SENT", "ENTERPRISE_SETUP_COMPLETED")')
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+        // 3. Calculate Stats
+        const now = new Date();
+        const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+        const activeCodes = codes?.filter(c => c.status === 'active') || [];
+        const expiringSoon = activeCodes.filter(c => {
+            const expiry = new Date(c.expires_at);
+            return expiry <= sevenDaysFromNow && expiry > now;
+        });
+
+        const totalEnrollments = codes?.reduce((sum, c) => sum + (c.used_count || 0), 0) || 0;
+
+        return {
+            success: true,
+            data: {
+                codes: codes || [],
+                stats: {
+                    activeCount: activeCodes.length,
+                    expiringSoonCount: expiringSoon.length,
+                    totalEnrollments,
+                    totalCodes: codes?.length || 0
+                },
+                activity: activityLogs || []
+            }
+        };
+    } catch (err: any) {
+        console.error("Error fetching access codes data:", err);
+        return { error: "Failed to load access code repository." };
     }
 }

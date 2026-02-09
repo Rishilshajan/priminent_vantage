@@ -8,7 +8,7 @@ import { AccessCodeTable } from "./access-table"
 import { AccessCodeActivity } from "./access-activity"
 import { AccessCodeActions } from "./access-actions"
 
-export default function AccessCodeDashboardView({ profile }: { profile: any }) {
+export default function AccessCodeDashboardView({ profile, dashboardData }: { profile: any, dashboardData: any }) {
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
     return (
@@ -27,14 +27,14 @@ export default function AccessCodeDashboardView({ profile }: { profile: any }) {
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8">
                     {/* Stats */}
-                    <AccessCodeStats />
+                    <AccessCodeStats stats={dashboardData?.stats} />
 
                     {/* Pending Requests Table */}
-                    <AccessCodeTable />
+                    <AccessCodeTable codes={dashboardData?.codes} />
 
                     {/* Bottom Grid: Activity & Actions */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
-                        <AccessCodeActivity />
+                        <AccessCodeActivity activity={dashboardData?.activity} />
                         <AccessCodeActions />
                     </div>
                 </div>

@@ -37,11 +37,10 @@ export default async function AdminDashboardPage() {
         // Active Organizations Count (Approved Requests as proxy)
         supabase.from('enterprise_requests').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
 
-        // Monthly Onboardings (Any non-pending/rejected status this month)
+        // Monthly Onboardings (Only APPROVED status this month)
         supabase.from('enterprise_requests')
             .select('*', { count: 'exact', head: true })
-            .neq('status', 'pending')
-            .neq('status', 'rejected')
+            .eq('status', 'approved')
             .gte('created_at', firstDayOfMonth),
 
         // Pending Applications List

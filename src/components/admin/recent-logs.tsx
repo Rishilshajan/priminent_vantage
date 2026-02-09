@@ -1,5 +1,6 @@
 import { CheckCircle2, AlertTriangle, Info } from "lucide-react"
 import { formatRelativeTime } from "@/lib/utils"
+import Link from "next/link"
 
 interface RecentLogsProps {
     logs: any[];
@@ -10,7 +11,9 @@ export function RecentLogs({ logs }: RecentLogsProps) {
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-slate-900 dark:text-white">Recent System Logs</h3>
-                <button className="text-primary text-xs font-bold hover:underline">View All</button>
+                <Link href="/admin/system-logs">
+                    <button className="text-primary text-xs font-bold hover:underline cursor-pointer">View All</button>
+                </Link>
             </div>
             <div className="space-y-4">
                 {logs.length === 0 ? (
