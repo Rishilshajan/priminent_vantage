@@ -1,24 +1,57 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { Send } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationNotice } from "./VerificationNotice";
 import { CompanyDetails } from "./CompanyDetails";
 import { AdminDetails } from "./AdminDetails";
 import { IntendedUse } from "./IntendedUse";
+import { submitEnterpriseRequest } from "@/actions/enterprise";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 export function RequestAccessForm() {
     const { register, handleSubmit, formState: { errors } } = useForm();
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+    const [error, setError] = useState<string | null>(null);
 
     const onSubmit = (data: any) => {
-        console.log("Form Submitted:", data);
-        // Here you would typically send the data to your API
-        alert("Request submitted for review!");
+        setError(null);
+        const formData = new FormData();
+
+        // Append all fields to FormData
+        Object.entries(data).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+                value.forEach((v) => formData.append(key, v));
+            } else if (value !== undefined && value !== null) {
+                formData.append(key, value as string);
+            }
+        });
+
+        startTransition(async () => {
+            const result = await submitEnterpriseRequest(null, formData);
+
+            if (result.error) {
+                setError(result.error);
+                // Scroll to top to show error
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            } else if (result.success) {
+                router.push("/enterprise/request-access/confirmation");
+            }
+        });
     };
 
     return (
         <div className="bg-card text-card-foreground rounded-xl shadow-2xl border border-border overflow-hidden">
+            {error && (
+                <div className="bg-red-50 text-red-600 p-4 border-l-4 border-red-500 m-8 mb-0">
+                    <p className="font-bold">Error</p>
+                    <p>{error}</p>
+                </div>
+            )}
+
             <form onSubmit={handleSubmit(onSubmit)} className="p-8 sm:p-12 space-y-16">
 
                 {/* Section 1 */}
@@ -61,10 +94,20 @@ export function RequestAccessForm() {
                         <Button
                             type="submit"
                             size="lg"
-                            className="w-full sm:w-auto px-10 py-4 h-auto text-base font-black shadow-xl shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-3"
+                            className="w-full sm:w-auto px-10 py-4 h-auto text-base font-black shadow-xl shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+                            disabled={isPending}
                         >
-                            SUBMIT ACCESS REQUEST
-                            <Send className="size-5" />
+                            {isPending ? (
+                                <>
+                                    SUBMITTING...
+                                    <Loader2 className="size-5 animate-spin" />
+                                </>
+                            ) : (
+                                <>
+                                    SUBMIT ACCESS REQUEST
+                                    <Send className="size-5" />
+                                </>
+                            )}
                         </Button>
                     </div>
                 </footer>

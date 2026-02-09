@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { authService } from '@/lib/auth/auth.service'
+import { logServerEvent } from "@/lib/logger-server"
 
 export async function signup(formData: FormData) {
     const email = formData.get('email') as string
@@ -25,8 +26,36 @@ export async function signup(formData: FormData) {
     })
 
     if (error) {
+        await logServerEvent({
+            level: 'ERROR',
+            action: {
+                code: 'AUTH_SIGNUP_FAILED',
+                category: 'SECURITY'
+            },
+            actor: {
+                type: 'user',
+                role: 'student',
+                user_agent: 'System'
+            },
+            message: error.message,
+            params: { email, firstName, lastName, phone }
+        })
         return { error: error.message }
     }
+
+    await logServerEvent({
+        level: 'SUCCESS',
+        action: {
+            code: 'AUTH_SIGNUP_SUCCESS',
+            category: 'SECURITY'
+        },
+        actor: {
+            type: 'user',
+            role: 'student'
+        },
+        message: 'User signed up successfully',
+        params: { email, role: 'student' }
+    })
 
     revalidatePath('/', 'layout')
     return { success: true, message: "Check your email for the confirmation link." }
@@ -42,8 +71,33 @@ export async function login(formData: FormData) {
     })
 
     if (error) {
+        await logServerEvent({
+            level: 'ERROR',
+            action: {
+                code: 'AUTH_LOGIN_FAILED',
+                category: 'SECURITY'
+            },
+            actor: {
+                type: 'user'
+            },
+            message: error.message,
+            params: { email }
+        })
         return { error: error.message }
     }
+
+    await logServerEvent({
+        level: 'SUCCESS',
+        action: {
+            code: 'AUTH_LOGIN_SUCCESS',
+            category: 'SECURITY'
+        },
+        actor: {
+            type: 'user'
+        },
+        message: 'User logged in successfully',
+        params: { email }
+    })
 
     revalidatePath('/', 'layout')
 
@@ -57,7 +111,7 @@ export async function login(formData: FormData) {
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
 
         if (profile?.role === 'admin' || profile?.role === 'super_admin') {
-            redirect('/admin')
+            redirect('/admin/dashboard')
         }
     }
 
@@ -84,8 +138,33 @@ export async function resetPasswordForEmail(formData: FormData) {
     )
 
     if (error) {
+        await logServerEvent({
+            level: 'ERROR',
+            action: {
+                code: 'AUTH_PASSWORD_RESET_REQUEST_FAILED',
+                category: 'SECURITY'
+            },
+            actor: {
+                type: 'user'
+            },
+            message: error.message,
+            params: { email }
+        })
         return { error: error.message }
     }
+
+    await logServerEvent({
+        level: 'INFO',
+        action: {
+            code: 'AUTH_PASSWORD_RESET_REQUEST',
+            category: 'SECURITY'
+        },
+        actor: {
+            type: 'user'
+        },
+        message: 'Password reset requested',
+        params: { email }
+    })
 
     return { success: true }
 }

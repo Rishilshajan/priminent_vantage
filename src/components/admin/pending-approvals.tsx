@@ -1,6 +1,12 @@
 import { Wand2, Filter, Download, ChevronLeft, ChevronRight, Check } from "lucide-react"
 
-export function PendingApprovals() {
+import { formatDate } from "@/lib/utils"
+
+interface PendingApprovalsProps {
+    applications: any[];
+}
+
+export function PendingApprovals({ applications }: PendingApprovalsProps) {
     return (
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="px-4 py-4 md:px-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/50">
@@ -35,36 +41,35 @@ export function PendingApprovals() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {/* Example Row 1 */}
-                        <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                            <td className="px-6 py-5 font-medium text-slate-900 dark:text-white">Acme Corp</td>
-                            <td className="px-6 py-5 text-sm text-primary hover:underline cursor-pointer">acme.com</td>
-                            <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">John Doe</td>
-                            <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">2023-10-24</td>
-                            <td className="px-6 py-5 text-right space-x-2">
-                                <button className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-all">View</button>
-                                <button className="px-3 py-1.5 text-xs font-bold bg-primary text-white rounded shadow-sm hover:opacity-90 transition-all group-hover:ring-2 ring-primary/20 relative">
-                                    Approve
-                                    <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                                    </span>
-                                </button>
-                                <button className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-all">Reject</button>
-                            </td>
-                        </tr>
-                        {/* Example Row 2 */}
-                        <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
-                            <td className="px-6 py-5 font-medium text-slate-900 dark:text-white">Globex Inc</td>
-                            <td className="px-6 py-5 text-sm text-primary hover:underline cursor-pointer">globex.org</td>
-                            <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">Alice Smith</td>
-                            <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">2023-10-23</td>
-                            <td className="px-6 py-5 text-right space-x-2">
-                                <button className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-all">View</button>
-                                <button className="px-3 py-1.5 text-xs font-bold bg-primary text-white rounded shadow-sm hover:opacity-90 transition-all group-hover:ring-2 ring-primary/20 relative">Approve</button>
-                                <button className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-all">Reject</button>
-                            </td>
-                        </tr>
+                        {applications.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                                    No pending applications found.
+                                </td>
+                            </tr>
+                        ) : (
+                            applications.map((app) => (
+                                <tr key={app.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                                    <td className="px-6 py-5 font-medium text-slate-900 dark:text-white">{app.company_name}</td>
+                                    <td className="px-6 py-5 text-sm text-primary hover:underline cursor-pointer">
+                                        <a href={app.website} target="_blank" rel="noopener noreferrer">{app.website}</a>
+                                    </td>
+                                    <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">{app.admin_name}</td>
+                                    <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">{formatDate(app.created_at)}</td>
+                                    <td className="px-6 py-5 text-right space-x-2">
+                                        <button className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-all">View</button>
+                                        <button className="px-3 py-1.5 text-xs font-bold bg-primary text-white rounded shadow-sm hover:opacity-90 transition-all group-hover:ring-2 ring-primary/20 relative">
+                                            Approve
+                                            <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                            </span>
+                                        </button>
+                                        <button className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-all">Reject</button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>

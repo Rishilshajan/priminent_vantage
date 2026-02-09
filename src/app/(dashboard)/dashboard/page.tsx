@@ -1,7 +1,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import AdminDashboardView from '@/components/admin/dashboard-view'
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -19,11 +18,10 @@ export default async function DashboardPage() {
         .eq('id', user.id)
         .single()
 
-    // Check for Admin Role
+    // Check for Admin Role - Redirect to the new admin path
     if (profile?.role === 'admin' || profile?.role === 'super_admin') {
-        return <AdminDashboardView profile={profile} />
+        redirect('/admin/dashboard')
     }
-
 
     // Default View (Student/Enterprise/etc)
     return (

@@ -1,10 +1,3 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-
-export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs))
-}
-
 export function formatRelativeTime(dateString: string): string {
     const date = new Date(dateString);
     const now = new Date();

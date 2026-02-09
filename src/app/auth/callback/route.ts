@@ -10,15 +10,30 @@ export async function GET(request: Request) {
         const supabase = await createClient()
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error) {
+            // Fetch profile to determine dynamic redirect if 'next' is not specified or is default
+            const { data: { user } } = await supabase.auth.getUser()
+            let redirectUrl = next
+
+            if (user && next === '/employee') {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single()
+
+                if (profile?.role === 'admin' || profile?.role === 'super_admin') {
+                    redirectUrl = '/admin/dashboard'
+                }
+            }
+
             const forwardedHost = request.headers.get('x-forwarded-host')
             const isLocalEnv = process.env.NODE_ENV === 'development'
             if (isLocalEnv) {
-
-                return NextResponse.redirect(`${origin}${next}`)
+                return NextResponse.redirect(`${origin}${redirectUrl}`)
             } else if (forwardedHost) {
-                return NextResponse.redirect(`https://${forwardedHost}${next}`)
+                return NextResponse.redirect(`https://${forwardedHost}${redirectUrl}`)
             } else {
-                return NextResponse.redirect(`${origin}${next}`)
+                return NextResponse.redirect(`${origin}${redirectUrl}`)
             }
         }
     }

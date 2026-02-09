@@ -16,6 +16,7 @@ import {
     GraduationCap
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { logSystemEvent } from "@/lib/logger"
 
 export function AdminSidebar({ user, isOpen, onClose }: { user: any, isOpen: boolean, onClose: () => void }) {
     const pathname = usePathname()
@@ -27,6 +28,21 @@ export function AdminSidebar({ user, isOpen, onClose }: { user: any, isOpen: boo
         if (!confirmed) return
 
         try {
+            await logSystemEvent({
+                level: 'INFO',
+                action: {
+                    code: 'AUTH_LOGOUT',
+                    category: 'SECURITY'
+                },
+                actor: {
+                    type: 'user',
+                    id: user?.id,
+                    name: user?.first_name ? `${user.first_name} ${user.last_name || ''}` : undefined,
+                    role: user?.role
+                },
+                message: 'Admin user logged out'
+            })
+
             const supabase = createClient()
             const { error } = await supabase.auth.signOut()
             if (error) {
@@ -44,37 +60,37 @@ export function AdminSidebar({ user, isOpen, onClose }: { user: any, isOpen: boo
     // ... (links array)
     const links = [
         {
-            href: "/dashboard",
+            href: "/admin/dashboard",
             label: "Dashboard",
             icon: LayoutDashboard // Material: dashboard
         },
         {
-            href: "/dashboard/candidates",
+            href: "/admin/candidates",
             label: "Candidates Overview",
             icon: Users // Material: groups
         },
         {
-            href: "/dashboard/organization",
+            href: "/admin/organization",
             label: "Organization Management",
             icon: Building2 // Material: corporate_fare
         },
         {
-            href: "/dashboard/educators",
+            href: "/admin/educators",
             label: "Educators",
             icon: GraduationCap // Material: person_pin_circle
         },
         {
-            href: "/dashboard/access-codes",
+            href: "/admin/access-codes",
             label: "Access Codes",
             icon: Key // Material: password
         },
         {
-            href: "/dashboard/system-logs",
+            href: "/admin/system-logs",
             label: "System Logs",
             icon: FileText // Material: receipt_long
         },
         {
-            href: "/dashboard/reports",
+            href: "/admin/reports",
             label: "Reports",
             icon: BarChart3 // Material: bar_chart
         }

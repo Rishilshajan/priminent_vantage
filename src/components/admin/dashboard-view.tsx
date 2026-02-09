@@ -8,7 +8,18 @@ import { PendingApprovals } from "./pending-approvals"
 import { RecentLogs } from "./recent-logs"
 import { QuickActions } from "./quick-actions"
 
-export default function AdminDashboardView({ profile }: { profile: any }) {
+interface AdminDashboardViewProps {
+    profile: any;
+    stats: {
+        pendingRequests: number;
+        activeOrgs: number;
+        monthlyOnboardings: number;
+    };
+    pendingApplications: any[];
+    recentLogs: any[];
+}
+
+export default function AdminDashboardView({ profile, stats, pendingApplications, recentLogs }: AdminDashboardViewProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
     return (
@@ -25,14 +36,18 @@ export default function AdminDashboardView({ profile }: { profile: any }) {
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8">
                     {/* Stats Grid */}
-                    <StatsCards />
+                    <StatsCards
+                        pendingRequests={stats.pendingRequests}
+                        activeOrgs={stats.activeOrgs}
+                        monthlyOnboardings={stats.monthlyOnboardings}
+                    />
 
                     {/* Pending Approvals Table */}
-                    <PendingApprovals />
+                    <PendingApprovals applications={pendingApplications} />
 
                     {/* Bottom Grid: Logs & Actions */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <RecentLogs />
+                        <RecentLogs logs={recentLogs} />
                         <QuickActions />
                     </div>
                 </div>
