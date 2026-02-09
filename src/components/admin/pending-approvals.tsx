@@ -1,4 +1,5 @@
 import { Wand2, Filter, Download, ChevronLeft, ChevronRight, Check } from "lucide-react"
+import Link from "next/link"
 
 import { formatDate } from "@/lib/utils"
 
@@ -57,7 +58,9 @@ export function PendingApprovals({ applications }: PendingApprovalsProps) {
                                     <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">{app.admin_name}</td>
                                     <td className="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">{formatDate(app.created_at)}</td>
                                     <td className="px-6 py-5 text-right space-x-2">
-                                        <button className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-all">View</button>
+                                        <Link href={`/admin/enterprise-requests/${app.id}`}>
+                                            <button className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-all">View</button>
+                                        </Link>
                                         <button className="px-3 py-1.5 text-xs font-bold bg-primary text-white rounded shadow-sm hover:opacity-90 transition-all group-hover:ring-2 ring-primary/20 relative">
                                             Approve
                                             <span className="absolute -top-1 -right-1 flex h-2 w-2">
