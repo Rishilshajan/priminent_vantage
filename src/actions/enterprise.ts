@@ -57,11 +57,19 @@ export type EnterpriseRequestState = {
 export async function submitEnterpriseRequest(prevState: any, formData: FormData) {
     const supabase = await createClient();
 
+    // Helper to sanitize URLs
+    const sanitizeUrl = (url: string | null) => {
+        if (!url) return null;
+        // Strip duplicate protocols and redundant www
+        const clean = url.replace(/(https?:\/\/)+/g, "").replace(/^www\./, "").trim();
+        return `https://${clean}`;
+    };
+
     // Extract data from FormData
     const rawData = {
         companyName: formData.get("companyName"),
         country: formData.get("country"),
-        website: formData.get("website"),
+        website: sanitizeUrl(formData.get("website") as string),
         industry: formData.get("industry"),
         companySize: formData.get("companySize"),
         registrationNumber: formData.get("registrationNumber"),
@@ -72,11 +80,10 @@ export async function submitEnterpriseRequest(prevState: any, formData: FormData
         adminTitle: formData.get("adminTitle"),
         adminEmail: formData.get("adminEmail"),
         adminPhone: formData.get("adminPhone"),
-        adminLinkedin: formData.get("adminLinkedin"),
+        adminLinkedin: sanitizeUrl(formData.get("adminLinkedin") as string),
 
         objectives: formData.getAll("objectives"),
         useCase: formData.get("useCase"),
-
     };
 
     // Validate data
@@ -185,8 +192,22 @@ export async function saveEnterpriseReview(requestId: string, reviewData: {
 
     try {
         // Validation: Block approval if domain is not verified
-        if (reviewData.status === 'approved' && !reviewData.domainVerified) {
-            return { error: "Cannot approve request: Organization domain must be verified first." };
+        if (reviewData.status === 'approved') {
+            if (!reviewData.domainVerified) {
+                return { error: "Cannot approve request: Organization domain must be verified first." };
+            }
+
+            // Verify checklist is complete
+            // We expect the client to send the latest checklist state
+            const currentChecklist = reviewData.checklist || (
+                (await supabase.from("enterprise_requests").select("checklist_state").eq("id", requestId).single()).data?.checklist_state
+            );
+
+            const isChecklistComplete = currentChecklist && Array.isArray(currentChecklist) && currentChecklist.every((item: any) => item.checked);
+
+            if (!isChecklistComplete) {
+                return { error: "Cannot approve request: All security checklist items must be completed." };
+            }
         }
 
         const updateData: any = {};
@@ -591,14 +612,20 @@ export async function validateAccessCode(code: string, email?: string) {
             .from('organizations')
             .select('id')
             .eq('request_id', codeRecord.request_id)
-            .single();
+            .maybeSingle();
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', email || request.admin_email)
+            .maybeSingle();
 
         // 5. Success
         await logServerEvent({
             level: 'SUCCESS',
             action: { code: 'ACCESS_CODE_VALIDATED', category: 'SECURITY' },
             message: `Access code validated for ${email || 'Anonymous'}`,
-            params: { requestId: codeRecord.request_id, isOnboarded: !!org }
+            params: { requestId: codeRecord.request_id, isOnboarded: !!org, isUserExists: !!profile }
         });
 
         return {
@@ -610,7 +637,8 @@ export async function validateAccessCode(code: string, email?: string) {
             website: request.website,
             industry: request.industry,
             companySize: request.company_size,
-            isOnboarded: !!org
+            isOrgExists: !!org,
+            isUserExists: !!profile
         };
     } catch (err: any) {
         console.error("Validation error:", err);
@@ -627,6 +655,7 @@ export async function completeEnterpriseSetup(setupData: {
     password: string;
     firstName: string;
     lastName: string;
+    companyName?: string;
     industry?: string;
     companySize?: string;
     website?: string;
@@ -659,52 +688,107 @@ export async function completeEnterpriseSetup(setupData: {
         }
 
         const domain = setupData.email.split('@')[1].toLowerCase();
+        const finalOrgName = setupData.companyName || requestData.company_name;
 
-        const { data: org, error: orgError } = await supabaseAdmin
+        // Check if organization already exists for this request
+        const { data: existingOrg } = await supabaseAdmin
             .from('organizations')
-            .insert({
-                request_id: setupData.requestId,
-                name: requestData.company_name,
-                domain: domain,
+            .select('id')
+            .eq('request_id', setupData.requestId)
+            .maybeSingle();
+
+        let org;
+        if (existingOrg) {
+            org = existingOrg;
+            // Update existing organization details
+            await supabaseAdmin.from('organizations').update({
+                name: finalOrgName,
                 industry: setupData.industry,
                 size: setupData.companySize,
-                website: setupData.website,
-                status: 'active'
-            })
-            .select()
-            .single();
+                website: setupData.website
+            }).eq('id', org.id);
+        } else {
+            const { data: newOrg, error: orgError } = await supabaseAdmin
+                .from('organizations')
+                .insert({
+                    request_id: setupData.requestId,
+                    name: finalOrgName,
+                    domain: domain,
+                    industry: setupData.industry,
+                    size: setupData.companySize,
+                    website: setupData.website,
+                    status: 'active'
+                })
+                .select()
+                .single();
 
-        if (orgError) {
-            console.error("Org Creation Error:", orgError);
-            if (orgError.code === '23505') return { error: "An organization with this domain already exists." };
-            return { error: "Failed to create organization record." };
+            if (orgError) {
+                console.error("Org Creation Error:", orgError);
+                if (orgError.code === '23505') return { error: "An organization with this domain already exists." };
+                return { error: "Failed to create organization record." };
+            }
+            org = newOrg;
         }
 
-        // 3. Create Admin Account in Auth (using Admin API to skip confirmation)
-        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-            email: setupData.email,
-            password: setupData.password,
-            email_confirm: true,
-            user_metadata: {
+        // 3. Create or Update Admin Account
+        let userId: string | undefined;
+
+        // Search for existing user in Auth system directly (Source of Truth)
+        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        const existingAuthUser = users.find(u => u.email?.toLowerCase() === setupData.email.toLowerCase());
+
+        if (existingAuthUser) {
+            userId = existingAuthUser.id;
+            // Update existing user password and metadata
+            const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+                password: setupData.password,
+                email_confirm: true,
+                user_metadata: {
+                    first_name: setupData.firstName,
+                    last_name: setupData.lastName,
+                    role: 'enterprise'
+                }
+            });
+
+            if (updateAuthError) {
+                return { error: `Failed to update existing account: ${updateAuthError.message}` };
+            }
+
+            // Ensure profile exists (in case trigger failed previously)
+            await supabaseAdmin.from('profiles').upsert({
+                id: userId,
+                email: setupData.email,
                 first_name: setupData.firstName,
                 last_name: setupData.lastName,
                 role: 'enterprise'
-            }
-        });
+            });
+        } else {
+            // Create Admin Account in Auth
+            const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+                email: setupData.email,
+                password: setupData.password,
+                email_confirm: true,
+                user_metadata: {
+                    first_name: setupData.firstName,
+                    last_name: setupData.lastName,
+                    role: 'enterprise'
+                }
+            });
 
-        if (authError) {
-            return { error: `Account creation failed: ${authError.message}` };
+            if (authError) {
+                return { error: `Account creation failed: ${authError.message}` };
+            }
+            userId = authData.user?.id;
         }
 
-        const userId = authData.user?.id;
         if (!userId) return { error: "Failed to establish user context." };
 
-        // 4. Link Admin to Organization
-        await supabaseAdmin.from('organization_members').insert({
+        // 4. Link Admin to Organization (using upsert to be safe)
+        await supabaseAdmin.from('organization_members').upsert({
             org_id: org.id,
             user_id: userId,
             role: 'admin'
-        });
+        }, { onConflict: 'org_id,user_id' });
 
         // 5. Update Entry status in request and access code
         await supabaseAdmin.from('enterprise_access_codes').update({
@@ -719,7 +803,7 @@ export async function completeEnterpriseSetup(setupData: {
         await logServerEvent({
             level: 'SUCCESS',
             action: { code: 'ENTERPRISE_SETUP_COMPLETE', category: 'ORGANIZATION' },
-            message: `Onboarding completed for ${requestData.company_name}`,
+            message: `Onboarding completed for ${requestData.company_name} (Idempotent)`,
             params: { orgId: org.id, adminId: userId }
         });
 
@@ -821,7 +905,7 @@ export async function updateEnterpriseRequest(requestId: string, updateData: any
  */
 async function sendAccessCodeEmail(email: string, adminName: string, companyName: string, accessCode: string) {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const accessLink = `${process.env.NEXT_PUBLIC_APP_URL}/enterprise/access?code=${accessCode}&email=${encodeURIComponent(email)}`;
+    const accessLink = `${process.env.NEXT_PUBLIC_APP_URL}/enterprise/login?code=${accessCode}&email=${encodeURIComponent(email)}`;
 
     try {
         const { error } = await resend.emails.send({
@@ -933,5 +1017,94 @@ export async function getAccessCodesData() {
     } catch (err: any) {
         console.error("Error fetching access codes data:", err);
         return { error: "Failed to load access code repository." };
+    }
+}
+
+/**
+ * Fetches metrics for the Enterprise Dashboard
+ */
+export async function getDashboardMetrics() {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { error: "Unauthorized" };
+
+        // 1. Fetch Organization Context
+        let { data: member } = await supabase
+            .from('organization_members')
+            .select('org_id, organizations(*)')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        // If not a direct member, check if the user is an admin/super_admin
+        if (!member) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (profile?.role === 'admin' || profile?.role === 'super_admin') {
+                // For admins, show the most recently created active organization as a preview
+                const { data: recentOrg } = await supabase
+                    .from('organizations')
+                    .select('*')
+                    .eq('status', 'active')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                if (recentOrg) {
+                    member = { org_id: recentOrg.id, organizations: recentOrg } as any;
+                }
+            }
+        }
+
+        if (!member) return { error: "Organization not found" };
+
+        // 2. Mock metrics for now based on the design provided
+        // In a real scenario, these would be calculated from simulations/completions tables
+        const stats = {
+            totalEnrollments: { value: "24,592", change: "+12.4%", trend: "up" },
+            completionRate: { value: "68.4%", change: "+5.2%", trend: "up" },
+            avgTimeToComplete: { value: "4.2 Days", change: "Avg.", trend: "neutral" },
+            skillScore: { value: "4.8/5.0", change: "+0.8", trend: "up" }
+        };
+
+        const chartData = [
+            { month: "Jan", enrollments: 45, completions: 25 },
+            { month: "Feb", enrollments: 60, completions: 35 },
+            { month: "Mar", enrollments: 55, completions: 40 },
+            { month: "Apr", enrollments: 85, completions: 60 },
+            { month: "May", enrollments: 70, completions: 50 },
+            { month: "Jun", enrollments: 95, completions: 75 },
+        ];
+
+        const activePrograms = [
+            { id: 1, name: "Q3 Market Analyst Simulation", department: "Finance & Investment", status: "STABLE", duration: "42 Days", enrolled: "1,240", rate: 85, color: "primary" },
+            { id: 2, name: "Cyber Response Protocol", department: "IT & Security", status: "SCALING", duration: "12 Days", enrolled: "856", rate: 72, color: "primary" },
+            { id: 3, name: "Legacy Systems Transition", department: "Operations", status: "CRITICAL", duration: "68 Days", enrolled: "412", rate: 28, color: "red" },
+        ];
+
+        const topDepartments = [
+            { name: "Human Resources", code: "HR", score: 94, color: "green" },
+            { name: "Engineering", code: "EN", score: 82, color: "primary" },
+            { name: "Sales", code: "SL", score: 65, color: "primary" },
+        ];
+
+        return {
+            success: true,
+            data: {
+                organization: member.organizations,
+                stats,
+                chartData,
+                activePrograms,
+                topDepartments
+            }
+        };
+    } catch (err: any) {
+        console.error("Dashboard metrics error:", err);
+        return { error: "Failed to load dashboard metrics." };
     }
 }

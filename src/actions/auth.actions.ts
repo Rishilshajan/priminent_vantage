@@ -111,10 +111,17 @@ export async function login(formData: FormData) {
 
         if (profile?.role === 'admin' || profile?.role === 'super_admin') {
             redirect('/admin/dashboard')
+        } else if (profile?.role === 'enterprise') {
+            // Check if MFA is required for enterprise role
+            const { data: factors, error: mfaError } = await supabase.auth.mfa.listFactors()
+            if (!mfaError && factors.all && factors.all.length > 0) {
+                redirect('/enterprise/mfa-verify')
+            }
+            redirect('/enterprise/dashboard')
         }
     }
 
-    redirect('/student/dashboard')
+    redirect('/')
 }
 
 export async function signInWithGoogle() {
@@ -236,11 +243,24 @@ export async function enrollMFA() {
     const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
 
+    // 1. Check for existing factors
+    const { data: factors, error: listError } = await supabase.auth.mfa.listFactors()
+
+    if (!listError && factors?.all && factors.all.length > 0) {
+        // If there are existing factors, we'll unenroll them to allow a fresh setup
+        // This is safe because we are in the Onboarding/Setup phase
+        for (const factor of factors.all) {
+            await supabase.auth.mfa.unenroll({ factorId: factor.id })
+        }
+    }
+
+    // 2. Start new enrollment
     const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp'
     })
 
     if (error) {
+        console.error("MFA Enrollment Error:", error.message)
         return { error: error.message }
     }
 

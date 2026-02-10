@@ -9,21 +9,20 @@ interface LogDetailsPanelProps {
 export function LogDetailsPanel({ log, onClose }: LogDetailsPanelProps) {
     const fullLog = {
         id: log.id,
-        version: log.event_version,
+        version: log.event_version || '1.0.0',
         timestamp: log.timestamp,
         actor: {
             id: log.actor_id,
             name: log.actor_name,
-            email: log.actor_email,
             role: log.actor_role,
-            ip: log.ip_address,
+            ip: log.actor_ip,
             type: log.actor_type
         },
         action: log.action_code,
         category: log.action_category,
         resource: {
-            type: log.resource_type,
-            id: log.resource_id
+            type: log.target_resource_type || log.resource_type,
+            id: log.target_resource_id || log.resource_id
         },
         message: log.message,
         params: log.params,
@@ -68,7 +67,10 @@ export function LogDetailsPanel({ log, onClose }: LogDetailsPanelProps) {
                     </div>
                     <div className="pt-4 space-y-3">
                         <button
-                            onClick={() => navigator.clipboard.writeText(JSON.stringify(fullLog, null, 2))}
+                            onClick={() => {
+                                navigator.clipboard.writeText(JSON.stringify(fullLog, null, 2))
+                                alert("JSON copied to clipboard!")
+                            }}
                             className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
                         >
                             <Copy className="size-4" />

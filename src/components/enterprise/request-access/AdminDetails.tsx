@@ -62,9 +62,11 @@ export function AdminDetails({ register }: AdminDetailsProps) {
                             return {
                                 ...rest,
                                 onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
-                                    let value = e.target.value;
-                                    if (value && !/^https?:\/\//i.test(value)) {
-                                        e.target.value = `https://${value}`;
+                                    const value = e.target.value;
+                                    if (value) {
+                                        // Strip existing protocols and redundant www
+                                        const clean = value.replace(/(https?:\/\/)+/g, "").replace(/^www\./, "").trim();
+                                        e.target.value = `https://www.linkedin.com/in/${clean.includes('linkedin.com') ? clean.replace(/.*linkedin\.com\/in\//, "") : clean}`;
                                     }
                                     onBlur(e);
                                 }

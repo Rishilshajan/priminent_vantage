@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Key, Lock, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,20 @@ import { AuthHeader } from "@/components/auth/AuthHeader";
 import { AuthFooter } from "@/components/auth/AuthFooter";
 import { validateAccessCode } from "@/actions/enterprise";
 
-export default function EnterpriseLoginPage() {
+export function EnterpriseLoginContent() {
+    const searchParams = useSearchParams();
     const [accessCode, setAccessCode] = useState("");
+    const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        const urlCode = searchParams.get("code");
+        const urlEmail = searchParams.get("email");
+        if (urlCode) setAccessCode(urlCode);
+        if (urlEmail) setEmail(urlEmail);
+    }, [searchParams]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,7 +31,7 @@ export default function EnterpriseLoginPage() {
         setIsLoading(true);
 
         try {
-            const result = await validateAccessCode(accessCode);
+            const result = await validateAccessCode(accessCode, email);
             if (result.success) {
                 // Save metadata for the flow
                 sessionStorage.setItem("enterprise_setup_requestId", result.requestId!);
@@ -33,11 +42,14 @@ export default function EnterpriseLoginPage() {
                 sessionStorage.setItem("enterprise_setup_companySize", result.companySize || "");
                 sessionStorage.setItem("enterprise_setup_website", result.website || "");
 
-                if (result.isOnboarded) {
+                sessionStorage.setItem("enterprise_setup_isOrgExists", result.isOrgExists ? "true" : "false");
+                sessionStorage.setItem("enterprise_setup_isUserExists", result.isUserExists ? "true" : "false");
+
+                if (result.isOrgExists && result.isUserExists) {
                     // Already have an account, go to dashboard
-                    router.push("/dashboard");
+                    router.push("/enterprise/dashboard");
                 } else {
-                    // First time, go to setup
+                    // First time or incomplete setup, go to setup
                     router.push("/enterprise/setup");
                 }
             } else {
@@ -66,7 +78,7 @@ export default function EnterpriseLoginPage() {
                             Enterprise Access
                         </h2>
                         <p className="mt-2 text-muted-foreground text-sm">
-                            Enter your unique access code to sign in to your organization's dashboard.
+                            Enter your unique access code to sign in to your organization&apos;s dashboard.
                         </p>
                     </div>
 
@@ -132,5 +144,17 @@ export default function EnterpriseLoginPage() {
 
             <AuthFooter />
         </div>
+    );
+}
+
+export default function EnterpriseLoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        }>
+            <EnterpriseLoginContent />
+        </Suspense>
     );
 }

@@ -46,15 +46,56 @@ export function LogFilterBar({ onFilter, isFiltering }: LogFilterBarProps) {
                 />
             </div>
             <div className="md:col-span-3">
-                <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 size-5" />
+                <div className="relative group">
+                    <Calendar
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 size-5 cursor-pointer group-hover:text-primary transition-colors"
+                        onClick={() => {
+                            const dateInput = document.getElementById('log-date-picker') as HTMLInputElement;
+                            if (dateInput) {
+                                try {
+                                    dateInput.showPicker();
+                                } catch {
+                                    dateInput.click();
+                                }
+                            }
+                        }}
+                    />
                     <input
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
-                        placeholder="Select Date Range (YYYY-MM-DD)"
-                        type="text"
+                        id="log-date-picker"
+                        type="date"
+                        className="absolute opacity-0 pointer-events-none"
                         value={filters.dateRange}
                         onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
                     />
+                    <input
+                        className="w-full pl-10 pr-4 py-2 rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none cursor-pointer"
+                        placeholder="Select Date (YYYY-MM-DD)"
+                        type="text"
+                        value={filters.dateRange}
+                        readOnly
+                        onClick={() => {
+                            const dateInput = document.getElementById('log-date-picker') as HTMLInputElement;
+                            if (dateInput) {
+                                try {
+                                    dateInput.showPicker();
+                                } catch {
+                                    dateInput.click();
+                                }
+                            }
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && handleApply()}
+                    />
+                    {filters.dateRange && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setFilters({ ...filters, dateRange: '' });
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        >
+                            <X className="size-4" />
+                        </button>
+                    )}
                 </div>
             </div>
             <div className="md:col-span-2">

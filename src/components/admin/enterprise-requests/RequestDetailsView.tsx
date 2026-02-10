@@ -119,9 +119,16 @@ export default function RequestDetailsView({ profile, requestData: data }: Reque
         }
     }
 
+    const isChecklistComplete = checklist.every((item: any) => item.checked)
+
     const handleApprove = async () => {
         if (!isDomainVerified) {
             alert("Verification Required: You cannot approve this request because the organization domain has not been verified. Please ensure the work email matches the company website domain.")
+            return
+        }
+
+        if (!isChecklistComplete) {
+            alert("Security Checklist Incomplete: You cannot approve this request until all security checks have been verified.")
             return
         }
 
@@ -144,7 +151,8 @@ export default function RequestDetailsView({ profile, requestData: data }: Reque
         const result = await saveEnterpriseReview(data.id, {
             status: 'approved',
             history: newHistory,
-            domainVerified: isDomainVerified
+            domainVerified: isDomainVerified,
+            checklist
         })
         setIsSaving(false)
 
@@ -233,6 +241,7 @@ export default function RequestDetailsView({ profile, requestData: data }: Reque
                             onApprove={handleApprove}
                             onReject={() => openActionDialog("reject")}
                             onClarify={() => openActionDialog("clarify")}
+                            isChecklistComplete={isChecklistComplete}
                         />
 
                         <div className="grid grid-cols-12 gap-8">
@@ -255,7 +264,7 @@ export default function RequestDetailsView({ profile, requestData: data }: Reque
                                     email={data.admin_email}
                                     isVerifiedDomain={isDomainVerified}
                                     phone={data.admin_phone}
-                                    linkedin={data.admin_linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '')}
+                                    linkedin={data.admin_linkedin}
                                 />
                                 <BusinessIntentCard
                                     objectives={data.objectives || []}

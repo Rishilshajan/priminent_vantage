@@ -1,10 +1,25 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Database, Calendar, Plus, Copy, RefreshCw, Ban, History, ChevronLeft, ChevronRight, HelpCircle, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export function AccessCodeTable({ codes = [] }: { codes: any[] }) {
+interface AccessCode {
+    id: string;
+    code?: string;
+    code_hash: string;
+    status: string;
+    expires_at: string;
+    created_at: string;
+    used_count: number;
+    usage_limit: number;
+    enterprise_requests?: {
+        company_name?: string;
+        industry?: string;
+    };
+}
+
+export function AccessCodeTable({ codes = [] }: { codes: AccessCode[] }) {
     const [statusFilter, setStatusFilter] = useState("All Statuses")
     const [industryFilter, setIndustryFilter] = useState("All Industries")
     const [currentPage, setCurrentPage] = useState(1)
@@ -36,9 +51,12 @@ export function AccessCodeTable({ codes = [] }: { codes: any[] }) {
     const totalPages = Math.ceil(filteredCodes.length / itemsPerPage) || 1
     const pagedCodes = filteredCodes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
+    // Compute expiry threshold once to avoid calling Date.now() during render
+    const expiryThreshold = useMemo(() => new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), []);
+
     const getStatusStyle = (status: string, expiresAt: string) => {
         // Expiring logic: Active AND expires within 2 days (48 hours)
-        const isExpiring = status === 'active' && new Date(expiresAt) <= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+        const isExpiring = status === 'active' && new Date(expiresAt) <= expiryThreshold;
 
         if (isExpiring) return "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800"
 
@@ -58,7 +76,7 @@ export function AccessCodeTable({ codes = [] }: { codes: any[] }) {
     }
 
     const getStatusLabel = (status: string, expiresAt: string) => {
-        const isExpiring = status === 'active' && new Date(expiresAt) <= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+        const isExpiring = status === 'active' && new Date(expiresAt) <= expiryThreshold;
         if (isExpiring) return 'EXPIRING';
         return status.toUpperCase();
     }
@@ -134,7 +152,7 @@ export function AccessCodeTable({ codes = [] }: { codes: any[] }) {
                                 const industry = code.enterprise_requests?.industry || "Uncategorized";
                                 const redemptionPercent = Math.min((code.used_count / (code.usage_limit || 1)) * 100, 100);
                                 const isRevoked = code.status === 'revoked';
-                                const isExpiring = code.status === 'active' && new Date(code.expires_at) <= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+                                const isExpiring = code.status === 'active' && new Date(code.expires_at) <= expiryThreshold;
 
                                 return (
                                     <tr key={code.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">

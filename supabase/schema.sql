@@ -153,12 +153,9 @@ create policy "Admins can update organizations" on organizations
 -- RLS for Members
 alter table public.organization_members enable row level security;
 
-create policy "Members viewable by fellow members" on organization_members
+create policy "Members can view their own membership" on organization_members
   for select using (
-    exists (
-      select 1 from organization_members m
-      where m.org_id = organization_members.org_id and m.user_id = auth.uid()
-    ) or exists (
+    user_id = auth.uid() or exists (
       select 1 from profiles
       where id = auth.uid() and role in ('admin', 'super_admin')
     )

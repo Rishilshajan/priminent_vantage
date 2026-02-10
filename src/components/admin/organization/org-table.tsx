@@ -193,10 +193,12 @@ export function OrgTable({ data = [] }: { data: any[] }) {
                                                 <button className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-all">View Details</button>
                                             </Link>
                                             {activeTab === "pending" && (
-                                                <button className="px-3 py-1.5 text-xs font-bold bg-primary text-white rounded shadow-sm hover:bg-primary/90 transition-all flex items-center gap-1">
-                                                    <Key className="size-3" />
-                                                    Process
-                                                </button>
+                                                <Link href={`/admin/enterprise-requests/${item.id}`}>
+                                                    <button className="px-3 py-1.5 text-xs font-bold bg-primary text-white rounded shadow-sm hover:bg-primary/90 transition-all flex items-center gap-1">
+                                                        <Key className="size-3" />
+                                                        Process
+                                                    </button>
+                                                </Link>
                                             )}
                                         </div>
                                     </td>

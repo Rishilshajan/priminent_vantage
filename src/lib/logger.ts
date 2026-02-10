@@ -28,20 +28,20 @@ export interface CreateSystemLogParams {
         resource_type?: string
         resource_id?: string
     }
-    params?: Record<string, any>
-    result?: Record<string, any>
+    params?: Record<string, unknown>
+    result?: Record<string, unknown>
     tags?: string[]
 }
 
 export interface SystemLog {
     id: string
+    event_version?: string
     timestamp: string
     level: LogLevel
     message: string | null
     actor_type: 'user' | 'system' | 'api_key'
     actor_id: string | null
     actor_name: string | null
-    actor_email?: string | null
     actor_role?: string | null
     actor_ip?: string | null
     actor_user_agent?: string | null
@@ -51,8 +51,10 @@ export interface SystemLog {
     action_category: 'SECURITY' | 'ORGANIZATION' | 'CONTENT' | 'SYSTEM'
     target_resource_type?: string | null
     target_resource_id?: string | null
-    params: Record<string, any>
-    result: Record<string, any>
+    resource_type?: string | null // Alias for backward compatibility if needed, but better to use target_resource_type
+    resource_id?: string | null   // Alias
+    params: Record<string, unknown>
+    result: Record<string, unknown>
     tags: string[]
 }
 

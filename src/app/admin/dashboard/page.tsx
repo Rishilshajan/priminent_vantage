@@ -18,7 +18,7 @@ export default async function AdminDashboardPage() {
 
     // Check for Admin Role
     if (profile?.role !== 'admin' && profile?.role !== 'super_admin') {
-        redirect('/employee') // or appropriate fallback
+        redirect('/enterprise/dashboard') // or appropriate fallback
     }
 
     const now = new Date();

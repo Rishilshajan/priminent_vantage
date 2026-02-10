@@ -49,6 +49,7 @@ export default function EnterpriseSetupWizard() {
         confirmPassword: "",
         firstName: "",
         lastName: "",
+        companyName: "",
         industry: "",
         companySize: "",
         website: ""
@@ -64,7 +65,7 @@ export default function EnterpriseSetupWizard() {
         const website = sessionStorage.getItem("enterprise_setup_website")
 
         if (!requestId || !adminEmail) {
-            router.push("/enterprise/access")
+            router.push("/enterprise/login")
             return
         }
 
@@ -79,6 +80,7 @@ export default function EnterpriseSetupWizard() {
             ...prev,
             firstName,
             lastName,
+            companyName: companyName || "",
             industry: industry || "",
             companySize: companySize || "",
             website: website || ""
@@ -107,6 +109,7 @@ export default function EnterpriseSetupWizard() {
                 password: formData.password,
                 firstName: formData.firstName,
                 lastName: formData.lastName,
+                companyName: formData.companyName,
                 industry: formData.industry,
                 companySize: formData.companySize,
                 website: formData.website
@@ -162,7 +165,7 @@ export default function EnterpriseSetupWizard() {
                     <div>
                         <h2 className="text-sm font-black text-primary uppercase tracking-[0.2em]">Onboarding</h2>
                         <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                            {currentStep === "account" && "Create Admin Account"}
+                            {currentStep === "account" && (sessionStorage.getItem("enterprise_setup_isUserExists") === "true" ? "Sign In to Organization" : "Create Admin Account")}
                             {currentStep === "organization" && "Organization Profile"}
                             {currentStep === "mfa" && "Secure Account"}
                             {currentStep === "completion" && "Setup Complete!"}
@@ -227,8 +230,9 @@ export default function EnterpriseSetupWizard() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Set Password</label>
-                            <div className="relative">
+                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                                {sessionStorage.getItem("enterprise_setup_isUserExists") === "true" ? "Confirm Password" : "Set Password"}
+                            </label>                            <div className="relative">
                                 <Input
                                     type={showPassword ? "text" : "password"}
                                     placeholder="Min. 8 characters"
@@ -264,9 +268,10 @@ export default function EnterpriseSetupWizard() {
                         <div className="space-y-2">
                             <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Legal Company Name</label>
                             <Input
-                                value={metadata.companyName}
-                                disabled
-                                className="h-11 bg-slate-100 dark:bg-slate-800/80 border-dashed cursor-not-allowed opacity-70"
+                                placeholder="Company Name"
+                                value={formData.companyName || metadata.companyName}
+                                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                                className="h-11 bg-slate-50 dark:bg-slate-800/50"
                             />
                         </div>
 
@@ -276,8 +281,8 @@ export default function EnterpriseSetupWizard() {
                                 <Input
                                     placeholder="Industry"
                                     value={formData.industry}
-                                    disabled
-                                    className="h-11 bg-slate-100 dark:bg-slate-800/80 border-dashed cursor-not-allowed opacity-70"
+                                    onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                                    className="h-11 bg-slate-50 dark:bg-slate-800/50"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -285,8 +290,8 @@ export default function EnterpriseSetupWizard() {
                                 <Input
                                     placeholder="Company Size"
                                     value={formData.companySize}
-                                    disabled
-                                    className="h-11 bg-slate-100 dark:bg-slate-800/80 border-dashed cursor-not-allowed opacity-70"
+                                    onChange={(e) => setFormData({ ...formData, companySize: e.target.value })}
+                                    className="h-11 bg-slate-50 dark:bg-slate-800/50"
                                 />
                             </div>
                         </div>
@@ -298,8 +303,8 @@ export default function EnterpriseSetupWizard() {
                                 <Input
                                     placeholder="https://company.com"
                                     value={formData.website}
-                                    disabled
-                                    className="pl-10 h-11 bg-slate-100 dark:bg-slate-800/80 border-dashed cursor-not-allowed opacity-70"
+                                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                    className="pl-10 h-11 bg-slate-50 dark:bg-slate-800/50"
                                 />
                             </div>
                         </div>
@@ -347,7 +352,7 @@ export default function EnterpriseSetupWizard() {
                             </p>
                         </div>
                         <Button
-                            onClick={() => router.push("/dashboard")}
+                            onClick={() => router.push("/enterprise/dashboard")}
                             className="h-12 px-8 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-xl shadow-primary/20 flex items-center gap-2 mx-auto"
                         >
                             Go to Dashboard

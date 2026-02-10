@@ -4,9 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
-    // Default to student dashboard if next is not provided or was the old employee route
+    // Default to enterprise dashboard if next is not provided or was the old employee route
     const rawNext = searchParams.get('next')
-    const next = (rawNext === '/employee' || !rawNext) ? '/student/dashboard' : rawNext
+    const next = (rawNext === '/employee' || !rawNext) ? '/enterprise/dashboard' : rawNext
 
     if (code) {
         const supabase = await createClient()

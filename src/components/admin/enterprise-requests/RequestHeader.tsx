@@ -11,6 +11,7 @@ interface RequestHeaderProps {
     onApprove: () => void
     onReject: () => void
     onClarify: () => void
+    isChecklistComplete?: boolean
 }
 
 export function RequestHeader({
@@ -20,7 +21,8 @@ export function RequestHeader({
     submittedAt,
     onApprove,
     onReject,
-    onClarify
+    onClarify,
+    isChecklistComplete = false
 }: RequestHeaderProps) {
     return (
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-8 mt-2 animate-fade-in-down">
@@ -61,12 +63,22 @@ export function RequestHeader({
                 >
                     <Ban className="size-4" /> Reject
                 </Button>
-                <Button
-                    onClick={onApprove}
-                    className="h-10 px-5 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center gap-2"
-                >
-                    <CheckCircle className="size-4" /> Approve & Issue Access Code
-                </Button>
+                <div title={
+                    !isChecklistComplete
+                        ? "Complete all security checklist items to approve"
+                        : status.toLowerCase() === 'approved'
+                            ? "This request has already been approved"
+                            : ""
+                }>
+                    <Button
+                        onClick={onApprove}
+                        disabled={!isChecklistComplete || status.toLowerCase() === 'approved'}
+                        className="h-10 px-5 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <CheckCircle className="size-4" />
+                        {status.toLowerCase() === 'approved' ? "Approved & Issued" : "Approve & Issue Access Code"}
+                    </Button>
+                </div>
             </div>
         </div>
     )

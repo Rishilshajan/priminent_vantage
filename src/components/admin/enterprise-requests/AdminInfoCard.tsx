@@ -163,12 +163,15 @@ export function AdminInfoCard({
                             />
                         ) : (
                             <a
-                                href={formData.admin_linkedin.startsWith('http') ? formData.admin_linkedin : `https://${formData.admin_linkedin}`}
+                                href={(() => {
+                                    const clean = formData.admin_linkedin.replace(/(https?:\/\/)+/g, "").replace(/^www\./, "").trim();
+                                    return `https://${clean.includes('linkedin.com') ? clean : `www.linkedin.com/in/${clean}`}`;
+                                })()}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-sm font-bold text-primary hover:underline flex items-center gap-1"
                             >
-                                {formData.admin_linkedin}
+                                {formData.admin_linkedin.replace(/(https?:\/\/)+/g, "https://")}
                                 <ExternalLink className="size-3.5" />
                             </a>
                         )}

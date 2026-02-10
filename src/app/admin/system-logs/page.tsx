@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 import SystemLogsView from '@/components/admin/system-logs/system-logs-view'
 
 export default async function SystemLogsPage() {
@@ -25,7 +26,11 @@ export default async function SystemLogsPage() {
             ...profile,
             email: user.email
         }
-        return <SystemLogsView profile={adminProfile} />
+        return (
+            <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
+                <SystemLogsView profile={adminProfile} />
+            </Suspense>
+        )
     }
 
     // If not admin, redirect back to main dashboard or show unauthorized

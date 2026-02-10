@@ -17,6 +17,12 @@ export function SystemLogsContent({ profile }: { profile: any }) {
     const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
     const [logs, setLogs] = useState<SystemLog[]>([])
     const [isLoading, setIsLoading] = useState(true)
+
+    // Pagination state
+    const [page, setPage] = useState(1)
+    const [pageSize] = useState(12)
+    const [totalCount, setTotalCount] = useState(0)
+
     const [filters, setFilters] = useState<LogFilters>({
         search: '',
         dateRange: '',
@@ -29,9 +35,8 @@ export function SystemLogsContent({ profile }: { profile: any }) {
         const supabase = createClient()
         let query = supabase
             .from('system_logs')
-            .select('*')
+            .select('*', { count: 'exact' })
             .order('timestamp', { ascending: false })
-            .limit(100)
 
         // Apply filters
         if (filters.level) {
@@ -43,26 +48,41 @@ export function SystemLogsContent({ profile }: { profile: any }) {
         }
 
         if (filters.search) {
-            // Check if search matches UUID/Text fields
-            // Supabase 'or' syntax for simple search across multiple columns
-            query = query.or(`action_code.ilike.%${filters.search}%,message.ilike.%${filters.search}%,actor_name.ilike.%${filters.search}%`)
+            const s = `%${filters.search}%`
+            query = query.or(`action_code.ilike.${s},message.ilike.${s},actor_name.ilike.${s}`)
         }
 
         if (filters.dateRange) {
-            // Simple date filtering (exact day or >= date) for now.
-            // A more robust implementation would parse Start/End range.
-            // Assuming format YYYY-MM-DD for simple equality or similar.
-            query = query.gte('timestamp', filters.dateRange)
+            const dateObj = new Date(filters.dateRange)
+            if (!isNaN(dateObj.getTime())) {
+                // Set to local start and end of the day
+                const start = new Date(dateObj)
+                start.setHours(0, 0, 0, 0)
+                const end = new Date(dateObj)
+                end.setHours(23, 59, 59, 999)
+
+                query = query.gte('timestamp', start.toISOString()).lte('timestamp', end.toISOString())
+            }
         }
 
-        const { data, error } = await query
+        // Apply Pagination
+        const from = (page - 1) * pageSize
+        const to = from + pageSize - 1
+        query = query.range(from, to)
+
+        const { data, error, count } = await query
 
         if (error) {
-            console.error('Error fetching logs:', error)
+            console.error('Error fetching logs:', JSON.stringify(error, null, 2))
         } else {
             setLogs(data as SystemLog[])
+            setTotalCount(count || 0)
         }
         setIsLoading(false)
+    }, [filters, page, pageSize])
+
+    useEffect(() => {
+        setPage(1)
     }, [filters])
 
     useEffect(() => {
@@ -106,31 +126,6 @@ export function SystemLogsContent({ profile }: { profile: any }) {
 
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={async () => {
-                                setIsLoading(true)
-                                await logSystemEvent({
-                                    level: 'INFO',
-                                    action: {
-                                        code: 'TEST_LOG_GENERATED',
-                                        category: 'SYSTEM'
-                                    },
-                                    actor: {
-                                        name: 'Test Actor',
-                                        type: 'system'
-                                    },
-                                    message: 'This is a test log entry generated from the UI.',
-                                    params: { test: true, timestamp: new Date().toISOString() }
-                                })
-                                // Artificial delay to allow DB propagation
-                                setTimeout(fetchLogs, 1000)
-                            }}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-blue-600 dark:text-blue-400"
-                        >
-                            <Bell className="size-3.5" />
-                            Test Log
-                        </button>
-                        <div className="h-6 w-px bg-slate-200 dark:border-slate-700 hidden md:block"></div>
-                        <button
                             onClick={handleExport}
                             className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                         >
@@ -156,6 +151,10 @@ export function SystemLogsContent({ profile }: { profile: any }) {
                             selectedLogId={selectedLogId}
                             logs={logs}
                             isLoading={isLoading}
+                            page={page}
+                            pageSize={pageSize}
+                            totalCount={totalCount}
+                            onPageChange={setPage}
                         />
                         {selectedLog && (
                             <LogDetailsPanel

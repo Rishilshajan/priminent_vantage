@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 export const authService = {
-    async signUp(data: { email: string; password: string; options: any }) {
+    async signUp(data: { email: string; password: string; options?: Record<string, unknown> }) {
         const supabase = await createClient()
         return await supabase.auth.signUp({
             email: data.email,

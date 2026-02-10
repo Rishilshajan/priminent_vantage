@@ -44,7 +44,21 @@ export function CompanyDetails({ register, control, errors }: CompanyDetailsProp
                 <div className="col-span-1">
                     <label className="block text-sm font-semibold text-muted-foreground mb-2">Company Website *</label>
                     <Input
-                        {...register("website", { required: true })}
+                        {...(() => {
+                            const { onBlur, ...rest } = register("website", { required: true });
+                            return {
+                                ...rest,
+                                onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+                                    const value = e.target.value;
+                                    if (value) {
+                                        // Strip existing protocols and redundant www
+                                        const clean = value.replace(/(https?:\/\/)+/g, "").replace(/^www\./, "").trim();
+                                        e.target.value = `https://${clean}`;
+                                    }
+                                    onBlur(e);
+                                }
+                            }
+                        })()}
                         className="w-full h-12 rounded-lg bg-background focus-visible:ring-primary px-4"
                         placeholder="https://www.company.com"
                         type="url"

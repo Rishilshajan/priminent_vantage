@@ -7,9 +7,22 @@ interface LogTableProps {
     selectedLogId?: string | null
     logs: SystemLog[]
     isLoading: boolean
+    page?: number
+    pageSize?: number
+    totalCount?: number
+    onPageChange?: (page: number) => void
 }
 
-export function LogTable({ onSelectLog, selectedLogId, logs, isLoading }: LogTableProps) {
+export function LogTable({
+    onSelectLog,
+    selectedLogId,
+    logs,
+    isLoading,
+    page = 1,
+    pageSize = 12,
+    totalCount = 0,
+    onPageChange
+}: LogTableProps) {
     if (isLoading) {
         return (
             <div className="flex-1 flex items-center justify-center">
@@ -25,6 +38,10 @@ export function LogTable({ onSelectLog, selectedLogId, logs, isLoading }: LogTab
             </div>
         )
     }
+
+    const totalPages = Math.ceil(totalCount / pageSize)
+    const startItem = (page - 1) * pageSize + 1
+    const endItem = Math.min(page * pageSize, totalCount)
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -72,10 +89,10 @@ export function LogTable({ onSelectLog, selectedLogId, logs, isLoading }: LogTab
                                             "size-6 rounded-full flex items-center justify-center text-[10px] font-bold",
                                             log.actor_type === 'system' ? "bg-slate-200 dark:bg-slate-700 text-slate-500" : "bg-primary/20 text-primary"
                                         )}>
-                                            {(log.actor_name || log.actor_email || 'S').substring(0, 1).toUpperCase()}
+                                            {(log.actor_name || log.actor_id || 'S').substring(0, 1).toUpperCase()}
                                         </div>
                                         <span className="text-sm font-medium text-slate-900 dark:text-white">
-                                            {log.actor_name || log.actor_email || 'System'}
+                                            {log.actor_name || log.actor_id || 'System'}
                                         </span>
                                     </div>
                                 </td>
@@ -96,13 +113,27 @@ export function LogTable({ onSelectLog, selectedLogId, logs, isLoading }: LogTab
             </div>
 
             <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between">
-                <p className="text-xs text-slate-500 font-medium">Showing {logs.length} entries</p>
-                <div className="flex gap-1">
-                    <button disabled className="size-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50">
+                <p className="text-xs text-slate-500 font-medium">
+                    Showing <span className="font-bold text-slate-900 dark:text-white">{startItem}-{endItem}</span> of <span className="font-bold text-slate-900 dark:text-white">{totalCount}</span> entries
+                </p>
+                <div className="flex gap-1 items-center">
+                    <button
+                        onClick={() => onPageChange?.(page - 1)}
+                        disabled={page <= 1}
+                        className="size-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
                         <ChevronLeft className="size-4" />
                     </button>
-                    <button className="size-8 flex items-center justify-center rounded bg-primary text-white font-bold text-xs">1</button>
-                    <button disabled className="size-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50">
+
+                    <div className="flex items-center gap-1 mx-2">
+                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Page {page} of {totalPages || 1}</span>
+                    </div>
+
+                    <button
+                        onClick={() => onPageChange?.(page + 1)}
+                        disabled={page >= totalPages}
+                        className="size-8 flex items-center justify-center rounded border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
                         <ChevronRight className="size-4" />
                     </button>
                 </div>
