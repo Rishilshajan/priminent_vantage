@@ -1,13 +1,16 @@
 import { Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { UseFormRegister } from "react-hook-form";
+import { UseFormRegister, Control, Controller, FieldErrors } from "react-hook-form";
+import { CountrySelect } from "@/components/ui/country-select";
 
 // Define interface for form data to ensure type safety
 interface CompanyDetailsProps {
     register: UseFormRegister<any>;
+    control: Control<any>;
+    errors: FieldErrors<any>;
 }
 
-export function CompanyDetails({ register }: CompanyDetailsProps) {
+export function CompanyDetails({ register, control, errors }: CompanyDetailsProps) {
     return (
         <section>
             <div className="flex items-center gap-3 mb-8 pb-3 border-b border-border">
@@ -25,10 +28,17 @@ export function CompanyDetails({ register }: CompanyDetailsProps) {
                 </div>
                 <div className="col-span-1">
                     <label className="block text-sm font-semibold text-muted-foreground mb-2">Country of Registration *</label>
-                    <Input
-                        {...register("country", { required: true })}
-                        className="w-full h-12 rounded-lg bg-background focus-visible:ring-primary px-4"
-                        placeholder="Select or enter country"
+                    <Controller
+                        name="country"
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field }) => (
+                            <CountrySelect
+                                value={field.value}
+                                onChange={field.onChange}
+                                error={!!errors.country}
+                            />
+                        )}
                     />
                 </div>
                 <div className="col-span-1">

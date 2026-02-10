@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 export function RequestAccessForm() {
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, control, handleSubmit, formState: { errors } } = useForm();
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
@@ -55,7 +55,7 @@ export function RequestAccessForm() {
             <form onSubmit={handleSubmit(onSubmit)} className="p-8 sm:p-12 space-y-16">
 
                 {/* Section 1 */}
-                <CompanyDetails register={register} />
+                <CompanyDetails register={register} control={control} errors={errors} />
 
                 {/* Section 2 */}
                 <AdminDetails register={register} />

@@ -56,9 +56,10 @@ create trigger on_auth_user_created
   for each row execute procedure public.handle_new_user();
 
 -- Create table for enterprise access codes
-create table enterprise_access_codes (
+create table if not exists enterprise_access_codes (
   id uuid default gen_random_uuid() primary key,
   request_id uuid references enterprise_requests(id) on delete cascade not null,
+  code text, -- Store plaintext code for testing purposes
   code_hash text not null,
   status text check (status in ('active', 'used', 'expired', 'revoked')) default 'active',
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
@@ -71,7 +72,11 @@ create table enterprise_access_codes (
 -- Set up RLS for access codes
 alter table enterprise_access_codes enable row level security;
 
--- Only admins can see access codes
+-- Public can view code status for validation (locked by hash)
+create policy "Public can validate access codes" on enterprise_access_codes
+  for select using (true);
+
+-- Only admins can see full details of all access codes
 create policy "Admins can view all access codes" on enterprise_access_codes
   for select using (
     exists (
@@ -134,6 +139,17 @@ create policy "Organizations viewable by members" on organizations
     )
   );
 
+create policy "Public can insert organizations" on organizations
+  for insert with check (true);
+
+create policy "Admins can update organizations" on organizations
+  for update using (
+    exists (
+      select 1 from profiles
+      where id = auth.uid() and role in ('admin', 'super_admin')
+    )
+  );
+
 -- RLS for Members
 alter table public.organization_members enable row level security;
 
@@ -147,3 +163,6 @@ create policy "Members viewable by fellow members" on organization_members
       where id = auth.uid() and role in ('admin', 'super_admin')
     )
   );
+
+create policy "Public can join organizations" on organization_members
+  for insert with check (true);

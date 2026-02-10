@@ -61,14 +61,18 @@ export function PendingApprovals({ applications }: PendingApprovalsProps) {
                                         <Link href={`/admin/enterprise-requests/${app.id}`}>
                                             <button className="px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-all">View</button>
                                         </Link>
-                                        <button className="px-3 py-1.5 text-xs font-bold bg-primary text-white rounded shadow-sm hover:opacity-90 transition-all group-hover:ring-2 ring-primary/20 relative">
-                                            Approve
-                                            <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                                            </span>
-                                        </button>
-                                        <button className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-all">Reject</button>
+                                        <Link href={`/admin/enterprise-requests/${app.id}`}>
+                                            <button className="px-3 py-1.5 text-xs font-bold bg-primary text-white rounded shadow-sm hover:opacity-90 transition-all group-hover:ring-2 ring-primary/20 relative">
+                                                Approve
+                                                <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                                </span>
+                                            </button>
+                                        </Link>
+                                        <Link href={`/admin/enterprise-requests/${app.id}`}>
+                                            <button className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/20 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-all">Reject</button>
+                                        </Link>
                                     </td>
                                 </tr>
                             ))

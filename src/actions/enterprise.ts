@@ -2,6 +2,7 @@
 
 import { Resend } from 'resend';
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logServerEvent } from "@/lib/logger-server";
 import { z } from "zod";
 import { createHash, randomBytes } from "node:crypto";
@@ -220,14 +221,94 @@ export async function saveEnterpriseReview(requestId: string, reviewData: {
 
         // Logic for Access Code Generation on Approval
         if (reviewData.status === 'approved') {
-            // Check if an access code already exists for this request
-            const { data: existingCode } = await supabase
+            // 1. Check for ANY existing code for this request (Active, Used, Expired, Revoked)
+            const { data: existingCodes } = await supabase
                 .from('enterprise_access_codes')
-                .select('id, status')
-                .eq('request_id', requestId)
-                .maybeSingle();
+                .select('id, code, status')
+                .eq('request_id', requestId);
 
-            if (!existingCode) {
+            if (existingCodes && existingCodes.length > 0) {
+                console.log(`Access code already exists for request ${requestId}. Status: ${existingCodes[0].status}. Skipping generation.`);
+
+                // If there's an ACTIVE code, resend it. Otherwise, do nothing (Admin must manually regenerate if needed).
+                const activeCode = existingCodes.find(c => c.status === 'active');
+
+                if (activeCode) {
+                    await logServerEvent({
+                        level: 'INFO',
+                        action: { code: 'ACCESS_CODE_RESENT', category: 'SYSTEM' },
+                        message: `Resending existing active access code for request ${requestId}`,
+                        params: { requestId }
+                    });
+
+                    // Fetch recipient details to re-send
+                    const { data: request } = await supabase
+                        .from('enterprise_requests')
+                        .select('admin_email, admin_name, company_name')
+                        .eq('id', requestId)
+                        .single();
+
+                    if (request) {
+                        await sendAccessCodeEmail(
+                            request.admin_email,
+                            request.admin_name,
+                            request.company_name,
+                            activeCode.code
+                        );
+                    }
+                }
+            } else {
+                // 2. Check for ANY ACTIVE code for this Company (Global Check) to prevent multi-request abuse
+                // We check by Company Name or Website to catch duplicates
+                const { data: requestData } = await supabase
+                    .from('enterprise_requests')
+                    .select('company_name, website')
+                    .eq('id', requestId)
+                    .single();
+
+                if (requestData) {
+                    const { data: duplicateCompanyCodes } = await supabase
+                        .from('enterprise_access_codes')
+                        .select('id, request_id')
+                        .eq('status', 'active')
+                        .neq('request_id', requestId) // Exclude current request (though we already checked that above)
+                        .in('request_id', (
+                            // Subquery to find request IDs matching company details
+                            // Note: Supabase JS doesn't support complex joins in `in` directly easily withoutrpc, 
+                            // so we'll do a two-step check or rely on application logic.
+                            // For simplicity and performance, we'll fetch potentially conflicting requests first.
+                            []
+                        ));
+
+                    // Alternative: Fetch other requests with same company/website
+                    const { data: similarRequests } = await supabase
+                        .from('enterprise_requests')
+                        .select('id')
+                        .or(`company_name.eq."${requestData.company_name}",website.eq."${requestData.website}"`)
+                        .neq('id', requestId);
+
+                    if (similarRequests && similarRequests.length > 0) {
+                        const similarRequestIds = similarRequests.map(r => r.id);
+                        const { data: activeGlobalCodes } = await supabase
+                            .from('enterprise_access_codes')
+                            .select('id')
+                            .eq('status', 'active')
+                            .in('request_id', similarRequestIds);
+
+                        if (activeGlobalCodes && activeGlobalCodes.length > 0) {
+                            // Block Generation
+                            await logServerEvent({
+                                level: 'WARNING',
+                                action: { code: 'ACCESS_CODE_DUPLICATE_BLOCKED', category: 'SECURITY' },
+                                message: `Blocked access code generation: Active code already exists for company ${requestData.company_name}`,
+                                params: { requestId, similarRequestIds }
+                            });
+                            return { success: true }; // Return success to allow the status update to persist, but suppress code gen
+                        }
+                    }
+                }
+
+                // 3. Generate New Code
                 const accessCode = generateAccessCode();
                 const codeHash = hashAccessCode(accessCode);
 
@@ -235,6 +316,7 @@ export async function saveEnterpriseReview(requestId: string, reviewData: {
                     .from('enterprise_access_codes')
                     .insert({
                         request_id: requestId,
+                        code: accessCode, // Store plaintext for testing/ MVP
                         code_hash: codeHash,
                         status: 'active'
                     });
@@ -274,16 +356,6 @@ export async function saveEnterpriseReview(requestId: string, reviewData: {
                         );
                     }
                 }
-            } else {
-                await logServerEvent({
-                    level: 'INFO',
-                    action: {
-                        code: 'ACCESS_CODE_REUSE',
-                        category: 'ORGANIZATION'
-                    },
-                    message: `Skipped code generation: Access code already exists for request ${requestId}`,
-                    params: { requestId, existingStatus: existingCode.status }
-                });
             }
         }
 
@@ -460,29 +532,33 @@ export async function getEnterpriseRequests() {
  * Calculates metrics for the enterprise dashboard.
  */
 /**
- * Validates an enterprise access code and work email.
+ * Validates an enterprise access code and optional work email.
  */
-export async function validateAccessCode(code: string, email: string) {
-    const supabase = await createClient();
-    const hashedCode = hashAccessCode(code);
+export async function validateAccessCode(code: string, email?: string) {
+    const supabase = createAdminClient();
+    const cleanCode = code.trim().toUpperCase();
+    const hashedCode = hashAccessCode(cleanCode);
 
     try {
         // 1. Fetch the code record
         const { data: codeRecord, error: fetchError } = await supabase
             .from('enterprise_access_codes')
-            .select('*, enterprise_requests(admin_email, company_name, status)')
+            .select('*, enterprise_requests(admin_email, admin_name, company_name, website, industry, company_size, status)')
             .eq('code_hash', hashedCode)
-            .single();
+            .eq('status', 'active')
+            .maybeSingle();
 
         if (fetchError || !codeRecord) {
             await logServerEvent({
                 level: 'WARNING',
                 action: { code: 'ACCESS_CODE_INVALID', category: 'SECURITY' },
-                message: `Invalid access code attempt for email ${email}`,
-                params: { email }
+                message: `Invalid access code attempt${email ? ` for email ${email}` : ''}`,
+                params: { email, code }
             });
             return { error: "Invalid access code. Please check your email for the correct code." };
         }
+
+        const request = codeRecord.enterprise_requests;
 
         // 2. Check status and expiry
         const now = new Date();
@@ -496,33 +572,45 @@ export async function validateAccessCode(code: string, email: string) {
             return { error: "This access code has expired (7-day limit)." };
         }
 
-        // 3. Domain validation (Security feature)
-        const request = codeRecord.enterprise_requests;
-        const getDomain = (e: string) => e.split('@')[1]?.toLowerCase();
-
-        if (getDomain(email) !== getDomain(request.admin_email)) {
-            await logServerEvent({
-                level: 'WARNING',
-                action: { code: 'ACCESS_CODE_DOMAIN_MISMATCH', category: 'SECURITY' },
-                message: `Domain mismatch for code validation: ${email} attempted to use code for ${request.admin_email}`,
-                params: { email, target: request.admin_email }
-            });
-            return { error: "Permission Denied: This code is locked to organization-specific work emails." };
+        // 3. Domain validation (Security feature) - Only if email is provided
+        if (email) {
+            const getDomain = (e: string) => e.split('@')[1]?.toLowerCase();
+            if (getDomain(email) !== getDomain(request.admin_email)) {
+                await logServerEvent({
+                    level: 'WARNING',
+                    action: { code: 'ACCESS_CODE_DOMAIN_MISMATCH', category: 'SECURITY' },
+                    message: `Domain mismatch for code validation: ${email} attempted to use code for ${request.admin_email}`,
+                    params: { email, target: request.admin_email }
+                });
+                return { error: "Permission Denied: This code is locked to organization-specific work emails." };
+            }
         }
 
-        // 4. Success - Return request metadata for the setup flow
+        // 4. Check onboarding status
+        const { data: org } = await supabase
+            .from('organizations')
+            .select('id')
+            .eq('request_id', codeRecord.request_id)
+            .single();
+
+        // 5. Success
         await logServerEvent({
             level: 'SUCCESS',
             action: { code: 'ACCESS_CODE_VALIDATED', category: 'SECURITY' },
-            message: `Access code validated for ${email}`,
-            params: { requestId: codeRecord.request_id }
+            message: `Access code validated for ${email || 'Anonymous'}`,
+            params: { requestId: codeRecord.request_id, isOnboarded: !!org }
         });
 
         return {
             success: true,
             requestId: codeRecord.request_id,
             companyName: request.company_name,
-            adminEmail: email
+            adminEmail: email || request.admin_email,
+            adminName: request.admin_name,
+            website: request.website,
+            industry: request.industry,
+            companySize: request.company_size,
+            isOnboarded: !!org
         };
     } catch (err: any) {
         console.error("Validation error:", err);
@@ -544,10 +632,11 @@ export async function completeEnterpriseSetup(setupData: {
     website?: string;
 }) {
     const supabase = await createClient();
+    const supabaseAdmin = createAdminClient();
 
     try {
         // 1. Verify access code still valid for this request
-        const { data: codeRecord, error: codeError } = await supabase
+        const { data: codeRecord, error: codeError } = await supabaseAdmin
             .from('enterprise_access_codes')
             .select('id, status, request_id')
             .eq('request_id', setupData.requestId)
@@ -559,7 +648,7 @@ export async function completeEnterpriseSetup(setupData: {
         }
 
         // 2. Create/Get the Organization
-        const { data: requestData } = await supabase
+        const { data: requestData } = await supabaseAdmin
             .from('enterprise_requests')
             .select('company_name, admin_email')
             .eq('id', setupData.requestId)
@@ -571,7 +660,7 @@ export async function completeEnterpriseSetup(setupData: {
 
         const domain = setupData.email.split('@')[1].toLowerCase();
 
-        const { data: org, error: orgError } = await supabase
+        const { data: org, error: orgError } = await supabaseAdmin
             .from('organizations')
             .insert({
                 request_id: setupData.requestId,
@@ -591,16 +680,15 @@ export async function completeEnterpriseSetup(setupData: {
             return { error: "Failed to create organization record." };
         }
 
-        // 3. Create Admin Account in Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        // 3. Create Admin Account in Auth (using Admin API to skip confirmation)
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: setupData.email,
             password: setupData.password,
-            options: {
-                data: {
-                    first_name: setupData.firstName,
-                    last_name: setupData.lastName,
-                    role: 'enterprise'
-                }
+            email_confirm: true,
+            user_metadata: {
+                first_name: setupData.firstName,
+                last_name: setupData.lastName,
+                role: 'enterprise'
             }
         });
 
@@ -612,19 +700,19 @@ export async function completeEnterpriseSetup(setupData: {
         if (!userId) return { error: "Failed to establish user context." };
 
         // 4. Link Admin to Organization
-        await supabase.from('organization_members').insert({
+        await supabaseAdmin.from('organization_members').insert({
             org_id: org.id,
             user_id: userId,
             role: 'admin'
         });
 
         // 5. Update Entry status in request and access code
-        await supabase.from('enterprise_access_codes').update({
+        await supabaseAdmin.from('enterprise_access_codes').update({
             status: 'used',
             used_count: 1
         }).eq('id', codeRecord.id);
 
-        await supabase.from('enterprise_requests').update({
+        await supabaseAdmin.from('enterprise_requests').update({
             status: 'completed'
         }).eq('id', setupData.requestId);
 

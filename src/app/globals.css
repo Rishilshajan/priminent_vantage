@@ -12,6 +12,17 @@
   --color-primary-purple-light: #6b3ba3;
   --color-primary-purple-lighter: #e8e1f0;
 
+  /* Student Dashboard Custom Colors */
+  --color-primary: #7f13ec;
+  --color-primary-dark: #6a0bc9;
+  --color-background-light: #f7f6f8;
+  --color-background-dark: #191022;
+  --color-text-main: #140d1b;
+  --color-text-secondary: #734c9a;
+  --color-border-color: #dbcfe7;
+  
+  --font-display: var(--font-lexend), sans-serif;
+
   /* Brand text and background colors */
   --color-text-primary: #1c1e21;
   --color-text-secondary: #65676b;

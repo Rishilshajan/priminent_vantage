@@ -1,9 +1,23 @@
+"use client"
+
 import { CheckCircle2, AlertTriangle, Info } from "lucide-react"
 import { formatRelativeTime } from "@/lib/utils"
 import Link from "next/link"
+import { useEffect, useState } from "react"
 
 interface RecentLogsProps {
     logs: any[];
+}
+
+function TimeDisplay({ timestamp }: { timestamp: string }) {
+    const [time, setTime] = useState<string>("")
+
+    useEffect(() => {
+        setTime(formatRelativeTime(timestamp))
+    }, [timestamp])
+
+    if (!time) return <span className="opacity-0">Loading...</span> // Prevent layout shift or show nothing
+    return <>{time}</>
 }
 
 export function RecentLogs({ logs }: RecentLogsProps) {
@@ -33,7 +47,7 @@ export function RecentLogs({ logs }: RecentLogsProps) {
                                 <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{log.action_code}</p>
                                 <p className="text-xs text-slate-500 italic">{log.message}</p>
                                 <p className="text-[10px] text-slate-400 mt-0.5">
-                                    {formatRelativeTime(log.timestamp)} • {log.actor_name || log.actor_id || 'System'}
+                                    <TimeDisplay timestamp={log.timestamp} /> • {log.actor_name || log.actor_id || 'System'}
                                 </p>
                             </div>
                         </div>

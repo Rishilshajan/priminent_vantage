@@ -4,7 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
-    const next = searchParams.get('next') ?? '/employee'
+    // Default to student dashboard if next is not provided or was the old employee route
+    const rawNext = searchParams.get('next')
+    const next = (rawNext === '/employee' || !rawNext) ? '/student/dashboard' : rawNext
 
     if (code) {
         const supabase = await createClient()
@@ -14,7 +16,7 @@ export async function GET(request: Request) {
             const { data: { user } } = await supabase.auth.getUser()
             let redirectUrl = next
 
-            if (user && next === '/employee') {
+            if (user) {
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('role')

@@ -6,19 +6,19 @@ import { Filter, Download, ChevronLeft, ChevronRight, Building2, HardHat, Shield
 import { cn } from "@/lib/utils"
 
 export function OrgTable({ data = [] }: { data: any[] }) {
-    const [activeTab, setActiveTab] = useState<"pending" | "active" | "archive">("pending")
+    const [activeTab, setActiveTab] = useState<"pending" | "active" | "rejected">("pending")
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 10
 
     // Filter logic
     const filteredData = data.filter(item => {
         if (activeTab === "pending") {
-            return item.status === "pending" || item.status === "reviewed" || item.status === "clarification_requested"
+            return item.status !== "approved" && item.status !== "rejected"
         }
         if (activeTab === "active") {
             return item.status === "approved" || item.status === "contacted"
         }
-        if (activeTab === "archive") {
+        if (activeTab === "rejected") {
             return item.status === "rejected"
         }
         return true
@@ -72,7 +72,7 @@ export function OrgTable({ data = [] }: { data: any[] }) {
                         >
                             Pending Requests
                             <span className="ml-2 px-1.5 py-0.5 bg-primary/10 text-[10px] rounded-md">
-                                {data.filter(i => i.status === "pending" || i.status === "reviewed" || i.status === "clarification_requested").length}
+                                {data.filter(item => item.status !== "approved" && item.status !== "rejected").length}
                             </span>
                         </button>
                         <button
@@ -88,13 +88,13 @@ export function OrgTable({ data = [] }: { data: any[] }) {
                             </span>
                         </button>
                         <button
-                            onClick={() => { setActiveTab("archive"); setCurrentPage(1); }}
+                            onClick={() => { setActiveTab("rejected"); setCurrentPage(1); }}
                             className={cn(
                                 "py-4 text-sm font-bold transition-all relative whitespace-nowrap",
-                                activeTab === "archive" ? "text-primary border-b-2 border-primary" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                                activeTab === "rejected" ? "text-primary border-b-2 border-primary" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                             )}
                         >
-                            Archive
+                            Rejected Organizations
                             <span className="ml-2 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[10px] rounded-md text-slate-500">
                                 {data.filter(item => item.status === "rejected").length}
                             </span>

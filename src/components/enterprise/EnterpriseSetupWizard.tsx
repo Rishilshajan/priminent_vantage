@@ -12,14 +12,19 @@ import {
     Loader2,
     Lock,
     Globe,
+    Eye,
+    EyeOff,
     AlertCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Progress } from "../ui/progress"
+// Checkbox import restored
+import { Checkbox } from "@/components/ui/checkbox"
 import { completeEnterpriseSetup } from "@/actions/enterprise"
+import MFASetup from "./MFASetup"
 
-type Step = "account" | "organization" | "completion"
+type Step = "account" | "organization" | "mfa" | "completion"
 
 export default function EnterpriseSetupWizard() {
     const router = useRouter()
@@ -34,6 +39,9 @@ export default function EnterpriseSetupWizard() {
     const [currentStep, setCurrentStep] = useState<Step>("account")
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [showPassword, setShowPassword] = useState(false)
+    // enableMFA state restored
+    const [enableMFA, setEnableMFA] = useState(true)
 
     // Form Data
     const [formData, setFormData] = useState({
@@ -50,6 +58,10 @@ export default function EnterpriseSetupWizard() {
         const requestId = sessionStorage.getItem("enterprise_setup_requestId")
         const companyName = sessionStorage.getItem("enterprise_setup_companyName")
         const adminEmail = sessionStorage.getItem("enterprise_setup_adminEmail")
+        const adminName = sessionStorage.getItem("enterprise_setup_adminName")
+        const industry = sessionStorage.getItem("enterprise_setup_industry")
+        const companySize = sessionStorage.getItem("enterprise_setup_companySize")
+        const website = sessionStorage.getItem("enterprise_setup_website")
 
         if (!requestId || !adminEmail) {
             router.push("/enterprise/access")
@@ -58,8 +70,19 @@ export default function EnterpriseSetupWizard() {
 
         setMetadata({ requestId, companyName: companyName || "Your Organization", adminEmail })
 
-        // Pre-fill some data if available (optional)
-        setFormData(prev => ({ ...prev, website: "" }))
+        // Pre-fill name and organization data
+        const parts = adminName?.trim().split(/\s+/) || []
+        const firstName = parts[0] || ""
+        const lastName = parts.slice(1).join(" ") || ""
+
+        setFormData(prev => ({
+            ...prev,
+            firstName,
+            lastName,
+            industry: industry || "",
+            companySize: companySize || "",
+            website: website || ""
+        }))
     }, [router])
 
     const handleNext = () => {
@@ -90,10 +113,16 @@ export default function EnterpriseSetupWizard() {
             })
 
             if (result.success) {
+                // Clear Access Code Session Data
                 sessionStorage.removeItem("enterprise_setup_requestId")
                 sessionStorage.removeItem("enterprise_setup_companyName")
                 sessionStorage.removeItem("enterprise_setup_adminEmail")
-                setCurrentStep("completion")
+
+                if (enableMFA) {
+                    setCurrentStep("mfa")
+                } else {
+                    setCurrentStep("completion")
+                }
             } else {
                 setError(result.error || "Failed to complete setup")
             }
@@ -106,26 +135,54 @@ export default function EnterpriseSetupWizard() {
 
     if (!metadata) return null
 
-    const progress = currentStep === "account" ? 33 : currentStep === "organization" ? 66 : 100
+    // Progress calculation
+    // Total steps: Account(1), Organization(2). MFA(3) is optional. Completion(4).
+    // If MFA is disabled: Account(1) -> Organization(2) -> Completion(3)
+    // Steps for Progress Bar:
+    // With MFA: 4 steps. 25, 50, 75, 100
+    // Without MFA: 3 steps. 33, 66, 100
+
+    let progress = 0;
+    if (enableMFA) {
+        if (currentStep === "account") progress = 25;
+        else if (currentStep === "organization") progress = 50;
+        else if (currentStep === "mfa") progress = 75;
+        else progress = 100;
+    } else {
+        if (currentStep === "account") progress = 33;
+        else if (currentStep === "organization") progress = 66;
+        else progress = 100;
+    }
 
     return (
         <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-fade-in-up">
             {/* Header / Progress */}
-            <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
+            <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h2 className="text-sm font-black text-primary uppercase tracking-[0.2em]">Onboarding</h2>
                         <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                             {currentStep === "account" && "Create Admin Account"}
                             {currentStep === "organization" && "Organization Profile"}
+                            {currentStep === "mfa" && "Secure Account"}
                             {currentStep === "completion" && "Setup Complete!"}
                         </h1>
                     </div>
                     <div className="text-right">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Step {currentStep === "account" ? "1" : currentStep === "organization" ? "2" : "3"} of 3</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                            Step {
+                                currentStep === "account" ? "1" :
+                                    currentStep === "organization" ? "2" :
+                                        currentStep === "mfa" ? "3" :
+                                            enableMFA ? "4" : "3"
+                            } of {enableMFA ? "4" : "3"}
+                        </span>
                         <div className="flex gap-1 justify-end">
                             <div className={`size-1.5 rounded-full ${currentStep === "account" ? "bg-primary" : "bg-slate-200 dark:bg-slate-700"}`} />
                             <div className={`size-1.5 rounded-full ${currentStep === "organization" ? "bg-primary" : "bg-slate-200 dark:bg-slate-700"}`} />
+                            {enableMFA && (
+                                <div className={`size-1.5 rounded-full ${currentStep === "mfa" ? "bg-primary" : "bg-slate-200 dark:bg-slate-700"}`} />
+                            )}
                             <div className={`size-1.5 rounded-full ${currentStep === "completion" ? "bg-primary" : "bg-slate-200 dark:bg-slate-700"}`} />
                         </div>
                     </div>
@@ -133,26 +190,26 @@ export default function EnterpriseSetupWizard() {
                 <Progress value={progress} className="h-1.5 bg-slate-200 dark:bg-slate-700" />
             </div>
 
-            <div className="p-8">
+            <div className="p-6 md:p-8">
                 {currentStep === "account" && (
                     <div className="space-y-6 animate-in slide-in-from-right duration-500">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">First Name</label>
                                 <Input
-                                    placeholder="John"
+                                    placeholder="First Name"
                                     value={formData.firstName}
-                                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                    className="h-11 bg-slate-50 dark:bg-slate-800/50"
+                                    disabled
+                                    className="h-11 bg-slate-100 dark:bg-slate-800/80 border-dashed cursor-not-allowed opacity-70"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Last Name</label>
                                 <Input
-                                    placeholder="Doe"
+                                    placeholder="Last Name"
                                     value={formData.lastName}
-                                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                    className="h-11 bg-slate-50 dark:bg-slate-800/50"
+                                    disabled
+                                    className="h-11 bg-slate-100 dark:bg-slate-800/80 border-dashed cursor-not-allowed opacity-70"
                                 />
                             </div>
                         </div>
@@ -171,13 +228,26 @@ export default function EnterpriseSetupWizard() {
 
                         <div className="space-y-2">
                             <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Set Password</label>
-                            <Input
-                                type="password"
-                                placeholder="Min. 8 characters"
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="h-11 bg-slate-50 dark:bg-slate-800/50"
-                            />
+                            <div className="relative">
+                                <Input
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Min. 8 characters"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    className="h-11 bg-slate-50 dark:bg-slate-800/50 pr-10"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="size-4" />
+                                    ) : (
+                                        <Eye className="size-4" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 p-4 rounded-xl flex gap-3">
@@ -200,23 +270,23 @@ export default function EnterpriseSetupWizard() {
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Industry</label>
                                 <Input
-                                    placeholder="Technology"
+                                    placeholder="Industry"
                                     value={formData.industry}
-                                    onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                                    className="h-11 bg-slate-50 dark:bg-slate-800/50"
+                                    disabled
+                                    className="h-11 bg-slate-100 dark:bg-slate-800/80 border-dashed cursor-not-allowed opacity-70"
                                 />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Company Size</label>
                                 <Input
-                                    placeholder="e.g. 50-200"
+                                    placeholder="Company Size"
                                     value={formData.companySize}
-                                    onChange={(e) => setFormData({ ...formData, companySize: e.target.value })}
-                                    className="h-11 bg-slate-50 dark:bg-slate-800/50"
+                                    disabled
+                                    className="h-11 bg-slate-100 dark:bg-slate-800/80 border-dashed cursor-not-allowed opacity-70"
                                 />
                             </div>
                         </div>
@@ -228,12 +298,41 @@ export default function EnterpriseSetupWizard() {
                                 <Input
                                     placeholder="https://company.com"
                                     value={formData.website}
-                                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                                    className="pl-10 h-11 bg-slate-50 dark:bg-slate-800/50"
+                                    disabled
+                                    className="pl-10 h-11 bg-slate-100 dark:bg-slate-800/80 border-dashed cursor-not-allowed opacity-70"
                                 />
                             </div>
                         </div>
+
+                        <div className="bg-slate-50 dark:bg-slate-800/30 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-start space-x-3">
+                                <Checkbox
+                                    id="mfa"
+                                    checked={enableMFA}
+                                    onCheckedChange={(checked) => setEnableMFA(checked as boolean)}
+                                    className="mt-0.5"
+                                />
+                                <div className="space-y-1">
+                                    <label
+                                        htmlFor="mfa"
+                                        className="text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                    >
+                                        Enable Multi-Factor Authentication (MFA)
+                                    </label>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        We strongly recommend allowing this for enhanced security. You can enforce this policy later in the dashboard.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                )}
+
+                {currentStep === "mfa" && (
+                    <MFASetup
+                        onComplete={() => setCurrentStep("completion")}
+                        onSkip={() => setCurrentStep("completion")}
+                    />
                 )}
 
                 {currentStep === "completion" && (
@@ -265,13 +364,13 @@ export default function EnterpriseSetupWizard() {
                 )}
             </div>
 
-            {currentStep !== "completion" && (
-                <div className="p-8 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/30 dark:bg-slate-800/10">
+            {currentStep !== "completion" && currentStep !== "mfa" && (
+                <div className="p-6 md:p-8 border-t border-slate-100 dark:border-slate-800 flex flex-col-reverse gap-4 sm:flex-row sm:justify-between sm:items-center bg-slate-50/30 dark:bg-slate-800/10">
                     <Button
                         variant="ghost"
                         onClick={handleBack}
                         disabled={currentStep === "account" || isLoading}
-                        className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 disabled:opacity-30"
+                        className="w-full sm:w-auto text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 disabled:opacity-30"
                     >
                         <ArrowLeft className="size-4 mr-2" />
                         Previous
@@ -279,7 +378,7 @@ export default function EnterpriseSetupWizard() {
                     <Button
                         onClick={handleNext}
                         disabled={isLoading || (currentStep === "account" && !formData.password)}
-                        className="h-11 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center gap-2"
+                        className="w-full sm:w-auto h-11 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2"
                     >
                         {isLoading ? (
                             <>
@@ -288,7 +387,7 @@ export default function EnterpriseSetupWizard() {
                             </>
                         ) : (
                             <>
-                                {currentStep === "organization" ? "Finalize Setup" : "Continue"}
+                                {currentStep === "organization" ? (enableMFA ? "Next: Secure Account" : "Complete Setup") : "Continue"}
                                 <ArrowRight className="size-4" />
                             </>
                         )}

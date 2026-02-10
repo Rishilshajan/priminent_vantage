@@ -104,7 +104,6 @@ export async function login(formData: FormData) {
     // Fetch profile to determine redirect
     const { data: { user } } = await authService.getUser()
     if (user) {
-        const { getAdminProfile } = await import('@/actions/admin.actions') // circular dependency risk?
         // Better to just fetch profile directly or use a shared service method
         const { createClient } = await import('@/lib/supabase/server')
         const supabase = await createClient()
@@ -115,7 +114,7 @@ export async function login(formData: FormData) {
         }
     }
 
-    redirect('/employee')
+    redirect('/student/dashboard')
 }
 
 export async function signInWithGoogle() {
@@ -165,6 +164,116 @@ export async function resetPasswordForEmail(formData: FormData) {
         message: 'Password reset requested',
         params: { email }
     })
+
+    return { success: true }
+}
+
+export async function resetEnterprisePassword(formData: FormData) {
+    const email = formData.get('email') as string
+
+    const { error } = await authService.resetPasswordForEmail(
+        email,
+        'http://localhost:3000/auth/callback?next=/enterprise/reset-password/update'
+    )
+
+    if (error) {
+        await logServerEvent({
+            level: 'ERROR',
+            action: {
+                code: 'ENTERPRISE_PASSWORD_RESET_REQUEST_FAILED',
+                category: 'SECURITY'
+            },
+            actor: {
+                type: 'user'
+            },
+            message: error.message,
+            params: { email }
+        })
+        return { error: error.message }
+    }
+
+    await logServerEvent({
+        level: 'INFO',
+        action: {
+            code: 'ENTERPRISE_PASSWORD_RESET_REQUEST',
+            category: 'SECURITY'
+        },
+        actor: {
+            type: 'user'
+        },
+        message: 'Enterprise password reset requested',
+        params: { email }
+    })
+
+    return { success: true }
+}
+
+export async function signOut() {
+    const { data: { user } } = await authService.getUser()
+
+    if (user) {
+        await logServerEvent({
+            level: 'SUCCESS',
+            action: {
+                code: 'AUTH_LOGOUT_SUCCESS',
+                category: 'SECURITY'
+            },
+            actor: {
+                type: 'user',
+                id: user.id,
+                role: 'student' // We can infer or fetch role if needed, but for logout current user is enough context usually
+            },
+            message: 'User logged out successfully',
+            params: { email: user.email }
+        })
+    }
+
+    await authService.signOut()
+    redirect('/login')
+}
+
+export async function enrollMFA() {
+    const { createClient } = await import('@/lib/supabase/server')
+    const supabase = await createClient()
+
+    const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: 'totp'
+    })
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    return {
+        success: true,
+        id: data.id,
+        totp: data.totp
+    }
+}
+
+export async function verifyMFA(factorId: string, code: string) {
+    const { createClient } = await import('@/lib/supabase/server')
+    const supabase = await createClient()
+
+    // 1. Create a challenge
+    const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId
+    })
+
+    if (challengeError) {
+        return { error: challengeError.message }
+    }
+
+    // 2. Verify the code against the challenge
+    const { data: verifyData, error: verifyError } = await supabase.auth.mfa.verify({
+        factorId,
+        challengeId: challengeData.id,
+        code
+    })
+
+    if (verifyError) {
+        return { error: verifyError.message }
+    }
 
     return { success: true }
 }

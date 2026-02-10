@@ -112,20 +112,11 @@ export default function EnterpriseLoginPage() {
                         </Button>
                     </form>
 
-                    <div className="text-center space-y-4">
-                        <div className="text-sm text-muted-foreground flex flex-col items-center gap-1">
-                            <span>Already have an enterprise account?</span>
-                            <Link href="/enterprise/signin" className="font-bold text-primary hover:underline">
-                                Sign in with email & password
-                            </Link>
-                        </div>
-
-                        <div className="border-t border-border pt-4">
-                            <Link href="/enterprise" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Enterprise Home
-                            </Link>
-                        </div>
+                    <div className="text-center">
+                        <Link href="/enterprise" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Enterprise Home
+                        </Link>
                     </div>
                 </div>
             </main>

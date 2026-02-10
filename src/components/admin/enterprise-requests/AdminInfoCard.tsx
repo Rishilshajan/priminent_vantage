@@ -163,9 +163,7 @@ export function AdminInfoCard({
                             />
                         ) : (
                             <a
-                                href={formData.admin_linkedin.includes('linkedin.com') ?
-                                    (formData.admin_linkedin.startsWith('http') ? formData.admin_linkedin : `https://${formData.admin_linkedin}`) :
-                                    `https://linkedin.com/in/${formData.admin_linkedin}`}
+                                href={formData.admin_linkedin.startsWith('http') ? formData.admin_linkedin : `https://${formData.admin_linkedin}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-sm font-bold text-primary hover:underline flex items-center gap-1"

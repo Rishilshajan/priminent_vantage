@@ -57,9 +57,21 @@ export function AdminDetails({ register }: AdminDetailsProps) {
                 <div className="col-span-1 md:col-span-2">
                     <label className="block text-sm font-semibold text-muted-foreground mb-2">LinkedIn Profile URL</label>
                     <Input
-                        {...register("adminLinkedin")}
+                        {...(() => {
+                            const { onBlur, ...rest } = register("adminLinkedin");
+                            return {
+                                ...rest,
+                                onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+                                    let value = e.target.value;
+                                    if (value && !/^https?:\/\//i.test(value)) {
+                                        e.target.value = `https://${value}`;
+                                    }
+                                    onBlur(e);
+                                }
+                            }
+                        })()}
                         className="w-full h-12 rounded-lg bg-background focus-visible:ring-primary px-4"
-                        placeholder="linkedin.com/in/username"
+                        placeholder="https://www.linkedin.com/in/username"
                         type="url"
                     />
                 </div>

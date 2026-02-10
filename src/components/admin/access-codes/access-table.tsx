@@ -1,19 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { Database, Calendar, Plus, Copy, RefreshCw, Ban, History, ChevronLeft, ChevronRight, HelpCircle } from "lucide-react"
+import { Database, Calendar, Plus, Copy, RefreshCw, Ban, History, ChevronLeft, ChevronRight, HelpCircle, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function AccessCodeTable({ codes = [] }: { codes: any[] }) {
     const [statusFilter, setStatusFilter] = useState("All Statuses")
     const [industryFilter, setIndustryFilter] = useState("All Industries")
     const [currentPage, setCurrentPage] = useState(1)
+    const [copiedId, setCopiedId] = useState<string | null>(null)
     const itemsPerPage = 8
 
     // Handle Copy to Clipboard
-    const copyToClipboard = (text: string) => {
+    const copyToClipboard = (text: string, id: string) => {
         navigator.clipboard.writeText(text)
-        // Simple alert or toast could go here
+        setCopiedId(id)
+        setTimeout(() => setCopiedId(null), 2000)
     }
 
     // Filter Logic
@@ -35,7 +37,8 @@ export function AccessCodeTable({ codes = [] }: { codes: any[] }) {
     const pagedCodes = filteredCodes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
     const getStatusStyle = (status: string, expiresAt: string) => {
-        const isExpiring = status === 'active' && new Date(expiresAt) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        // Expiring logic: Active AND expires within 2 days (48 hours)
+        const isExpiring = status === 'active' && new Date(expiresAt) <= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
 
         if (isExpiring) return "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800"
 
@@ -43,7 +46,8 @@ export function AccessCodeTable({ codes = [] }: { codes: any[] }) {
             case 'active':
                 return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
             case 'used':
-                return "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+                // Used status style (Blue/Green distinct from Active)
+                return "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
             case 'expired':
                 return "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/30"
             case 'revoked':
@@ -54,7 +58,7 @@ export function AccessCodeTable({ codes = [] }: { codes: any[] }) {
     }
 
     const getStatusLabel = (status: string, expiresAt: string) => {
-        const isExpiring = status === 'active' && new Date(expiresAt) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        const isExpiring = status === 'active' && new Date(expiresAt) <= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
         if (isExpiring) return 'EXPIRING';
         return status.toUpperCase();
     }
@@ -130,28 +134,40 @@ export function AccessCodeTable({ codes = [] }: { codes: any[] }) {
                                 const industry = code.enterprise_requests?.industry || "Uncategorized";
                                 const redemptionPercent = Math.min((code.used_count / (code.usage_limit || 1)) * 100, 100);
                                 const isRevoked = code.status === 'revoked';
-                                const isExpiring = code.status === 'active' && new Date(code.expires_at) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+                                const isExpiring = code.status === 'active' && new Date(code.expires_at) <= new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
 
                                 return (
                                     <tr key={code.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                                         <td className="px-6 py-4">
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className={cn(
-                                                        "font-mono font-bold px-2 py-0.5 rounded text-[11px] border tracking-widest transition-all",
-                                                        isRevoked
-                                                            ? "text-slate-400 dark:text-slate-600 bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-800 line-through"
-                                                            : "text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                                                    )}>
-                                                        ***-***-***
-                                                    </span>
-                                                    <span title="Actual code is private and sent via email for security.">
-                                                        <HelpCircle className="size-3 text-slate-300 cursor-help" />
-                                                    </span>
-                                                </div>
-                                                <span className="text-[9px] text-slate-400 font-mono uppercase tracking-tighter">
-                                                    Ref ID: {code.code_hash.substring(0, 8)}...
+                                            <div className="flex items-center gap-2">
+                                                <span className={cn(
+                                                    "font-mono font-bold px-2 py-1 rounded text-sm transition-all",
+                                                    isRevoked ? "text-slate-400 dark:text-slate-600 bg-slate-50 dark:bg-slate-800/30 line-through" : "text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800"
+                                                )}>
+                                                    {code.code || `${code.code_hash.substring(0, 3)}-${code.code_hash.substring(3, 6)}-${code.code_hash.substring(6, 9)}`}
                                                 </span>
+                                                {!isRevoked && (
+                                                    <button
+                                                        onClick={() => copyToClipboard(code.code || code.code_hash, code.id)}
+                                                        className={cn(
+                                                            "flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold transition-all border shrink-0",
+                                                            copiedId === code.id
+                                                                ? "bg-emerald-500 text-white border-emerald-500"
+                                                                : "bg-white dark:bg-slate-900 text-slate-400 border-slate-200 dark:border-slate-800 hover:border-primary hover:text-primary"
+                                                        )}
+                                                    >
+                                                        {copiedId === code.id ? (
+                                                            <>
+                                                                <ShieldCheck className="size-3" />
+                                                                Copied!
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Copy className="size-3" />
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -190,7 +206,7 @@ export function AccessCodeTable({ codes = [] }: { codes: any[] }) {
                                                 <span className={cn(
                                                     "size-1.5 rounded-full transition-all animate-pulse",
                                                     code.status === 'active' ? (isExpiring ? "bg-amber-500" : "bg-emerald-500") :
-                                                        code.status === 'used' ? "bg-slate-400" :
+                                                        code.status === 'used' ? "bg-blue-500" :
                                                             code.status === 'expired' ? "bg-red-500" : "bg-slate-300"
                                                 )}></span>
                                                 {getStatusLabel(code.status, code.expires_at)}
