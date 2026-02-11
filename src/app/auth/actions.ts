@@ -59,7 +59,7 @@ export async function login(formData: FormData) {
 
 export async function signInWithGoogle() {
     const supabase = await createClient()
-    const baseUrl = getBaseUrl()
+    const baseUrl = await getBaseUrl()
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -76,7 +76,7 @@ export async function signInWithGoogle() {
 export async function resetPasswordForEmail(formData: FormData) {
     const supabase = await createClient()
     const email = formData.get('email') as string
-    const baseUrl = getBaseUrl()
+    const baseUrl = await getBaseUrl()
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${baseUrl}/auth/callback?next=/update-password`,

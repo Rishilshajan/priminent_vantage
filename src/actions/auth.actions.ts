@@ -126,7 +126,7 @@ export async function login(formData: FormData) {
 }
 
 export async function signInWithGoogle() {
-    const baseUrl = getBaseUrl()
+    const baseUrl = await getBaseUrl()
     const { data, error } = await authService.signInWithOAuth(
         'google',
         `${baseUrl}/auth/callback`
@@ -139,7 +139,7 @@ export async function signInWithGoogle() {
 
 export async function resetPasswordForEmail(formData: FormData) {
     const email = formData.get('email') as string
-    const baseUrl = getBaseUrl()
+    const baseUrl = await getBaseUrl()
 
     const { error } = await authService.resetPasswordForEmail(
         email,
@@ -180,7 +180,7 @@ export async function resetPasswordForEmail(formData: FormData) {
 
 export async function resetEnterprisePassword(formData: FormData) {
     const email = formData.get('email') as string
-    const baseUrl = getBaseUrl()
+    const baseUrl = await getBaseUrl()
 
     const { error } = await authService.resetPasswordForEmail(
         email,
