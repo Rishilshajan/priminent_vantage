@@ -19,7 +19,7 @@ export function PasswordResetConfirmation() {
                     <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Check your email</h2>
                     <div className="space-y-4">
                         <p className="text-muted-foreground text-sm leading-relaxed">
-                            We've sent a password reset link to<br />
+                            We&apos;ve sent a password reset link to<br />
                             <span className="font-bold text-foreground text-base">{email}</span>
                         </p>
                         <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 border border-slate-100 dark:border-slate-700">

@@ -78,7 +78,7 @@ export default function EnterpriseForgotPasswordPage() {
                                 <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
                                 <h3 className="text-lg font-bold text-green-700 dark:text-green-400">Check your email</h3>
                                 <p className="text-sm text-green-600 dark:text-green-300 mt-1">
-                                    We've sent a password reset link to your email address.
+                                    We&apos;ve sent a password reset link to your email address.
                                 </p>
                             </div>
                             <Link href="/enterprise/signin" className="inline-flex items-center text-sm font-bold text-primary hover:underline">
