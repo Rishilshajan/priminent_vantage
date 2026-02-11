@@ -45,9 +45,27 @@ export async function updateSession(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user && request.nextUrl.pathname === '/') {
-        // If user is logged in and visits home, redirect to dashboard
+        // Fetch user profile to determine role-based redirect
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
         const url = request.nextUrl.clone()
-        url.pathname = '/enterprise/dashboard'
+
+        // Redirect based on user role
+        if (profile?.role === 'admin' || profile?.role === 'super_admin') {
+            url.pathname = '/admin/dashboard'
+        } else if (profile?.role === 'enterprise') {
+            url.pathname = '/enterprise/dashboard'
+        } else if (profile?.role === 'student') {
+            url.pathname = '/student/dashboard'
+        } else {
+            // Default fallback for unknown roles
+            url.pathname = '/student/dashboard'
+        }
+
         return NextResponse.redirect(url)
     }
 

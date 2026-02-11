@@ -4,28 +4,39 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
-    // Default to enterprise dashboard if next is not provided or was the old employee route
+    // Default to student dashboard if next is not provided
     const rawNext = searchParams.get('next')
-    const next = (rawNext === '/employee' || !rawNext) ? '/enterprise/dashboard' : rawNext
+    const next = rawNext || null
 
     if (code) {
         const supabase = await createClient()
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error) {
-            // Fetch profile to determine dynamic redirect if 'next' is not specified or is default
+            // Fetch profile to determine dynamic redirect if 'next' is not specified
             const { data: { user } } = await supabase.auth.getUser()
             let redirectUrl = next
 
-            if (user) {
+            if (user && !next) {
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('role')
                     .eq('id', user.id)
                     .single()
 
+                // Redirect based on role
                 if (profile?.role === 'admin' || profile?.role === 'super_admin') {
                     redirectUrl = '/admin/dashboard'
+                } else if (profile?.role === 'enterprise') {
+                    redirectUrl = '/enterprise/dashboard'
+                } else if (profile?.role === 'student') {
+                    redirectUrl = '/student/dashboard'
+                } else {
+                    // Default fallback
+                    redirectUrl = '/student/dashboard'
                 }
+            } else if (!next) {
+                // If no user profile found and no next param, default to student dashboard
+                redirectUrl = '/student/dashboard'
             }
 
             const forwardedHost = request.headers.get('x-forwarded-host')

@@ -119,9 +119,12 @@ export async function login(formData: FormData) {
                 redirect('/enterprise/mfa-verify')
             }
             redirect('/enterprise/dashboard')
+        } else if (profile?.role === 'student') {
+            redirect('/student/dashboard')
         }
     }
 
+    // Default fallback to home
     redirect('/')
 }
 
