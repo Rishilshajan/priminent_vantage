@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { authService } from '@/lib/auth/auth.service'
 import { logServerEvent } from "@/lib/logger-server"
+import { getBaseUrl } from '@/lib/utils/url'
 
 export async function signup(formData: FormData) {
     const email = formData.get('email') as string
@@ -125,9 +126,10 @@ export async function login(formData: FormData) {
 }
 
 export async function signInWithGoogle() {
+    const baseUrl = getBaseUrl()
     const { data, error } = await authService.signInWithOAuth(
         'google',
-        `http://localhost:3000/auth/callback`
+        `${baseUrl}/auth/callback`
     )
 
     if (data.url) {
@@ -137,10 +139,11 @@ export async function signInWithGoogle() {
 
 export async function resetPasswordForEmail(formData: FormData) {
     const email = formData.get('email') as string
+    const baseUrl = getBaseUrl()
 
     const { error } = await authService.resetPasswordForEmail(
         email,
-        'http://localhost:3000/auth/callback?next=/reset-password/update'
+        `${baseUrl}/auth/callback?next=/reset-password/update`
     )
 
     if (error) {
@@ -177,10 +180,11 @@ export async function resetPasswordForEmail(formData: FormData) {
 
 export async function resetEnterprisePassword(formData: FormData) {
     const email = formData.get('email') as string
+    const baseUrl = getBaseUrl()
 
     const { error } = await authService.resetPasswordForEmail(
         email,
-        'http://localhost:3000/auth/callback?next=/enterprise/reset-password/update'
+        `${baseUrl}/auth/callback?next=/enterprise/reset-password/update`
     )
 
     if (error) {

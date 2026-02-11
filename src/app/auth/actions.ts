@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-
+import { getBaseUrl } from '@/lib/utils/url'
 import { createClient } from '@/lib/supabase/server'
 
 export async function signup(formData: FormData) {
@@ -59,10 +59,11 @@ export async function login(formData: FormData) {
 
 export async function signInWithGoogle() {
     const supabase = await createClient()
+    const baseUrl = getBaseUrl()
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: `http://localhost:3000/auth/callback`,
+            redirectTo: `${baseUrl}/auth/callback`,
         },
     })
 
@@ -75,9 +76,10 @@ export async function signInWithGoogle() {
 export async function resetPasswordForEmail(formData: FormData) {
     const supabase = await createClient()
     const email = formData.get('email') as string
+    const baseUrl = getBaseUrl()
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'http://localhost:3000/auth/callback?next=/update-password',
+        redirectTo: `${baseUrl}/auth/callback?next=/update-password`,
     })
 
     if (error) {
