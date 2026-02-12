@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, Rocket, Users, BookOpen, BarChart3, Settings, LogOut, GraduationCap } from "lucide-react"
-import { signOut } from "@/actions/auth.actions"
+import { signOut } from "@/actions/auth/shared.auth"
 
 interface EducatorSidebarProps {
     user: any

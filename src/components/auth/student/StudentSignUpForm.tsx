@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { signup, signInWithGoogle } from "@/actions/auth.actions";
+import { studentSignup as signup } from "@/actions/auth/student.auth";
+import { signInWithGoogle } from "@/actions/auth/shared.auth";
 import { PasswordInput } from "@/components/ui/password-input";
 
 const phoneRegex = new RegExp(

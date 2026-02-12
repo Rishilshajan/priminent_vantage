@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { ShieldCheck, Loader2, Copy, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { enrollMFA, verifyMFA } from "@/actions/auth.actions"
+import { enrollMFA, verifyMFA } from "@/actions/auth/enterprise.auth";
 
 interface MFASetupProps {
     onComplete: () => void;

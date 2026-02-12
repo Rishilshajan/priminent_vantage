@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthHeader } from "@/components/auth/AuthHeader";
 import { AuthFooter } from "@/components/auth/AuthFooter";
-import { resetEnterprisePassword } from "@/actions/auth.actions";
+import { resetEnterprisePassword } from "@/actions/auth/enterprise.auth";
 import { cn } from "@/lib/utils";
 
 const forgotPasswordSchema = z.object({
