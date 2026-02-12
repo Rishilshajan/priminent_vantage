@@ -25,3 +25,17 @@ export function formatDate(dateString: string): string {
         day: 'numeric'
     });
 }
+export function getDomainMatch(email: string, website: string): boolean {
+    if (!email || !website) return false;
+
+    const emailDomain = email.split('@')[1]?.toLowerCase().trim();
+    let webDomain = website.toLowerCase().trim()
+        .replace(/^https?:\/\//, '')
+        .replace(/^www\./, '')
+        .split('/')[0];
+
+    if (!emailDomain || !webDomain) return false;
+
+    // Check if one is a subset of the other (e.g. mit.edu and user@mit.edu)
+    return emailDomain.includes(webDomain) || webDomain.includes(emailDomain);
+}
