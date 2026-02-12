@@ -3,12 +3,13 @@
 import { adminService } from '@/lib/admin/admin.service'
 import { createClient } from '@/lib/supabase/server'
 
-// Example action structure based on potential needs
+// Fetches the admin profile for the currently authenticated user
 export async function getAdminProfile() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) return null
+    if (!user)
+        return null
 
     try {
         return await adminService.getProfile(user.id)

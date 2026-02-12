@@ -114,19 +114,37 @@ export async function updateSimulation(
             return { error: "Authentication required" };
         }
 
-        // Verify user has access to this simulation
+        // 1. Get simulation to check its organization
         const { data: simulation, error: simError } = await supabase
             .from('simulations')
-            .select('*, organization_members!inner(role)')
+            .select('org_id')
             .eq('id', simulationId)
-            .eq('organization_members.user_id', user.id)
             .single();
 
         if (simError || !simulation) {
-            return { error: "Simulation not found or access denied" };
+            console.error("Simulation fetch error:", simError);
+            return { error: "Simulation not found" };
         }
 
-        // Update simulation
+        // 2. Verify user belongs to that organization and has permissions
+        const { data: membership, error: membershipError } = await supabase
+            .from('organization_members')
+            .select('role')
+            .eq('org_id', simulation.org_id)
+            .eq('user_id', user.id)
+            .single();
+
+        if (membershipError || !membership) {
+            console.error("Membership verification error:", membershipError);
+            return { error: "Access denied: You don't have permission to edit this simulation" };
+        }
+
+        // Check if user has permission (admin or owner)
+        if (!['admin', 'owner'].includes(membership.role)) {
+            return { error: "You don't have permission to edit simulations" };
+        }
+
+        // 3. Update simulation
         const { data: updated, error: updateError } = await supabase
             .from('simulations')
             .update(data)
@@ -639,12 +657,16 @@ export async function removeSkill(simulationId: string, skillName: string) {
 /**
  * Upload asset (logo, banner, video, etc.)
  */
-export async function uploadAsset(
-    simulationId: string,
-    file: File,
-    assetType: 'logo' | 'banner' | 'video' | 'pdf' | 'dataset' | 'document',
-    taskId?: string
-) {
+export async function uploadAsset(formData: FormData) {
+    const simulationId = formData.get('simulationId') as string;
+    const assetType = formData.get('assetType') as 'logo' | 'banner' | 'video' | 'pdf' | 'dataset' | 'document';
+    const taskId = formData.get('taskId') as string | undefined;
+    const file = formData.get('file') as File;
+
+    if (!file || !(file instanceof File)) {
+        return { error: 'Invalid file upload' };
+    }
+
     const supabase = await createClient();
 
     try {
@@ -653,15 +675,34 @@ export async function uploadAsset(
             return { error: "Authentication required" };
         }
 
-        // Get user's organization
-        const { data: membership } = await supabase
-            .from('organization_members')
+        // 1. Get simulation to check its organization
+        const { data: simulation, error: simError } = await supabase
+            .from('simulations')
             .select('org_id')
+            .eq('id', simulationId)
+            .single();
+
+        if (simError || !simulation) {
+            console.error("Simulation fetch error:", simError);
+            return { error: "Simulation not found" };
+        }
+
+        // 2. Verify user belongs to that organization and has permissions
+        const { data: membership, error: membershipError } = await supabase
+            .from('organization_members')
+            .select('role, org_id')
+            .eq('org_id', simulation.org_id)
             .eq('user_id', user.id)
             .single();
 
-        if (!membership) {
-            return { error: "Organization not found" };
+        if (membershipError || !membership) {
+            console.error("Membership verification error:", membershipError);
+            return { error: "Access denied: You don't have permission to edit this simulation" };
+        }
+
+        // Check if user has permission (admin or owner)
+        if (!['admin', 'owner'].includes(membership.role)) {
+            return { error: "You don't have permission to upload assets" };
         }
 
         // Determine folder based on asset type
@@ -676,7 +717,7 @@ export async function uploadAsset(
 
         const folder = folderMap[assetType];
 
-        // Upload to S3
+        // 3. Upload to S3
         const { url, key } = await uploadToS3({
             file,
             fileName: file.name,
@@ -687,7 +728,7 @@ export async function uploadAsset(
             contentType: file.type,
         });
 
-        // Save asset record
+        // 4. Save asset record
         const { data: asset, error: assetError } = await supabase
             .from('simulation_assets')
             .insert({
