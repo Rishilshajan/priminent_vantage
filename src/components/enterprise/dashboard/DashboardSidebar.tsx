@@ -9,8 +9,8 @@ export default function DashboardSidebar() {
     const pathname = usePathname()
 
     const navItems = [
-        { label: "Dashboard", href: "/enterprise/dashboard", icon: "dashboard", active: true },
-        { label: "Simulations", href: "#", icon: "layers" },
+        { label: "Dashboard", href: "/enterprise/dashboard", icon: "dashboard" },
+        { label: "Simulations", href: "/enterprise/simulations", icon: "layers" },
         { label: "Candidates", href: "#", icon: "groups" },
         { label: "Analytics", href: "#", icon: "insights" },
     ]
@@ -34,19 +34,23 @@ export default function DashboardSidebar() {
 
             <nav className="flex-1 px-4 space-y-1 pt-4">
                 <p className="px-2 pb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Main Menu</p>
-                {navItems.map((item) => (
-                    <Link
-                        key={item.label}
-                        href={item.href}
-                        className={`flex items-center gap-3 px-3 py-2.5 text-sm font-bold rounded-xl transition-all border ${item.active
+                {navItems.map((item) => {
+                    const isActive = pathname === item.href
+                    return (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            className={`flex items-center gap-3 px-3 py-2.5 text-sm font-bold rounded-xl transition-all border ${isActive
                                 ? "bg-primary/5 text-primary border-primary/10 shadow-sm"
                                 : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent"
-                            }`}
-                    >
-                        <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                        {item.label}
-                    </Link>
-                ))}
+                                }`}
+                        >
+                            <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                            {item.label}
+                        </Link>
+                    )
+                })}
+
 
                 <p className="px-2 pt-8 pb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Organization</p>
                 {orgItems.map((item) => (

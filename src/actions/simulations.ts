@@ -1,0 +1,765 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { logServerEvent } from "@/lib/logger-server";
+import { uploadToS3, deleteFromS3, extractS3KeyFromUrl } from "@/lib/s3";
+import {
+    Simulation,
+    SimulationTask,
+    SimulationSkill,
+    SimulationMetadataSchema,
+    SimulationBrandingSchema,
+    SimulationTaskSchema,
+    canPublishSimulation,
+} from "@/lib/simulations";
+
+// ============================================
+// SIMULATION CRUD OPERATIONS
+// ============================================
+
+/**
+ * Create a new simulation
+ */
+export async function createSimulation(data: {
+    title: string;
+    description?: string;
+    short_description?: string;
+    industry?: string;
+    target_role?: string;
+    duration?: string;
+    difficulty_level?: 'beginner' | 'intermediate' | 'advanced';
+    program_type?: 'job_simulation' | 'career_exploration' | 'skill_lab';
+}) {
+    const supabase = await createClient();
+
+    try {
+        // Validate input
+        const validated = SimulationMetadataSchema.parse(data);
+
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get user's organization
+        const { data: membership, error: membershipError } = await supabase
+            .from('organization_members')
+            .select('org_id, role')
+            .eq('user_id', user.id)
+            .single();
+
+        if (membershipError || !membership) {
+            return { error: "No organization found for this user" };
+        }
+
+        // Check if user has permission (admin or owner)
+        if (!['admin', 'owner'].includes(membership.role)) {
+            return { error: "You don't have permission to create simulations" };
+        }
+
+        // Create simulation
+        const { data: simulation, error: createError } = await supabase
+            .from('simulations')
+            .insert({
+                org_id: membership.org_id,
+                created_by: user.id,
+                ...validated,
+                status: 'draft',
+            })
+            .select()
+            .single();
+
+        if (createError) {
+            console.error("Create simulation error:", createError);
+            return { error: "Failed to create simulation" };
+        }
+
+        await logServerEvent({
+            level: 'INFO',
+            action: {
+                code: 'SIMULATION_CREATED',
+                category: 'CONTENT'
+            },
+            actor: {
+                type: 'user',
+                id: user.id
+            },
+            organization: {
+                org_id: membership.org_id
+            },
+            message: `Simulation created: ${simulation.title}`
+        });
+
+        return { data: simulation };
+    } catch (err: any) {
+        console.error("Create simulation error:", err);
+        return { error: err.message || "Failed to create simulation" };
+    }
+}
+
+/**
+ * Update simulation metadata
+ */
+export async function updateSimulation(
+    simulationId: string,
+    data: Partial<Simulation>
+) {
+    const supabase = await createClient();
+
+    try {
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Verify user has access to this simulation
+        const { data: simulation, error: simError } = await supabase
+            .from('simulations')
+            .select('*, organization_members!inner(role)')
+            .eq('id', simulationId)
+            .eq('organization_members.user_id', user.id)
+            .single();
+
+        if (simError || !simulation) {
+            return { error: "Simulation not found or access denied" };
+        }
+
+        // Update simulation
+        const { data: updated, error: updateError } = await supabase
+            .from('simulations')
+            .update(data)
+            .eq('id', simulationId)
+            .select()
+            .single();
+
+        if (updateError) {
+            console.error("Update simulation error:", updateError);
+            return { error: "Failed to update simulation" };
+        }
+
+        await logServerEvent({
+            level: 'INFO',
+            action: {
+                code: 'SIMULATION_UPDATED',
+                category: 'CONTENT'
+            },
+            actor: {
+                type: 'user',
+                id: user.id
+            },
+            message: `Simulation updated: ${simulationId}`
+        });
+
+        return { data: updated };
+    } catch (err: any) {
+        console.error("Update simulation error:", err);
+        return { error: err.message || "Failed to update simulation" };
+    }
+}
+
+/**
+ * Get simulation by ID
+ */
+export async function getSimulation(simulationId: string) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get simulation with tasks and skills
+        const { data: simulation, error: simError } = await supabase
+            .from('simulations')
+            .select(`
+                *,
+                simulation_tasks (*),
+                simulation_skills (*)
+            `)
+            .eq('id', simulationId)
+            .single();
+
+        if (simError || !simulation) {
+            return { error: "Simulation not found" };
+        }
+
+        return { data: simulation };
+    } catch (err: any) {
+        console.error("Get simulation error:", err);
+        return { error: "Failed to fetch simulation" };
+    }
+}
+
+/**
+ * Get all simulations for user's organization
+ */
+export async function getSimulations() {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get user's organization
+        const { data: membership, error: membershipError } = await supabase
+            .from('organization_members')
+            .select('org_id')
+            .eq('user_id', user.id)
+            .single();
+
+        if (membershipError || !membership) {
+            return { error: "No organization found" };
+        }
+
+        // Get all simulations for the organization
+        const { data: simulations, error: simError } = await supabase
+            .from('simulations')
+            .select(`
+                *,
+                simulation_tasks (count),
+                simulation_skills (count)
+            `)
+            .eq('org_id', membership.org_id)
+            .order('created_at', { ascending: false });
+
+        if (simError) {
+            console.error("Get simulations error:", simError);
+            return { error: "Failed to fetch simulations" };
+        }
+
+        return { data: simulations || [] };
+    } catch (err: any) {
+        console.error("Get simulations error:", err);
+        return { error: "Failed to fetch simulations" };
+    }
+}
+
+/**
+ * Publish a simulation
+ */
+export async function publishSimulation(simulationId: string) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get simulation with tasks
+        const { data: simulation, error: simError } = await supabase
+            .from('simulations')
+            .select('*, simulation_tasks (*)')
+            .eq('id', simulationId)
+            .single();
+
+        if (simError || !simulation) {
+            return { error: "Simulation not found" };
+        }
+
+        // Validate simulation can be published
+        const validation = canPublishSimulation(simulation, simulation.simulation_tasks);
+        if (!validation.canPublish) {
+            return { error: validation.errors.join(', ') };
+        }
+
+        // Publish simulation
+        const { data: published, error: publishError } = await supabase
+            .from('simulations')
+            .update({
+                status: 'published',
+                published_at: new Date().toISOString(),
+            })
+            .eq('id', simulationId)
+            .select()
+            .single();
+
+        if (publishError) {
+            console.error("Publish simulation error:", publishError);
+            return { error: "Failed to publish simulation" };
+        }
+
+        await logServerEvent({
+            level: 'INFO',
+            action: {
+                code: 'SIMULATION_PUBLISHED',
+                category: 'CONTENT'
+            },
+            actor: {
+                type: 'user',
+                id: user.id
+            },
+            message: `Simulation published: ${simulation.title}`
+        });
+
+        return { data: published };
+    } catch (err: any) {
+        console.error("Publish simulation error:", err);
+        return { error: "Failed to publish simulation" };
+    }
+}
+
+/**
+ * Delete a simulation
+ */
+export async function deleteSimulation(simulationId: string) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get simulation with assets
+        const { data: simulation, error: simError } = await supabase
+            .from('simulations')
+            .select('*, simulation_assets (*)')
+            .eq('id', simulationId)
+            .single();
+
+        if (simError || !simulation) {
+            return { error: "Simulation not found" };
+        }
+
+        // Delete all S3 assets
+        for (const asset of simulation.simulation_assets) {
+            const key = extractS3KeyFromUrl(asset.file_url);
+            if (key) {
+                await deleteFromS3(key);
+            }
+        }
+
+        // Delete simulation (cascade will handle related records)
+        const { error: deleteError } = await supabase
+            .from('simulations')
+            .delete()
+            .eq('id', simulationId);
+
+        if (deleteError) {
+            console.error("Delete simulation error:", deleteError);
+            return { error: "Failed to delete simulation" };
+        }
+
+        await logServerEvent({
+            level: 'INFO',
+            action: {
+                code: 'SIMULATION_DELETED',
+                category: 'CONTENT'
+            },
+            actor: {
+                type: 'user',
+                id: user.id
+            },
+            message: `Simulation deleted: ${simulationId}`
+        });
+
+        return { success: true };
+    } catch (err: any) {
+        console.error("Delete simulation error:", err);
+        return { error: "Failed to delete simulation" };
+    }
+}
+
+/**
+ * Save draft (auto-save)
+ */
+export async function saveDraft(simulationId: string, data: Partial<Simulation>) {
+    return updateSimulation(simulationId, data);
+}
+
+// ============================================
+// TASK OPERATIONS
+// ============================================
+
+/**
+ * Add a task to simulation
+ */
+export async function addTask(
+    simulationId: string,
+    data: {
+        title: string;
+        description?: string;
+        scenario_context?: string;
+        estimated_duration?: string;
+        difficulty_level?: 'beginner' | 'intermediate' | 'advanced';
+        instructions?: string;
+        what_you_learn?: string[];
+        what_you_do?: string;
+        submission_type?: 'file_upload' | 'text' | 'mcq' | 'self_paced';
+    }
+) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get current task count to determine task_number and sort_order
+        const { count } = await supabase
+            .from('simulation_tasks')
+            .select('*', { count: 'exact', head: true })
+            .eq('simulation_id', simulationId);
+
+        const taskNumber = (count || 0) + 1;
+
+        // Validate task data
+        const validated = SimulationTaskSchema.parse({
+            ...data,
+            task_number: taskNumber,
+            sort_order: taskNumber,
+        });
+
+        // Create task
+        const { data: task, error: createError } = await supabase
+            .from('simulation_tasks')
+            .insert({
+                simulation_id: simulationId,
+                ...validated,
+                status: 'incomplete',
+            })
+            .select()
+            .single();
+
+        if (createError) {
+            console.error("Create task error:", createError);
+            return { error: "Failed to create task" };
+        }
+
+        await logServerEvent({
+            level: 'INFO',
+            action: {
+                code: 'SIMULATION_TASK_CREATED',
+                category: 'CONTENT'
+            },
+            actor: {
+                type: 'user',
+                id: user.id
+            },
+            message: `Task created: ${task.title}`
+        });
+
+        return { data: task };
+    } catch (err: any) {
+        console.error("Create task error:", err);
+        return { error: err.message || "Failed to create task" };
+    }
+}
+
+/**
+ * Update a task
+ */
+export async function updateTask(taskId: string, data: Partial<SimulationTask>) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        const { data: updated, error: updateError } = await supabase
+            .from('simulation_tasks')
+            .update(data)
+            .eq('id', taskId)
+            .select()
+            .single();
+
+        if (updateError) {
+            console.error("Update task error:", updateError);
+            return { error: "Failed to update task" };
+        }
+
+        return { data: updated };
+    } catch (err: any) {
+        console.error("Update task error:", err);
+        return { error: "Failed to update task" };
+    }
+}
+
+/**
+ * Delete a task
+ */
+export async function deleteTask(taskId: string) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get task with assets
+        const { data: task, error: taskError } = await supabase
+            .from('simulation_tasks')
+            .select('*, simulation_assets (*)')
+            .eq('id', taskId)
+            .single();
+
+        if (taskError || !task) {
+            return { error: "Task not found" };
+        }
+
+        // Delete S3 assets
+        for (const asset of task.simulation_assets) {
+            const key = extractS3KeyFromUrl(asset.file_url);
+            if (key) {
+                await deleteFromS3(key);
+            }
+        }
+
+        // Delete task
+        const { error: deleteError } = await supabase
+            .from('simulation_tasks')
+            .delete()
+            .eq('id', taskId);
+
+        if (deleteError) {
+            console.error("Delete task error:", deleteError);
+            return { error: "Failed to delete task" };
+        }
+
+        return { success: true };
+    } catch (err: any) {
+        console.error("Delete task error:", err);
+        return { error: "Failed to delete task" };
+    }
+}
+
+/**
+ * Reorder tasks
+ */
+export async function reorderTasks(simulationId: string, taskIds: string[]) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Update sort_order for each task
+        const updates = taskIds.map((taskId, index) =>
+            supabase
+                .from('simulation_tasks')
+                .update({ sort_order: index + 1 })
+                .eq('id', taskId)
+                .eq('simulation_id', simulationId)
+        );
+
+        await Promise.all(updates);
+
+        return { success: true };
+    } catch (err: any) {
+        console.error("Reorder tasks error:", err);
+        return { error: "Failed to reorder tasks" };
+    }
+}
+
+// ============================================
+// SKILL OPERATIONS
+// ============================================
+
+/**
+ * Add skills to simulation
+ */
+export async function addSkills(simulationId: string, skills: string[]) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Insert skills (ignore duplicates)
+        const skillRecords = skills.map(skill => ({
+            simulation_id: simulationId,
+            skill_name: skill,
+        }));
+
+        const { data: inserted, error: insertError } = await supabase
+            .from('simulation_skills')
+            .upsert(skillRecords, { onConflict: 'simulation_id,skill_name', ignoreDuplicates: true })
+            .select();
+
+        if (insertError) {
+            console.error("Add skills error:", insertError);
+            return { error: "Failed to add skills" };
+        }
+
+        return { data: inserted };
+    } catch (err: any) {
+        console.error("Add skills error:", err);
+        return { error: "Failed to add skills" };
+    }
+}
+
+/**
+ * Remove skill from simulation
+ */
+export async function removeSkill(simulationId: string, skillName: string) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        const { error: deleteError } = await supabase
+            .from('simulation_skills')
+            .delete()
+            .eq('simulation_id', simulationId)
+            .eq('skill_name', skillName);
+
+        if (deleteError) {
+            console.error("Remove skill error:", deleteError);
+            return { error: "Failed to remove skill" };
+        }
+
+        return { success: true };
+    } catch (err: any) {
+        console.error("Remove skill error:", err);
+        return { error: "Failed to remove skill" };
+    }
+}
+
+// ============================================
+// FILE UPLOAD OPERATIONS
+// ============================================
+
+/**
+ * Upload asset (logo, banner, video, etc.)
+ */
+export async function uploadAsset(
+    simulationId: string,
+    file: File,
+    assetType: 'logo' | 'banner' | 'video' | 'pdf' | 'dataset' | 'document',
+    taskId?: string
+) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get user's organization
+        const { data: membership } = await supabase
+            .from('organization_members')
+            .select('org_id')
+            .eq('user_id', user.id)
+            .single();
+
+        if (!membership) {
+            return { error: "Organization not found" };
+        }
+
+        // Determine folder based on asset type
+        const folderMap: Record<string, string> = {
+            logo: 'logos',
+            banner: 'banners',
+            video: 'videos',
+            pdf: 'tasks',
+            dataset: 'tasks',
+            document: 'tasks',
+        };
+
+        const folder = folderMap[assetType];
+
+        // Upload to S3
+        const { url, key } = await uploadToS3({
+            file,
+            fileName: file.name,
+            folder,
+            orgId: membership.org_id,
+            simulationId,
+            taskId,
+            contentType: file.type,
+        });
+
+        // Save asset record
+        const { data: asset, error: assetError } = await supabase
+            .from('simulation_assets')
+            .insert({
+                simulation_id: simulationId,
+                task_id: taskId,
+                asset_type: assetType,
+                file_name: file.name,
+                file_url: url,
+                file_size: file.size,
+                mime_type: file.type,
+                uploaded_by: user.id,
+            })
+            .select()
+            .single();
+
+        if (assetError) {
+            // Rollback S3 upload
+            await deleteFromS3(key);
+            console.error("Save asset error:", assetError);
+            return { error: "Failed to save asset record" };
+        }
+
+        return { data: { url, asset } };
+    } catch (err: any) {
+        console.error("Upload asset error:", err);
+        return { error: err.message || "Failed to upload asset" };
+    }
+}
+
+/**
+ * Delete asset
+ */
+export async function deleteAsset(assetId: string) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get asset
+        const { data: asset, error: assetError } = await supabase
+            .from('simulation_assets')
+            .select('*')
+            .eq('id', assetId)
+            .single();
+
+        if (assetError || !asset) {
+            return { error: "Asset not found" };
+        }
+
+        // Delete from S3
+        const key = extractS3KeyFromUrl(asset.file_url);
+        if (key) {
+            await deleteFromS3(key);
+        }
+
+        // Delete record
+        const { error: deleteError } = await supabase
+            .from('simulation_assets')
+            .delete()
+            .eq('id', assetId);
+
+        if (deleteError) {
+            console.error("Delete asset error:", deleteError);
+            return { error: "Failed to delete asset" };
+        }
+
+        return { success: true };
+    } catch (err: any) {
+        console.error("Delete asset error:", err);
+        return { error: "Failed to delete asset" };
+    }
+}

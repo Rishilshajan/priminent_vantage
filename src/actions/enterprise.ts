@@ -1108,3 +1108,92 @@ export async function getDashboardMetrics() {
         return { error: "Failed to load dashboard metrics." };
     }
 }
+
+/**
+ * Fetches simulation metrics for the enterprise simulations page
+ */
+export async function getSimulationsMetrics() {
+    const supabase = await createClient();
+
+    try {
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get user's organization
+        const { data: membership, error: membershipError } = await supabase
+            .from('organization_members')
+            .select('org_id, organizations(id, name)')
+            .eq('user_id', user.id)
+            .single();
+
+        if (membershipError || !membership) {
+            return { error: "No organization found for this user" };
+        }
+
+        const organization = membership.organizations;
+        const orgId = membership.org_id;
+
+        // Fetch simulations for this organization
+        const { data: simulations, error: simulationsError } = await supabase
+            .from('simulations')
+            .select(`
+                *,
+                simulation_tasks(count),
+                simulation_skills(count)
+            `)
+            .eq('org_id', orgId)
+            .order('updated_at', { ascending: false });
+
+        if (simulationsError) {
+            console.error("Error fetching simulations:", simulationsError);
+        }
+
+        // Calculate stats
+        const totalEnrollments = 0; // TODO: Count from simulation_enrollments
+        const activeSimulations = simulations?.filter(s => s.status === 'published').length || 0;
+        const completionRate = 0; // TODO: Calculate from enrollments
+        const skillsAssessed = simulations?.reduce((acc, s) => {
+            const skillCount = Array.isArray(s.simulation_skills) ? s.simulation_skills.length : 0;
+            return acc + skillCount;
+        }, 0) || 0;
+
+        const stats = {
+            totalEnrollments,
+            activeSimulations,
+            completionRate,
+            skillsAssessed
+        };
+
+        await logServerEvent({
+            level: 'INFO',
+            action: {
+                code: 'SIMULATIONS_METRICS_FETCHED',
+                category: 'ORGANIZATION'
+            },
+            actor: {
+                type: 'user',
+                id: user.id
+            },
+            organization: {
+                org_id: membership.org_id,
+                org_name: (Array.isArray(organization) ? organization[0]?.name : (organization as any)?.name) || 'Unknown'
+            },
+            message: 'Simulations metrics fetched successfully'
+        });
+
+        return {
+            data: {
+                organization,
+                stats,
+                simulations: simulations || []
+            }
+        };
+    } catch (err: any) {
+        console.error("Simulations metrics error:", err);
+        return { error: "Failed to load simulations metrics." };
+    }
+}
+
