@@ -61,6 +61,8 @@ export async function updateSession(request: NextRequest) {
             url.pathname = '/enterprise/dashboard'
         } else if (profile?.role === 'student') {
             url.pathname = '/student/dashboard'
+        } else if (profile?.role === 'educator') {
+            url.pathname = '/educators/dashboard'
         } else {
             // Default fallback for unknown roles
             url.pathname = '/student/dashboard'

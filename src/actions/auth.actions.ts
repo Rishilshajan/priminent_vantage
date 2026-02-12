@@ -12,16 +12,27 @@ export async function signup(formData: FormData) {
     const firstName = formData.get('firstName') as string
     const lastName = formData.get('lastName') as string
     const phone = formData.get('phone') as string
+    const flow = formData.get('flow') as string
+    const baseUrl = await getBaseUrl()
+
+    // Educators start as students until approved
+    const role = 'student'
+
+    // If coming from educator flow, we want to redirect them to educator dashboard after email confirmation
+    const emailRedirectTo = flow === 'educator'
+        ? `${baseUrl}/auth/callback?next=/educators/dashboard`
+        : `${baseUrl}/auth/callback`
 
     const { error } = await authService.signUp({
         email,
         password,
         options: {
+            emailRedirectTo,
             data: {
                 first_name: firstName,
                 last_name: lastName,
                 phone: phone,
-                role: 'student',
+                role: role,
             }
         }
     })
@@ -110,6 +121,8 @@ export async function login(formData: FormData) {
         const supabase = await createClient()
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
 
+        const flow = formData.get('flow') as string
+
         if (profile?.role === 'admin' || profile?.role === 'super_admin') {
             redirect('/admin/dashboard')
         } else if (profile?.role === 'enterprise') {
@@ -119,8 +132,13 @@ export async function login(formData: FormData) {
                 redirect('/enterprise/mfa-verify')
             }
             redirect('/enterprise/dashboard')
+        } else if (flow === 'educator') {
+            // Even if role is student, if coming from educator flow, send to educator dashboard
+            redirect('/educators/dashboard')
         } else if (profile?.role === 'student') {
             redirect('/student/dashboard')
+        } else if (profile?.role === 'educator') {
+            redirect('/educators/dashboard')
         }
     }
 
@@ -128,11 +146,15 @@ export async function login(formData: FormData) {
     redirect('/')
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(next?: string) {
     const baseUrl = await getBaseUrl()
+    const redirectTo = next
+        ? `${baseUrl}/auth/callback?next=${next}`
+        : `${baseUrl}/auth/callback`
+
     const { data, error } = await authService.signInWithOAuth(
         'google',
-        `${baseUrl}/auth/callback`
+        redirectTo
     )
 
     if (data.url) {

@@ -28,13 +28,19 @@ export function AuthHeader() {
 
     const isActive = (path: string) => {
         if (path === '/signup' && (pathname === '/' || pathname === '/login' || pathname === '/signup')) return true;
+        if (path === '/educators/signup' && pathname?.startsWith('/educators')) return true;
         return pathname?.startsWith(path);
     };
+
+    // Determine which login/signup links to show based on current page
+    const isEducatorPage = pathname?.startsWith('/educators');
+    const loginHref = isEducatorPage ? '/educators/login?next=/educators/dashboard' : '/login';
+    const signupHref = isEducatorPage ? '/educators/signup?next=/educators/dashboard' : '/signup';
 
     const navItems = [
         { name: "For Students", href: "/signup" },
         { name: "For Enterprise", href: "/enterprise" },
-        { name: "For Educators", href: "/educators" },
+        { name: "For Educators", href: "/educators/signup" },
     ];
 
     return (
@@ -77,10 +83,10 @@ export function AuthHeader() {
                     {/* Right Side Actions */}
                     <div className="hidden md:flex items-center gap-4">
                         <Button variant="ghost" className="font-medium text-muted-foreground hover:text-foreground hover:bg-transparent" asChild>
-                            <Link href="/login">Log In</Link>
+                            <Link href={loginHref}>Log In</Link>
                         </Button>
                         <Button className="font-semibold shadow-lg shadow-primary/20" asChild>
-                            <Link href="/signup">Sign Up</Link>
+                            <Link href={signupHref}>Sign Up</Link>
                         </Button>
                     </div>
 
@@ -180,10 +186,10 @@ export function AuthHeader() {
                             <div className="mt-auto pt-6 border-t border-slate-200 dark:border-slate-800">
                                 <div className="grid grid-cols-1 gap-3">
                                     <Button variant="outline" size="sm" className="w-full justify-center text-sm font-medium border-slate-200 dark:border-slate-800" asChild>
-                                        <Link href="/login" onClick={() => setIsMenuOpen(false)}>Log In</Link>
+                                        <Link href={loginHref} onClick={() => setIsMenuOpen(false)}>Log In</Link>
                                     </Button>
                                     <Button size="sm" className="w-full justify-center text-sm font-bold shadow-lg shadow-primary/20" asChild>
-                                        <Link href="/signup" onClick={() => setIsMenuOpen(false)}>Sign Up</Link>
+                                        <Link href={signupHref} onClick={() => setIsMenuOpen(false)}>Sign Up</Link>
                                     </Button>
                                 </div>
                             </div>

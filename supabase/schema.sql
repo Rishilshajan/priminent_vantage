@@ -163,3 +163,63 @@ create policy "Members can view their own membership" on organization_members
 
 create policy "Public can join organizations" on organization_members
   for insert with check (true);
+
+-- Create table for educator applications
+create table public.educator_applications (
+    id uuid default gen_random_uuid() primary key,
+    user_id uuid references auth.users(id) on delete cascade not null,
+    status text check (status in ('PENDING_VERIFICATION', 'APPROVED', 'REJECTED')) default 'PENDING_VERIFICATION',
+    
+    -- Personal & Institutional
+    full_name text not null,
+    institutional_email text not null,
+    institution_name text not null,
+    institution_website text,
+    department text not null,
+    designation text not null,
+    
+    -- Academic Context
+    courses_teaching text not null,
+    academic_level text not null,
+    estimated_students text not null,
+    
+    -- Intended Usage
+    intended_usage text not null,
+    implementation_types text[] not null,
+    
+    -- Professional Verification
+    linkedin_profile text,
+    verification_document_url text,
+    
+    -- Metadata
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+    updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+    reviewed_at timestamp with time zone,
+    reviewed_by uuid references auth.users(id),
+    admin_notes text
+);
+
+-- Set up RLS for educator applications
+alter table public.educator_applications enable row level security;
+
+create policy "Users can view their own applications" on educator_applications
+  for select using (auth.uid() = user_id);
+
+create policy "Users can insert their own applications" on educator_applications
+  for insert with check (auth.uid() = user_id);
+
+create policy "Admins can view all applications" on educator_applications
+  for select using (
+    exists (
+      select 1 from profiles
+      where id = auth.uid() and role in ('admin', 'super_admin')
+    )
+  );
+
+create policy "Admins can update applications" on educator_applications
+  for update using (
+    exists (
+      select 1 from profiles
+      where id = auth.uid() and role in ('admin', 'super_admin')
+    )
+  );

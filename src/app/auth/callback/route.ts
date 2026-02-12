@@ -23,19 +23,22 @@ export async function GET(request: Request) {
                     .eq('id', user.id)
                     .single()
 
-                // Redirect based on role
+                // Redirect based on role if no 'next' is specified
                 if (profile?.role === 'admin' || profile?.role === 'super_admin') {
                     redirectUrl = '/admin/dashboard'
                 } else if (profile?.role === 'enterprise') {
                     redirectUrl = '/enterprise/dashboard'
-                } else if (profile?.role === 'student') {
-                    redirectUrl = '/student/dashboard'
+                } else if (profile?.role === 'educator') {
+                    redirectUrl = '/educators/dashboard'
                 } else {
-                    // Default fallback
+                    // Default fallback for students or undefined roles
                     redirectUrl = '/student/dashboard'
                 }
-            } else if (!next) {
-                // If no user profile found and no next param, default to student dashboard
+            } else if (next) {
+                // If 'next' is provided, we trust it as the intended destination (e.g., from a sign-up flow)
+                redirectUrl = next
+            } else {
+                // Default fallback if no user and no next
                 redirectUrl = '/student/dashboard'
             }
 
