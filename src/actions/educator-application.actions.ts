@@ -245,15 +245,6 @@ export async function handleEducatorAction(
                 </div>
             `;
 
-            // Core Logic: Update User Role to 'educator'
-            if (currentApp?.user_id) {
-                const { error: roleError } = await supabase
-                    .from("profiles")
-                    .update({ role: 'educator' })
-                    .eq("id", currentApp.user_id);
-
-                if (roleError) console.error("Failed to update user role:", roleError);
-            }
 
         } else if (action === "reject") {
             status = 'REJECTED';
@@ -300,17 +291,40 @@ export async function handleEducatorAction(
         };
 
         // 2. Update Application (Status & Notes)
-        const updatedNotes = [...(currentApp?.admin_notes || []), newNote];
+        let updatedNotes = [];
+        try {
+            updatedNotes = currentApp?.admin_notes ? JSON.parse(currentApp.admin_notes) : [];
+            if (!Array.isArray(updatedNotes)) updatedNotes = [];
+        } catch (e) {
+            console.error("Error parsing admin notes:", e);
+            updatedNotes = [];
+        }
 
         const { error: updateError } = await supabase
             .from("educator_applications")
             .update({
                 status: status,
-                admin_notes: updatedNotes
+                admin_notes: JSON.stringify([...updatedNotes, newNote]),
+                reviewed_at: status === 'APPROVED' ? new Date().toISOString() : null,
+                reviewed_by: adminProfile.id
             })
             .eq("id", applicationId);
 
         if (updateError) throw updateError;
+
+        // 3. Update User Role to 'educator' (Strictly for Approval)
+        if (action === "approve" && currentApp?.user_id) {
+            const { error: roleError } = await supabase
+                .from("profiles")
+                .update({ role: 'educator' })
+                .eq("id", currentApp.user_id);
+
+            if (roleError) {
+                console.error("Failed to update user role:", roleError);
+                // We don't throw here to avoid failing the whole action if email sent, 
+                // but it's a critical warning.
+            }
+        }
 
         // 3. Send Email
         const { error: emailError } = await resend.emails.send({
