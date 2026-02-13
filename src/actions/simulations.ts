@@ -28,7 +28,13 @@ export async function createSimulation(data: {
     target_role?: string;
     duration?: string;
     difficulty_level?: 'beginner' | 'intermediate' | 'advanced';
-    program_type?: 'job_simulation' | 'career_exploration' | 'skill_lab';
+    program_type?: 'job_simulation' | 'career_exploration' | 'skill_sprint' | 'case_study' | 'internship_preview';
+    learning_outcomes?: string[];
+    prerequisites?: string;
+    target_audience?: string;
+    visibility?: 'draft' | 'internal' | 'public' | 'private';
+    analytics_tags?: string[];
+    certificate_enabled?: boolean;
 }) {
     const supabase = await createClient();
 
@@ -66,6 +72,12 @@ export async function createSimulation(data: {
                 created_by: user.id,
                 ...validated,
                 status: 'draft',
+                learning_outcomes: data.learning_outcomes || [],
+                prerequisites: data.prerequisites || null,
+                target_audience: data.target_audience || null,
+                visibility: data.visibility || 'draft',
+                analytics_tags: data.analytics_tags || [],
+                certificate_enabled: data.certificate_enabled !== false,
             })
             .select()
             .single();
@@ -147,7 +159,28 @@ export async function updateSimulation(
         // 3. Update simulation
         const { data: updated, error: updateError } = await supabase
             .from('simulations')
-            .update(data)
+            .update({
+                title: data.title,
+                description: data.description,
+                short_description: data.short_description,
+                industry: data.industry,
+                target_role: data.target_role,
+                duration: data.duration,
+                difficulty_level: data.difficulty_level,
+                program_type: data.program_type,
+                learning_outcomes: data.learning_outcomes,
+                prerequisites: data.prerequisites,
+                target_audience: data.target_audience,
+                visibility: data.visibility,
+                analytics_tags: data.analytics_tags,
+                certificate_enabled: data.certificate_enabled,
+                company_logo_url: data.company_logo_url,
+                banner_url: data.banner_url,
+                intro_video_url: data.intro_video_url,
+                about_company: data.about_company,
+                why_work_here: data.why_work_here,
+                updated_at: new Date().toISOString(),
+            })
             .eq('id', simulationId)
             .select()
             .single();
@@ -586,7 +619,56 @@ export async function reorderTasks(simulationId: string, taskIds: string[]) {
 // ============================================
 
 /**
- * Add skills to simulation
+ * Sync skills (replace all)
+ */
+export async function syncSimulationSkills(simulationId: string, skills: string[]) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // 1. Delete existing skills
+        const { error: deleteError } = await supabase
+            .from('simulation_skills')
+            .delete()
+            .eq('simulation_id', simulationId);
+
+        if (deleteError) {
+            console.error("Delete existing skills error:", deleteError);
+            return { error: "Failed to sync skills" };
+        }
+
+        // 2. Insert new skills
+        if (skills.length > 0) {
+            const skillRecords = skills.map(skill => ({
+                simulation_id: simulationId,
+                skill_name: skill,
+            }));
+
+            const { data: inserted, error: insertError } = await supabase
+                .from('simulation_skills')
+                .insert(skillRecords)
+                .select();
+
+            if (insertError) {
+                console.error("Insert new skills error:", insertError);
+                return { error: "Failed to sync skills" };
+            }
+            return { data: inserted };
+        }
+
+        return { success: true };
+    } catch (err: any) {
+        console.error("Sync skills error:", err);
+        return { error: "Failed to sync skills" };
+    }
+}
+
+/**
+ * Add skills to simulation (incremental)
  */
 export async function addSkills(simulationId: string, skills: string[]) {
     const supabase = await createClient();

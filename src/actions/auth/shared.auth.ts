@@ -7,10 +7,15 @@ import { redirect } from 'next/navigation'
 
 
 //Common sign out action
-export async function signOut() {
+export async function signOut(redirectTo: string = '/login') {
     const { data: { user } } = await authService.getUser()
 
     if (user) {
+        const { createClient } = await import('@/lib/supabase/server')
+        const supabase = await createClient()
+        const { data: profile } = await supabase.from('profiles').select('first_name, last_name, role').eq('id', user.id).single()
+        const actorName = profile ? `${profile.first_name} ${profile.last_name || ''}`.trim() : user.email
+
         await logServerEvent({
             level: 'SUCCESS',
             action: {
@@ -19,15 +24,17 @@ export async function signOut() {
             },
             actor: {
                 type: 'user',
-                id: user.id
+                id: user.id,
+                name: actorName,
+                role: profile?.role
             },
-            message: 'User logged out successfully',
+            message: `${actorName} logged out successfully`,
             params: { email: user.email }
         })
     }
 
     await authService.signOut()
-    redirect('/login')
+    redirect(redirectTo)
 }
 
 

@@ -4,9 +4,19 @@ import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
+import { signOut } from "@/actions/auth/shared.auth"
+
 
 export default function DashboardSidebar() {
     const pathname = usePathname()
+
+    const handleLogout = async () => {
+        const confirmed = window.confirm("Are you sure you want to log out?")
+        if (confirmed) {
+            await signOut("/")
+        }
+    }
+
 
     const navItems = [
         { label: "Dashboard", href: "/enterprise/dashboard", icon: "dashboard" },
@@ -66,15 +76,21 @@ export default function DashboardSidebar() {
             </nav>
 
             <div className="p-4 mt-auto">
-                <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4">
-                    <div className="flex justify-between items-center mb-1">
-                        <p className="text-[10px] font-black text-primary uppercase tracking-wider">Enterprise Plan</p>
-                        <span className="text-[10px] font-bold text-primary">85%</span>
+                <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-2xl p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="size-8 rounded-lg bg-red-100 dark:bg-red-900/20 flex items-center justify-center text-red-600 dark:text-red-400">
+                            <span className="material-symbols-outlined text-[20px]">logout</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <p className="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-wider">Account</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">End your session</p>
+                        </div>
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-3 font-medium">Simulator seats used</p>
-                    <Progress value={85} className="h-1.5 bg-primary/10 mb-4" />
-                    <Button className="w-full h-8 text-[10px] font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white rounded-lg shadow-lg shadow-primary/10">
-                        Upgrade
+                    <Button
+                        onClick={handleLogout}
+                        className="w-full h-9 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg shadow-red-200 dark:shadow-none border-none transition-all"
+                    >
+                        Sign Out
                     </Button>
                 </div>
             </div>

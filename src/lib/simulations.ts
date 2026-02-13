@@ -15,7 +15,13 @@ export interface Simulation {
     target_role: string | null;
     duration: string | null;
     difficulty_level: 'beginner' | 'intermediate' | 'advanced' | null;
-    program_type: 'job_simulation' | 'career_exploration' | 'skill_lab';
+    program_type: 'job_simulation' | 'career_exploration' | 'skill_sprint' | 'case_study' | 'internship_preview';
+    learning_outcomes: string[];
+    prerequisites: string | null;
+    target_audience: string | null;
+    visibility: 'draft' | 'internal' | 'educator_assigned' | 'public' | 'private' | 'archived';
+    analytics_tags: string[];
+    certificate_enabled: boolean;
     company_logo_url: string | null;
     banner_url: string | null;
     intro_video_url: string | null;
@@ -25,6 +31,7 @@ export interface Simulation {
     published_at: string | null;
     created_at: string;
     updated_at: string;
+    simulation_skills?: SimulationSkill[];
 }
 
 export interface SimulationTask {
@@ -84,20 +91,25 @@ export const SimulationMetadataSchema = z.object({
     target_role: z.string().optional(),
     duration: z.string().optional(),
     difficulty_level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
-    program_type: z.enum(['job_simulation', 'career_exploration', 'skill_lab']).default('job_simulation'),
+    program_type: z.enum(['job_simulation', 'career_exploration', 'skill_sprint', 'case_study', 'internship_preview']).default('job_simulation'),
+    learning_outcomes: z.array(z.string()).default([]),
+    prerequisites: z.string().optional(),
+    target_audience: z.string().optional(),
+    visibility: z.enum(['draft', 'internal', 'educator_assigned', 'public', 'private', 'archived']).default('draft'),
+    analytics_tags: z.array(z.string()).default([]),
+    certificate_enabled: z.boolean().default(true),
 });
 
 export const SimulationBrandingSchema = z.object({
-    company_logo_url: z.string().url().optional(),
-    banner_url: z.string().url().optional(),
-    intro_video_url: z.string().url().optional(),
+    company_logo_url: z.string().optional(),
+    banner_url: z.string().optional(),
+    intro_video_url: z.string().optional(),
     about_company: z.string().optional(),
     why_work_here: z.string().optional(),
 });
 
 export const SimulationTaskSchema = z.object({
-    task_number: z.number().int().positive(),
-    title: z.string().min(1, "Task title is required"),
+    title: z.string().min(1, "Title is required"),
     description: z.string().optional(),
     scenario_context: z.string().optional(),
     estimated_duration: z.string().optional(),
@@ -105,8 +117,10 @@ export const SimulationTaskSchema = z.object({
     instructions: z.string().optional(),
     what_you_learn: z.array(z.string()).optional(),
     what_you_do: z.string().optional(),
+    video_url: z.string().optional(),
+    pdf_brief_url: z.string().optional(),
+    dataset_url: z.string().optional(),
     submission_type: z.enum(['file_upload', 'text', 'mcq', 'self_paced']).default('self_paced'),
-    sort_order: z.number().int(),
 });
 
 // ============================================
@@ -118,27 +132,20 @@ export const INDUSTRIES = [
     'Technology',
     'Consulting',
     'Healthcare',
+    'Marketing',
+    'Engineering',
     'Retail',
-    'Manufacturing',
-    'Education',
-    'Media & Entertainment',
-    'Real Estate',
-    'Energy',
-    'Other',
+    'Legal',
 ] as const;
 
 export const TARGET_ROLES = [
-    'Junior Data Analyst',
-    'Investment Associate',
-    'Product Manager',
     'Software Engineer',
-    'Marketing Specialist',
+    'Data Analyst',
+    'Product Manager',
     'Business Analyst',
+    'Marketing Manager',
+    'Investment Banker',
     'UX Designer',
-    'Financial Analyst',
-    'Consultant',
-    'Project Manager',
-    'Other',
 ] as const;
 
 export const DURATIONS = [
@@ -159,145 +166,63 @@ export const DIFFICULTY_LEVELS = [
 export const PROGRAM_TYPES = [
     { value: 'job_simulation', label: 'Job Simulation' },
     { value: 'career_exploration', label: 'Career Exploration' },
-    { value: 'skill_lab', label: 'Skill Lab' },
+    { value: 'skill_sprint', label: 'Skill Sprint' },
+    { value: 'case_study', label: 'Case Study' },
+    { value: 'internship_preview', label: 'Internship Preview' },
 ] as const;
 
-// Common technical skills
-export const TECHNICAL_SKILLS = [
-    'Python',
-    'JavaScript',
-    'SQL',
-    'Data Visualization',
-    'Machine Learning',
-    'React',
-    'Node.js',
-    'AWS',
-    'Docker',
-    'Git',
-    'Tableau',
-    'Power BI',
-    'Excel',
-    'Financial Modeling',
-    'Market Research',
-    'A/B Testing',
-    'SEO',
-    'Content Strategy',
-    'UX Research',
-    'Figma',
+export const AUDIENCE_LEVELS = [
+    { value: '1st Year Students', label: '1st Year Students' },
+    { value: 'Final Year Students', label: 'Final Year Students' },
+    { value: 'Early Professionals', label: 'Early Professionals' },
+    { value: 'Career Switchers', label: 'Career Switchers' },
+    { value: 'Anyone', label: 'Anyone' },
 ] as const;
 
-// Common soft skills
-export const SOFT_SKILLS = [
-    'Communication',
-    'Critical Thinking',
-    'Problem Solving',
-    'Teamwork',
-    'Leadership',
-    'Time Management',
-    'Adaptability',
-    'Creativity',
-    'Attention to Detail',
-    'Strategic Thinking',
-    'Presentation',
-    'Negotiation',
-    'Conflict Resolution',
+export const VISIBILITY_OPTIONS = [
+    {
+        value: 'draft',
+        label: 'Draft',
+        description: 'Only visible to builder. Students cannot see or enroll. Educator cannot assign.'
+    },
+    {
+        value: 'internal',
+        label: 'Internal (Enterprise Only)',
+        description: 'Visible ONLY to students tied to your enterprise. Ideal for internal hiring or culture previews.'
+    },
+    {
+        value: 'educator_assigned',
+        label: 'Educator-Assigned',
+        description: 'Visible only within an educator\'s classroom. Does not appear in the public explore page.'
+    },
+    {
+        value: 'public',
+        label: 'Public',
+        description: 'Visible in the public explore page. Anyone can enroll. Boosts brand exposure and talent pool.'
+    },
+    {
+        value: 'private',
+        label: 'Private (Invite Only)',
+        description: 'Not discoverable publicly. Accessible only via a direct invitation link for specific recruitment batches.'
+    },
+    {
+        value: 'archived',
+        label: 'Archived',
+        description: 'Historical data is preserved for analytics, but the program is closed to new student enrollments.'
+    },
 ] as const;
 
 // ============================================
-// HELPER FUNCTIONS
+// HELPERS
 // ============================================
 
-/**
- * Generate a unique certificate ID
- */
-export function generateCertificateId(): string {
-    const year = new Date().getFullYear();
-    const randomString = Math.random().toString(36).substring(2, 8).toUpperCase();
-    return `CERT-${year}-${randomString}`;
-}
-
-/**
- * Calculate progress percentage
- */
-export function calculateProgress(completedTasks: number, totalTasks: number): number {
-    if (totalTasks === 0) return 0;
-    return Math.round((completedTasks / totalTasks) * 100);
-}
-
-/**
- * Format duration for display
- */
-export function formatDuration(minutes: number): string {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-}
-
-/**
- * Get skill suggestions based on industry and role
- */
-export function getSkillSuggestions(industry?: string, role?: string): string[] {
-    const suggestions: string[] = [];
-
-    // Industry-based suggestions
-    if (industry === 'Technology') {
-        suggestions.push('JavaScript', 'Python', 'React', 'Node.js', 'AWS');
-    } else if (industry === 'Financial Services') {
-        suggestions.push('Financial Modeling', 'Excel', 'SQL', 'Data Visualization');
-    } else if (industry === 'Consulting') {
-        suggestions.push('Strategic Thinking', 'Presentation', 'Problem Solving', 'Excel');
-    }
-
-    // Role-based suggestions
-    if (role?.includes('Data')) {
-        suggestions.push('SQL', 'Python', 'Tableau', 'Data Visualization');
-    } else if (role?.includes('Product')) {
-        suggestions.push('UX Research', 'A/B Testing', 'Strategic Thinking');
-    } else if (role?.includes('Software')) {
-        suggestions.push('JavaScript', 'Git', 'React', 'Node.js');
-    }
-
-    // Always include soft skills
-    suggestions.push('Communication', 'Critical Thinking', 'Problem Solving');
-
-    // Remove duplicates and return
-    return Array.from(new Set(suggestions));
-}
-
-/**
- * Validate simulation can be published
- */
-export function canPublishSimulation(simulation: Partial<Simulation>, tasks: SimulationTask[]): {
-    canPublish: boolean;
-    errors: string[];
-} {
-    const errors: string[] = [];
-
-    // Check required metadata
-    if (!simulation.title) errors.push('Title is required');
-    if (!simulation.description) errors.push('Description is required');
-    if (!simulation.industry) errors.push('Industry is required');
-    if (!simulation.target_role) errors.push('Target role is required');
-    if (!simulation.duration) errors.push('Duration is required');
-    if (!simulation.difficulty_level) errors.push('Difficulty level is required');
-
-    // Check branding
-    if (!simulation.company_logo_url) errors.push('Company logo is required');
-    if (!simulation.banner_url) errors.push('Banner image is required');
-
-    // Check tasks
-    if (tasks.length === 0) {
-        errors.push('At least one task is required');
-    } else {
-        const incompleteTasks = tasks.filter(t => t.status === 'incomplete');
-        if (incompleteTasks.length > 0) {
-            errors.push(`${incompleteTasks.length} task(s) are incomplete`);
-        }
-    }
-
-    return {
-        canPublish: errors.length === 0,
-        errors,
-    };
+export function canPublishSimulation(simulation: Simulation): boolean {
+    return !!(
+        simulation.title &&
+        simulation.description &&
+        simulation.industry &&
+        simulation.target_role &&
+        simulation.company_logo_url &&
+        simulation.banner_url
+    );
 }

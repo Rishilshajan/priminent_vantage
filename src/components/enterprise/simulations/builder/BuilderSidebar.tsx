@@ -1,24 +1,24 @@
 "use client";
 
+import Link from "next/link";
 import { User } from "@supabase/supabase-js";
 import { BuilderStep } from "./SimulationBuilderView";
 
 interface BuilderSidebarProps {
     currentStep: BuilderStep;
     onStepChange: (step: BuilderStep) => void;
+    completedSteps: BuilderStep[];
     user: User;
     canNavigate: boolean;
 }
 
 const steps = [
     { id: 'metadata' as BuilderStep, label: 'Program Metadata', icon: 'settings' },
-    { id: 'branding' as BuilderStep, label: 'Employer Branding', icon: 'branding_watermark' },
-    { id: 'outcomes' as BuilderStep, label: 'Learning Outcomes', icon: 'psychology' },
     { id: 'tasks' as BuilderStep, label: 'Task Flow Builder', icon: 'account_tree' },
-    { id: 'certification' as BuilderStep, label: 'Certification Setup', icon: 'verified' },
+    { id: 'branding' as BuilderStep, label: 'Employer Branding', icon: 'branding_watermark' },
 ];
 
-export default function BuilderSidebar({ currentStep, onStepChange, user, canNavigate }: BuilderSidebarProps) {
+export default function BuilderSidebar({ currentStep, onStepChange, completedSteps, user, canNavigate }: BuilderSidebarProps) {
     return (
         <aside className="w-64 flex-shrink-0 border-r border-primary/10 bg-white dark:bg-slate-900 flex flex-col">
             {/* Logo */}
@@ -35,6 +35,14 @@ export default function BuilderSidebar({ currentStep, onStepChange, user, canNav
 
             {/* Navigation Steps */}
             <nav className="flex-1 p-4 space-y-1">
+                <Link
+                    href="/enterprise/simulations"
+                    className="flex items-center gap-3 px-3 py-2.5 mb-4 rounded-xl text-xs font-black text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all uppercase tracking-[0.15em] border border-transparent hover:border-slate-100 dark:hover:border-slate-800 group"
+                >
+                    <span className="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                    Back to Dashboard
+                </Link>
+
                 <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     Builder Steps
                 </div>
@@ -57,8 +65,17 @@ export default function BuilderSidebar({ currentStep, onStepChange, user, canNav
                                 }
                             `}
                         >
-                            <span className="material-symbols-outlined">{step.icon}</span>
-                            <span>{step.label}</span>
+                            <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                                <span className={`material-symbols-outlined ${isActive ? 'text-primary' : 'text-slate-400'}`}>
+                                    {step.icon}
+                                </span>
+                                <span className="truncate">{step.label}</span>
+                            </div>
+                            {completedSteps.includes(step.id) && (
+                                <span className="material-symbols-outlined text-green-500 text-[18px] animate-in fade-in zoom-in duration-300">
+                                    check_circle
+                                </span>
+                            )}
                         </button>
                     );
                 })}

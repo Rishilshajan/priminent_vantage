@@ -31,22 +31,51 @@ export async function login(formData: FormData) {
     }
 
     //Success Logging
+    const { data: { user } } = await authService.getUser()
+    let actorName = email
+    let orgName = undefined
+
+    if (user) {
+        const { createClient } = await import('@/lib/supabase/server')
+        const supabase = await createClient()
+        const { data: profile } = await supabase.from('profiles').select('first_name, last_name, role').eq('id', user.id).single()
+
+        if (profile) {
+            actorName = `${profile.first_name} ${profile.last_name || ''}`.trim()
+
+            if (profile.role === 'enterprise') {
+                const { data: orgMember } = await supabase
+                    .from('organization_members')
+                    .select('org_id, organizations(name)')
+                    .eq('user_id', user.id)
+                    .single()
+
+                if (orgMember?.organizations) {
+                    orgName = (orgMember.organizations as any).name
+                }
+            }
+        }
+    }
+
     await logServerEvent({
         level: 'SUCCESS',
         action: {
             code: 'AUTH_LOGIN_SUCCESS',
             category: 'SECURITY'
         },
-        actor: { type: 'user' },
-        message: 'User logged in successfully',
+        actor: {
+            type: 'user',
+            id: user?.id,
+            name: actorName
+        },
+        organization: orgName ? { org_name: orgName } : undefined,
+        message: orgName ? `${orgName} logged in successfully` : `${actorName} logged in successfully`,
         params: { email, flow }
     })
 
     revalidatePath('/', 'layout')
 
     //Handle Role-Based Redirection
-    const { data: { user } } = await authService.getUser()
-
     if (user) {
         const { createClient } = await import('@/lib/supabase/server')
         const supabase = await createClient()

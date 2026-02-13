@@ -292,16 +292,16 @@ export default function EmployerBrandingForm({ simulationId, onNext, onBack }: E
                     className="px-6 py-3 text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
                 >
                     <span className="material-symbols-outlined text-sm">arrow_back</span>
-                    Back to Metadata
+                    Back to Task Builder
                 </button>
 
                 <button
                     type="button"
                     onClick={handleNext}
-                    className="px-6 py-3 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
+                    className="px-6 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all flex items-center gap-2"
                 >
-                    Continue to Learning Outcomes
-                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    Finish & Save Simulation
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
                 </button>
             </div>
         </div>

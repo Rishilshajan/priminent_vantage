@@ -20,12 +20,20 @@ interface SimulationBuilderViewProps {
     initialSimulationId?: string;
 }
 
-export type BuilderStep = 'metadata' | 'branding' | 'outcomes' | 'tasks' | 'certification';
+export type BuilderStep = 'metadata' | 'tasks' | 'branding';
 
 export default function SimulationBuilderView({ organization, user, initialSimulationId }: SimulationBuilderViewProps) {
     const [currentStep, setCurrentStep] = useState<BuilderStep>('metadata');
     const [simulationId, setSimulationId] = useState<string | null>(initialSimulationId || null);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
+    const [completedSteps, setCompletedSteps] = useState<BuilderStep[]>([]);
+    const [saveTrigger, setSaveTrigger] = useState(0);
+
+    const markStepCompleted = (step: BuilderStep) => {
+        if (!completedSteps.includes(step)) {
+            setCompletedSteps(prev => [...prev, step]);
+        }
+    };
 
     const renderStep = () => {
         switch (currentStep) {
@@ -33,38 +41,36 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                 return (
                     <ProgramMetadataForm
                         simulationId={simulationId}
-                        onSimulationCreated={setSimulationId}
-                        onNext={() => setCurrentStep('branding')}
-                    />
-                );
-            case 'branding':
-                return (
-                    <EmployerBrandingForm
-                        simulationId={simulationId!}
-                        onNext={() => setCurrentStep('outcomes')}
-                        onBack={() => setCurrentStep('metadata')}
-                    />
-                );
-            case 'outcomes':
-                return (
-                    <LearningOutcomesForm
-                        simulationId={simulationId!}
-                        onNext={() => setCurrentStep('tasks')}
-                        onBack={() => setCurrentStep('branding')}
+                        saveTrigger={saveTrigger}
+                        onSimulationCreated={(id) => {
+                            setSimulationId(id);
+                        }}
+                        onNext={() => {
+                            markStepCompleted('metadata');
+                            setCurrentStep('tasks');
+                        }}
                     />
                 );
             case 'tasks':
                 return (
                     <TaskFlowBuilder
                         simulationId={simulationId!}
-                        onNext={() => setCurrentStep('certification')}
-                        onBack={() => setCurrentStep('outcomes')}
+                        onNext={() => {
+                            markStepCompleted('tasks');
+                            setCurrentStep('branding');
+                        }}
+                        onBack={() => setCurrentStep('metadata')}
                     />
                 );
-            case 'certification':
+            case 'branding':
                 return (
-                    <CertificationSetup
+                    <EmployerBrandingForm
                         simulationId={simulationId!}
+                        onNext={() => {
+                            markStepCompleted('branding');
+                            // Close builder or navigate away
+                            window.location.href = '/enterprise/simulations';
+                        }}
                         onBack={() => setCurrentStep('tasks')}
                     />
                 );
@@ -79,6 +85,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             <BuilderSidebar
                 currentStep={currentStep}
                 onStepChange={setCurrentStep}
+                completedSteps={completedSteps}
                 user={user}
                 canNavigate={!!simulationId}
             />
@@ -101,10 +108,10 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                 </div>
             </main>
 
-            {/* Right Sidebar - Task Map */}
-            {simulationId && (
+            {/* Right Sidebar - Task Map (Hidden as requested) */}
+            {/* {simulationId && (
                 <TaskMapSidebar simulationId={simulationId} />
-            )}
+            )} */}
         </div>
     );
 }
