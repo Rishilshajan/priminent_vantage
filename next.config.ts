@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '500mb',
     },
+    middlewareClientMaxBodySize: 500 * 1024 * 1024, // 500MB in bytes
   },
 };
 

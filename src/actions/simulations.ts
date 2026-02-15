@@ -442,7 +442,10 @@ export async function addTask(
         instructions?: string;
         what_you_learn?: string[];
         what_you_do?: string;
-        submission_type?: 'file_upload' | 'text' | 'mcq' | 'self_paced';
+        submission_type?: 'file_upload' | 'text' | 'mcq' | 'self_paced' | 'code_snippet';
+        submission_instructions?: string;
+        internal_notes?: string;
+        is_required?: boolean;
     }
 ) {
     const supabase = await createClient();
@@ -740,24 +743,26 @@ export async function removeSkill(simulationId: string, skillName: string) {
  * Upload asset (logo, banner, video, etc.)
  */
 export async function uploadAsset(formData: FormData) {
-    const simulationId = formData.get('simulationId') as string;
-    const assetType = formData.get('assetType') as 'logo' | 'banner' | 'video' | 'pdf' | 'dataset' | 'document';
-    const taskId = formData.get('taskId') as string | undefined;
-    const file = formData.get('file') as File;
-
-    if (!file || !(file instanceof File)) {
-        return { error: 'Invalid file upload' };
-    }
-
-    const supabase = await createClient();
-
     try {
+        const simulationId = formData.get('simulationId') as string;
+        const assetType = formData.get('assetType') as 'logo' | 'banner' | 'video' | 'pdf' | 'dataset' | 'document';
+        const taskId = formData.get('taskId') as string | undefined;
+        const file = formData.get('file') as File;
+
+        if (!file || !((file as any) instanceof File)) {
+            console.error("Upload Asset Check: File missing or invalid type", { file: !!file, isFile: file instanceof File });
+            return { error: 'Invalid file upload: No file received' };
+        }
+
+        const supabase = await createClient();
+
+        // 1. Get current user
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) {
             return { error: "Authentication required" };
         }
 
-        // 1. Get simulation to check its organization
+        // 2. Get simulation to check its organization
         const { data: simulation, error: simError } = await supabase
             .from('simulations')
             .select('org_id')
@@ -769,7 +774,7 @@ export async function uploadAsset(formData: FormData) {
             return { error: "Simulation not found" };
         }
 
-        // 2. Verify user belongs to that organization and has permissions
+        // 3. Verify user belongs to that organization and has permissions
         const { data: membership, error: membershipError } = await supabase
             .from('organization_members')
             .select('role, org_id')
@@ -797,9 +802,9 @@ export async function uploadAsset(formData: FormData) {
             document: 'tasks',
         };
 
-        const folder = folderMap[assetType];
+        const folder = folderMap[assetType] || 'misc';
 
-        // 3. Upload to S3
+        // 4. Upload to S3
         const { url, key } = await uploadToS3({
             file,
             fileName: file.name,
@@ -810,7 +815,7 @@ export async function uploadAsset(formData: FormData) {
             contentType: file.type,
         });
 
-        // 4. Save asset record
+        // 5. Save asset record
         const { data: asset, error: assetError } = await supabase
             .from('simulation_assets')
             .insert({
@@ -820,7 +825,7 @@ export async function uploadAsset(formData: FormData) {
                 file_name: file.name,
                 file_url: url,
                 file_size: file.size,
-                mime_type: file.type,
+                mime_type: file.type || 'application/octet-stream',
                 uploaded_by: user.id,
             })
             .select()
@@ -829,14 +834,14 @@ export async function uploadAsset(formData: FormData) {
         if (assetError) {
             // Rollback S3 upload
             await deleteFromS3(key);
-            console.error("Save asset error:", assetError);
-            return { error: "Failed to save asset record" };
+            console.error("Save asset database error:", assetError);
+            return { error: `Failed to save asset record: ${assetError.message}` };
         }
 
         return { data: { url, asset } };
     } catch (err: any) {
-        console.error("Upload asset error:", err);
-        return { error: err.message || "Failed to upload asset" };
+        console.error("Critical Upload Asset Error:", err);
+        return { error: `System Error during upload: ${err.message || 'Unknown processing error'}` };
     }
 }
 

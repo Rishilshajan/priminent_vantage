@@ -2,16 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { getSimulation, updateSimulation, uploadAsset } from "@/actions/simulations";
-import { FILE_VALIDATION, validateFileType, validateFileSize } from "@/lib/s3";
+import { FILE_VALIDATION, validateFileType, validateFileSize } from "@/lib/s3-shared";
 import { cn } from "@/lib/utils";
 
 interface EmployerBrandingFormProps {
     simulationId: string;
+    saveTrigger?: number;
+    onSaveSuccess?: () => void;
     onNext: () => void;
     onBack: () => void;
 }
 
-export default function EmployerBrandingForm({ simulationId, onNext, onBack }: EmployerBrandingFormProps) {
+export default function EmployerBrandingForm({ simulationId, saveTrigger, onSaveSuccess, onNext, onBack }: EmployerBrandingFormProps) {
     const [formData, setFormData] = useState({
         company_logo_url: '',
         banner_url: '',
@@ -45,6 +47,12 @@ export default function EmployerBrandingForm({ simulationId, onNext, onBack }: E
     useEffect(() => {
         loadSimulation();
     }, [simulationId]);
+
+    useEffect(() => {
+        if (saveTrigger && saveTrigger > 0) {
+            handleSave();
+        }
+    }, [saveTrigger]);
 
     const loadSimulation = async () => {
         const result = await getSimulation(simulationId);
@@ -113,7 +121,10 @@ export default function EmployerBrandingForm({ simulationId, onNext, onBack }: E
     };
 
     const handleSave = async () => {
-        await updateSimulation(simulationId, formData);
+        const result = await updateSimulation(simulationId, formData);
+        if (!result.error) {
+            onSaveSuccess?.();
+        }
     };
 
     const handleNext = async () => {

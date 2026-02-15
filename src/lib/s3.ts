@@ -1,31 +1,42 @@
+import 'server-only';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { UploadFileParams } from "./s3-shared";
+
+// These variables are only available on the server
+const AWS_REGION = process.env.AWS_REGION;
+const AWS_S3_BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME;
+const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
+const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+
+// Initialize S3 Client lazily or check envs in a way that doesn't crash module evaluation if possible,
+// but for server-side it's better to know early.
+if (!AWS_REGION || !AWS_S3_BUCKET_NAME || !AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
+    // Only log this once on the server
+    if (typeof window === 'undefined') {
+        console.warn("S3 Configuration is incomplete. Uploads will fail until environment variables are set.");
+    }
+}
 
 export const s3Client = new S3Client({
-    region: process.env.AWS_REGION!,
+    region: AWS_REGION || 'us-east-1',
     credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: AWS_SECRET_ACCESS_KEY || '',
     },
 });
 
-const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME!;
-
-export interface UploadFileParams {
-    file: File | Buffer;
-    fileName: string;
-    folder: string; // e.g., "logos", "banners", "videos", "tasks"
-    orgId: string;
-    simulationId?: string;
-    taskId?: string;
-    contentType?: string;
-}
+const BUCKET_NAME = AWS_S3_BUCKET_NAME || '';
 
 /**
  * Upload a file to S3
  */
 export async function uploadToS3(params: UploadFileParams): Promise<{ url: string; key: string }> {
     const { file, fileName, folder, orgId, simulationId, taskId, contentType } = params;
+
+    if (!BUCKET_NAME || !AWS_REGION) {
+        throw new Error("S3 is not configured. Missing AWS_S3_BUCKET_NAME or AWS_REGION.");
+    }
 
     // Construct S3 key path
     let key = `${folder}/${orgId}`;
@@ -43,20 +54,30 @@ export async function uploadToS3(params: UploadFileParams): Promise<{ url: strin
     }
 
     // Upload to S3
-    const command = new PutObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key,
-        Body: buffer,
-        ContentType: contentType || (file instanceof File ? file.type : 'application/octet-stream'),
-        // Note: ACL removed - bucket has ACLs disabled (AWS best practice)
-    });
+    try {
+        const command = new PutObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: key,
+            Body: buffer,
+            ContentType: contentType || (file instanceof File ? file.type : 'application/octet-stream'),
+        });
 
-    await s3Client.send(command);
+        await s3Client.send(command);
 
-    // Construct public URL
-    const url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+        // Construct public URL
+        const url = `https://${BUCKET_NAME}.s3.${AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
 
-    return { url, key };
+        return { url, key };
+    } catch (err: any) {
+        console.error("S3 Upload Error Detail:", {
+            message: err.message,
+            code: err.code,
+            requestId: err.$metadata?.requestId,
+            bucket: BUCKET_NAME,
+            key: key
+        });
+        throw new Error(`S3 Upload failed: ${err.message} (${err.code || 'unknown'})`);
+    }
 }
 
 /**
@@ -85,51 +106,6 @@ export async function getSignedS3Url(key: string, expiresIn: number = 3600): Pro
 }
 
 /**
- * Validate file type
- */
-export function validateFileType(file: File, allowedTypes: string[]): boolean {
-    return allowedTypes.includes(file.type);
-}
-
-/**
- * Validate file size (in MB)
- */
-export function validateFileSize(file: File, maxSizeMB: number): boolean {
-    const fileSizeMB = file.size / (1024 * 1024);
-    return fileSizeMB <= maxSizeMB;
-}
-
-/**
- * File validation constants
- */
-export const FILE_VALIDATION = {
-    LOGO: {
-        allowedTypes: ['image/png', 'image/svg+xml', 'image/jpeg'],
-        maxSizeMB: 2,
-    },
-    BANNER: {
-        allowedTypes: ['image/png', 'image/jpeg', 'image/jpg'],
-        maxSizeMB: 5,
-    },
-    VIDEO: {
-        allowedTypes: ['video/mp4', 'video/quicktime', 'video/x-msvideo'],
-        maxSizeMB: 500,
-    },
-    PDF: {
-        allowedTypes: ['application/pdf'],
-        maxSizeMB: 10,
-    },
-    DATASET: {
-        allowedTypes: ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-        maxSizeMB: 50,
-    },
-    DOCUMENT: {
-        allowedTypes: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-        maxSizeMB: 10,
-    },
-};
-
-/**
  * Extract S3 key from URL
  */
 export function extractS3KeyFromUrl(url: string): string | null {
@@ -142,3 +118,5 @@ export function extractS3KeyFromUrl(url: string): string | null {
         return null;
     }
 }
+
+export { validateFileType, validateFileSize, FILE_VALIDATION } from "./s3-shared";

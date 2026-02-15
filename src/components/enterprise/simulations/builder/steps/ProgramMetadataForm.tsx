@@ -9,10 +9,11 @@ interface ProgramMetadataFormProps {
     simulationId: string | null;
     saveTrigger?: number;
     onSimulationCreated: (id: string) => void;
+    onSaveSuccess?: () => void;
     onNext: () => void;
 }
 
-export default function ProgramMetadataForm({ simulationId, saveTrigger, onSimulationCreated, onNext }: ProgramMetadataFormProps) {
+export default function ProgramMetadataForm({ simulationId, saveTrigger, onSimulationCreated, onSaveSuccess, onNext }: ProgramMetadataFormProps) {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -93,8 +94,25 @@ export default function ProgramMetadataForm({ simulationId, saveTrigger, onSimul
 
         setSaving(true);
 
+        // [BUGFIX]: Collect pending input values that haven't been "entered" yet
+        let finalAnalyticsTags = [...formData.analytics_tags];
+        if (newTag.trim() && !finalAnalyticsTags.includes(newTag.trim())) {
+            finalAnalyticsTags.push(newTag.trim());
+            setFormData(prev => ({ ...prev, analytics_tags: finalAnalyticsTags }));
+            setNewTag('');
+        }
+
+        let finalLearningOutcomes = [...formData.learning_outcomes];
+        if (newOutcome.trim() && !finalLearningOutcomes.includes(newOutcome.trim())) {
+            finalLearningOutcomes.push(newOutcome.trim());
+            setFormData(prev => ({ ...prev, learning_outcomes: finalLearningOutcomes }));
+            setNewOutcome('');
+        }
+
         const dataToSave = {
             ...formData,
+            analytics_tags: finalAnalyticsTags,
+            learning_outcomes: finalLearningOutcomes,
         };
 
         if (simulationId) {
@@ -106,6 +124,7 @@ export default function ProgramMetadataForm({ simulationId, saveTrigger, onSimul
                 // Synchronize skills (atomic replace)
                 const { syncSimulationSkills } = await import("@/actions/simulations");
                 await syncSimulationSkills(simulationId, skills);
+                onSaveSuccess?.();
             }
         } else {
             // Create new simulation
@@ -120,6 +139,7 @@ export default function ProgramMetadataForm({ simulationId, saveTrigger, onSimul
 
                 // THEN notify parent (which triggers reload)
                 onSimulationCreated(newId);
+                onSaveSuccess?.();
             }
         }
 
