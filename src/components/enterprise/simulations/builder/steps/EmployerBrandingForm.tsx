@@ -1,9 +1,9 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { getSimulation, updateSimulation, uploadAsset } from "@/actions/simulations";
 import { FILE_VALIDATION, validateFileType, validateFileSize } from "@/lib/s3-shared";
 import { cn } from "@/lib/utils";
+import RichTextEditor from "../RichTextEditor";
+import { ArrowLeft, ArrowRight, CheckCircle2, Award, Globe } from "lucide-react";
 
 interface EmployerBrandingFormProps {
     simulationId: string;
@@ -11,9 +11,17 @@ interface EmployerBrandingFormProps {
     onSaveSuccess?: () => void;
     onNext: () => void;
     onBack: () => void;
+    certificateEnabled?: boolean;
 }
 
-export default function EmployerBrandingForm({ simulationId, saveTrigger, onSaveSuccess, onNext, onBack }: EmployerBrandingFormProps) {
+export default function EmployerBrandingForm({
+    simulationId,
+    saveTrigger,
+    onSaveSuccess,
+    onNext,
+    onBack,
+    certificateEnabled = true
+}: EmployerBrandingFormProps) {
     const [formData, setFormData] = useState({
         company_logo_url: '',
         banner_url: '',
@@ -137,12 +145,31 @@ export default function EmployerBrandingForm({ simulationId, saveTrigger, onSave
     }
 
     return (
-        <div className="space-y-8">
-            <section className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-primary/5 shadow-sm">
-                <div className="mb-6">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Employer Branding</h2>
-                    <p className="text-sm text-slate-500">Showcase your company culture to prospective talent.</p>
+        <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            {/* Header Section */}
+            <div className="flex items-end justify-between px-6 pb-2">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                        <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-sm border border-primary/10">
+                            <Globe size={24} />
+                        </div>
+                        <div className="space-y-0.5">
+                            <div className="flex items-center gap-3">
+                                <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                                    Employer Branding
+                                </h2>
+                                <span className="px-3 py-1 bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-black rounded-full uppercase tracking-[0.2em] shadow-lg shadow-slate-900/10">v2.0</span>
+                            </div>
+                            <p className="text-slate-400 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                                <CheckCircle2 size={12} className="text-green-500" />
+                                Culture & Strategic Positioning
+                            </p>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            <section className="bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-200/60 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.03)] dark:shadow-none">
 
                 <div className="space-y-6">
                     {/* Logo and Banner Upload */}
@@ -266,53 +293,64 @@ export default function EmployerBrandingForm({ simulationId, saveTrigger, onSave
                         </div>
                     </div>
 
-                    {/* Text Fields */}
-                    <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            About the Company
-                        </label>
-                        <textarea
-                            value={formData.about_company}
-                            onChange={(e) => setFormData(prev => ({ ...prev, about_company: e.target.value }))}
-                            className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
-                            placeholder="Tell candidates about your company..."
-                            rows={4}
-                        />
-                    </div>
+                    {/* Text Fields with Rich Text Editor */}
+                    <div className="space-y-8 pt-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <span className="size-1.5 rounded-full bg-primary" />
+                                About the Company
+                            </label>
+                            <RichTextEditor
+                                value={formData.about_company}
+                                onChange={(val) => setFormData(prev => ({ ...prev, about_company: val }))}
+                                placeholder="Describe your company culture, mission, and achievements..."
+                                minHeight="240px"
+                            />
+                        </div>
 
-                    <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            Why Work Here
-                        </label>
-                        <textarea
-                            value={formData.why_work_here}
-                            onChange={(e) => setFormData(prev => ({ ...prev, why_work_here: e.target.value }))}
-                            className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
-                            placeholder="What makes your company a great place to work..."
-                            rows={4}
-                        />
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <span className="size-1.5 rounded-full bg-primary" />
+                                Why Work Here
+                            </label>
+                            <RichTextEditor
+                                value={formData.why_work_here}
+                                onChange={(val) => setFormData(prev => ({ ...prev, why_work_here: val }))}
+                                placeholder="What makes your company unique? Mention benefits, growth opportunities, etc."
+                                minHeight="240px"
+                            />
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pt-8 border-t border-slate-100 dark:border-slate-800">
                 <button
                     type="button"
                     onClick={onBack}
-                    className="px-6 py-3 text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
+                    className="group px-8 py-4 text-xs font-black border-2 border-slate-100 dark:border-slate-800 text-slate-500 rounded-2xl hover:bg-white dark:hover:bg-slate-800 hover:border-slate-200 transition-all flex items-center gap-3 uppercase tracking-widest shadow-sm"
                 >
-                    <span className="material-symbols-outlined text-sm">arrow_back</span>
-                    Back to Task Builder
+                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                    Back to Assessment
                 </button>
 
                 <button
                     type="button"
                     onClick={handleNext}
-                    className="px-6 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all flex items-center gap-2"
+                    className="px-8 py-4 bg-green-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-green-700 shadow-xl shadow-green-600/20 transition-all flex items-center gap-3 group hover:scale-[1.02] active:scale-[0.98]"
                 >
-                    Finish & Save Simulation
-                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    {certificateEnabled ? (
+                        <>
+                            Continue to Certification
+                            <Award size={18} className="group-hover:translate-x-1 transition-transform" />
+                        </>
+                    ) : (
+                        <>
+                            Continue to Visibility
+                            <Globe size={18} className="group-hover:translate-x-1 transition-transform" />
+                        </>
+                    )}
                 </button>
             </div>
         </div>

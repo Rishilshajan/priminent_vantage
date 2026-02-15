@@ -32,6 +32,8 @@ export interface Simulation {
     created_at: string;
     updated_at: string;
     simulation_skills?: SimulationSkill[];
+    simulation_tasks?: SimulationTask[];
+    grading_criteria?: string | null;
 }
 
 export interface SimulationTask {
@@ -62,6 +64,8 @@ export interface SimulationTask {
     what_you_learn?: string[] | null;
     supporting_docs?: { name: string; url: string }[];
     video_assets?: { title: string; url: string; type: 'upload' | 'embed' }[];
+    quiz_data?: any; // { question: string, options: string[], answer: number }[]
+    code_config?: { language: string; starter_code?: string };
 }
 
 export interface SimulationSkill {
@@ -104,6 +108,7 @@ export const SimulationMetadataSchema = z.object({
     visibility: z.enum(['draft', 'internal', 'educator_assigned', 'public', 'private', 'archived']).default('draft'),
     analytics_tags: z.array(z.string()).default([]),
     certificate_enabled: z.boolean().default(true),
+    grading_criteria: z.string().optional().nullable(),
 });
 
 export const SimulationBrandingSchema = z.object({
@@ -135,6 +140,11 @@ export const SimulationTaskSchema = z.object({
     order_index: z.number().optional(),
     task_number: z.number().optional(),
     sort_order: z.number().optional(),
+    quiz_data: z.any().optional().nullable(), // Using z.any() for flexibility, valid type: { question: string, options: string[], answer: number }[]
+    code_config: z.object({
+        language: z.string().default('javascript'),
+        starter_code: z.string().optional()
+    }).optional().nullable(),
 });
 
 // ============================================

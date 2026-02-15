@@ -10,6 +10,7 @@ interface BuilderHeaderProps {
     simulationId: string | null;
     lastSaved: Date | null;
     onSave: () => void;
+    isSaving?: boolean;
 }
 
 const stepTitles: Record<BuilderStep, string> = {
@@ -17,10 +18,14 @@ const stepTitles: Record<BuilderStep, string> = {
     branding: 'Employer Branding',
     outcomes: 'Learning Outcomes',
     tasks: 'Task Flow Builder',
+    assessment: 'Assessment & Submission',
     certification: 'Certification Setup',
+    visibility: 'Visibility & Access',
+    analytics: 'Analytics Preview',
+    review: 'Review & Publish',
 };
 
-export default function BuilderHeader({ currentStep, simulationId, lastSaved, onSave }: BuilderHeaderProps) {
+export default function BuilderHeader({ currentStep, simulationId, lastSaved, onSave, isSaving }: BuilderHeaderProps) {
     const router = useRouter();
     const [isPublishing, setIsPublishing] = useState(false);
 
@@ -42,12 +47,7 @@ export default function BuilderHeader({ currentStep, simulationId, lastSaved, on
     const getLastSavedText = () => {
         if (!lastSaved) return 'Not saved yet';
 
-        const now = new Date();
-        const diff = Math.floor((now.getTime() - lastSaved.getTime()) / 1000);
-
-        if (diff < 60) return 'Saved just now';
-        if (diff < 3600) return `Saved ${Math.floor(diff / 60)}m ago`;
-        return `Saved ${Math.floor(diff / 3600)}h ago`;
+        return `Draft Saved at ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     };
 
     return (
@@ -70,9 +70,10 @@ export default function BuilderHeader({ currentStep, simulationId, lastSaved, on
                     <>
                         <button
                             onClick={onSave}
-                            className="px-4 py-2 text-sm font-semibold border border-primary/20 text-primary rounded-lg hover:bg-primary/5 transition-colors"
+                            disabled={isSaving}
+                            className={`px-4 py-2 text-sm font-semibold border border-primary/20 text-primary rounded-lg hover:bg-primary/5 transition-colors ${isSaving ? 'opacity-50 cursor-wait' : ''}`}
                         >
-                            Save Draft
+                            {isSaving ? 'Saving...' : 'Save Draft'}
                         </button>
 
                         <button

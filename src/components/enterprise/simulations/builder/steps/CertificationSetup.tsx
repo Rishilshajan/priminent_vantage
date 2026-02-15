@@ -5,13 +5,18 @@ import { useRouter } from "next/navigation";
 interface CertificationSetupProps {
     simulationId: string;
     onBack: () => void;
+    onNext?: () => void;
 }
 
-export default function CertificationSetup({ simulationId, onBack }: CertificationSetupProps) {
+export default function CertificationSetup({ simulationId, onBack, onNext }: CertificationSetupProps) {
     const router = useRouter();
 
     const handleFinish = () => {
-        router.push('/enterprise/simulations');
+        if (onNext) {
+            onNext();
+        } else {
+            router.push('/enterprise/simulations');
+        }
     };
 
     return (
@@ -68,16 +73,16 @@ export default function CertificationSetup({ simulationId, onBack }: Certificati
                     className="px-6 py-3 text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
                 >
                     <span className="material-symbols-outlined text-sm">arrow_back</span>
-                    Back to Tasks
+                    Back to Branding
                 </button>
 
                 <button
                     type="button"
                     onClick={handleFinish}
-                    className="px-8 py-3 text-sm font-semibold bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all flex items-center gap-2"
+                    className="px-8 py-3 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
                 >
-                    <span className="material-symbols-outlined text-sm">check_circle</span>
-                    Finish & Return to Simulations
+                    Continue to Visibility
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </button>
             </div>
         </div>

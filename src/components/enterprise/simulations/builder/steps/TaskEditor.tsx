@@ -13,7 +13,11 @@ import {
     ListChecks,
     Type,
     Eye,
-    Layers
+    Layers,
+    CheckCircle2,
+    Code2,
+    Terminal,
+    AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +36,8 @@ interface TaskEditorProps {
     onClose: () => void;
     onUpdate: (updatedTask: SimulationTask) => void;
     inline?: boolean;
+    saveTrigger?: number;
+    onSaveSuccess?: () => void;
 }
 
 const ESTIMATED_TIME_OPTIONS = [
@@ -44,12 +50,21 @@ const ESTIMATED_TIME_OPTIONS = [
 const DELIVERABLE_TYPES = [
     { id: 'TEXT', label: 'Text Submission', icon: Type, description: 'Student writes a response in a text editor' },
     { id: 'FILE_UPLOAD', label: 'File Upload', icon: FileUp, description: 'Student uploads a PDF, DOCX, or other file' },
-    { id: 'MULTIPLE_CHOICE', label: 'Multiple Choice', icon: ListChecks, description: 'Coming Soon', disabled: true },
-    { id: 'CODE_SNIPPET', label: 'Code Snippet', icon: Layers, description: 'Coming Soon', disabled: true },
-    { id: 'REFLECTION_ONLY', label: 'Reflection Only', icon: Eye, description: 'Coming Soon', disabled: true },
+    { id: 'MULTIPLE_CHOICE', label: 'Multiple Choice', icon: ListChecks, description: 'Auto-graded quiz with options' },
+    { id: 'CODE_SNIPPET', label: 'Code Snippet', icon: Code2, description: 'Code editor with syntax highlighting' },
+    { id: 'REFLECTION_ONLY', label: 'Reflection Only', icon: Eye, description: 'Student marks as complete after reading', disabled: true },
 ];
 
-export default function TaskEditor({ task, onClose, onUpdate, inline }: TaskEditorProps) {
+const PROGRAMMING_LANGUAGES = [
+    { value: 'javascript', label: 'JavaScript' },
+    { value: 'python', label: 'Python' },
+    { value: 'java', label: 'Java' },
+    { value: 'cpp', label: 'C++' },
+    { value: 'html', label: 'HTML/CSS' },
+    { value: 'sql', label: 'SQL' },
+];
+
+export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigger, onSaveSuccess }: TaskEditorProps) {
     const [formData, setFormData] = useState<Partial<SimulationTask>>({
         ...task,
         learning_objectives: task.learning_objectives || task.what_you_learn || [],
@@ -60,32 +75,75 @@ export default function TaskEditor({ task, onClose, onUpdate, inline }: TaskEdit
         introduction: task.introduction || task.description || "",
     });
 
+    // MCQ State
+    const [quizData, setQuizData] = useState<any[]>(task.quiz_data || []);
+
+    // Code Snippet State
+    const [codeConfig, setCodeConfig] = useState<{ language: string; starter_code?: string }>(
+        task.code_config || { language: 'javascript', starter_code: '' }
+    );
+
     const [saving, setSaving] = useState(false);
+    const [saveSource, setSaveSource] = useState<'global' | 'local_publish' | null>(null);
     const [uploading, setUploading] = useState(false);
     const [videoLink, setVideoLink] = useState(task.video_url || "");
     const [customMinutes, setCustomMinutes] = useState("");
 
-    const handleSave = async (options: { status?: 'ready' | 'incomplete', shouldClose?: boolean } = {}) => {
+    const [error, setError] = useState<string | null>(null);
+
+    // Listen for global save trigger
+    useEffect(() => {
+        if (saveTrigger && saveTrigger > 0) {
+            handleSave({ status: formData.status || 'incomplete', shouldClose: false, source: 'global' });
+        }
+    }, [saveTrigger]);
+
+    const handleSave = async (options: { status?: 'ready' | 'incomplete', shouldClose?: boolean, source?: 'global' | 'local_publish' } = {}) => {
+        // Prevent saving if already in progress or if uploading a file
+        if (saving) return;
+
+        if (uploading) {
+            setError("Please wait for the file upload to complete before saving.");
+            return;
+        }
+
         setSaving(true);
+        if (options.source) setSaveSource(options.source);
+        setError(null);
+
         // Prepare final data
         const finalData = {
             ...formData,
             status: options.status || formData.status || 'incomplete',
             estimated_time: formData.estimated_time === 'Custom' ? `${customMinutes} mins` : formData.estimated_time,
             video_url: videoLink,
+            quiz_data: quizData,
+            code_config: codeConfig,
         };
 
-        const result = await updateTask(task.id, finalData as any);
-        if (!result.error && result.data) {
-            onUpdate(result.data);
-            if (options.shouldClose && !inline) {
-                onClose();
-            } else if (options.shouldClose && inline) {
-                // If inline and we should close, it means we return to the list
-                onClose();
+        try {
+            const result = await updateTask(task.id, finalData as any);
+
+            if (result.error) {
+                setError(result.error);
+                setSaving(false);
+                return;
             }
+
+            if (result.data) {
+                onUpdate(result.data);
+                if (options.shouldClose) {
+                    onClose();
+                } else if (onSaveSuccess) {
+                    onSaveSuccess();
+                }
+            }
+        } catch (err) {
+            setError('An unexpected error occurred while saving.');
+            console.error(err);
+        } finally {
+            setSaving(false);
         }
-        setSaving(false);
     };
 
     const addLearningObjective = () => {
@@ -360,17 +418,57 @@ export default function TaskEditor({ task, onClose, onUpdate, inline }: TaskEdit
 
                             <div className="space-y-4">
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Video Resource (YouTube, Loom)</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={videoLink}
-                                        onChange={e => setVideoLink(e.target.value)}
-                                        className="flex-1 bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
-                                        placeholder="Paste host URL"
-                                    />
-                                    <button className="px-6 bg-slate-100 dark:bg-slate-800 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors text-xs font-bold">
-                                        Verify
-                                    </button>
+                                <div className="space-y-2">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={videoLink}
+                                            onChange={e => setVideoLink(e.target.value)}
+                                            className="flex-1 bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
+                                            placeholder="Paste host URL"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+                                                const loomRegex = /^(https?:\/\/)?(www\.)?loom\.com\/share\/.+$/;
+
+                                                if (youtubeRegex.test(videoLink) || loomRegex.test(videoLink)) {
+                                                    // Valid case
+                                                    const btn = document.getElementById('verify-btn');
+                                                    if (btn) {
+                                                        btn.textContent = 'Verified!';
+                                                        btn.classList.add('bg-green-500', 'text-white');
+                                                        btn.classList.remove('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800');
+                                                        setTimeout(() => {
+                                                            btn.textContent = 'Verify';
+                                                            btn.classList.remove('bg-green-500', 'text-white');
+                                                            btn.classList.add('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800');
+                                                        }, 2000);
+                                                    }
+                                                } else {
+                                                    // Invalid case
+                                                    const btn = document.getElementById('verify-btn');
+                                                    if (btn) {
+                                                        btn.textContent = 'Invalid URL';
+                                                        btn.classList.add('bg-red-500', 'text-white');
+                                                        btn.classList.remove('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800');
+                                                        setTimeout(() => {
+                                                            btn.textContent = 'Verify';
+                                                            btn.classList.remove('bg-red-500', 'text-white');
+                                                            btn.classList.add('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800');
+                                                        }, 2000);
+                                                    }
+                                                }
+                                            }}
+                                            id="verify-btn"
+                                            className="px-6 bg-slate-100 dark:bg-slate-800 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors text-xs font-bold w-24"
+                                        >
+                                            Verify
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 pl-1">
+                                        Supported: YouTube, Loom
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -413,6 +511,155 @@ export default function TaskEditor({ task, onClose, onUpdate, inline }: TaskEdit
                                 ))}
                             </div>
 
+                            {/* MULTIPLE CHOICE BUILDER */}
+                            {formData.deliverable_type === 'MULTIPLE_CHOICE' && (
+                                <div className="space-y-4 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Quiz Questions</label>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setQuizData([...quizData, { question: '', options: ['', ''], answer: 0 }])}
+                                            className="h-8 text-xs gap-2"
+                                        >
+                                            <Plus size={14} /> Add Question
+                                        </Button>
+                                    </div>
+
+                                    {quizData.length === 0 ? (
+                                        <div className="text-center py-8 text-slate-400 text-sm border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-lg">
+                                            No questions added yet. Click "Add Question" to start.
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            {quizData.map((q, qIdx) => (
+                                                <div key={qIdx} className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm relative group">
+                                                    <button
+                                                        onClick={() => setQuizData(quizData.filter((_, i) => i !== qIdx))}
+                                                        className="absolute top-2 right-2 p-2 text-slate-300 hover:text-red-500 transition-colors"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <label className="text-xs text-slate-400 font-bold mb-1 block">Question {qIdx + 1}</label>
+                                                            <Input
+                                                                value={q.question}
+                                                                onChange={(e) => {
+                                                                    const newData = [...quizData];
+                                                                    newData[qIdx].question = e.target.value;
+                                                                    setQuizData(newData);
+                                                                }}
+                                                                placeholder="Enter question here..."
+                                                                className="font-medium"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2 pl-4 border-l-2 border-slate-100 dark:border-slate-800">
+                                                            {q.options.map((opt: string, oIdx: number) => (
+                                                                <div key={oIdx} className="flex items-center gap-3">
+                                                                    <div
+                                                                        onClick={() => {
+                                                                            const newData = [...quizData];
+                                                                            newData[qIdx].answer = oIdx;
+                                                                            setQuizData(newData);
+                                                                        }}
+                                                                        className={`cursor-pointer size-5 rounded-full border flex items-center justify-center transition-all ${q.answer === oIdx ? 'border-primary bg-primary text-white' : 'border-slate-300 text-transparent hover:border-primary'}`}
+                                                                    >
+                                                                        <CheckCircle2 size={12} />
+                                                                    </div>
+                                                                    <Input
+                                                                        value={opt}
+                                                                        onChange={(e) => {
+                                                                            const newData = [...quizData];
+                                                                            newData[qIdx].options[oIdx] = e.target.value;
+                                                                            setQuizData(newData);
+                                                                        }}
+                                                                        placeholder={`Option ${oIdx + 1}`}
+                                                                        className="h-9 text-sm"
+                                                                    />
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            const newData = [...quizData];
+                                                                            newData[qIdx].options = newData[qIdx].options.filter((_: any, i: number) => i !== oIdx);
+                                                                            if (q.answer === oIdx) newData[qIdx].answer = 0;
+                                                                            setQuizData(newData);
+                                                                        }}
+                                                                        className="text-slate-300 hover:text-red-500"
+                                                                    >
+                                                                        <X size={14} />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    const newData = [...quizData];
+                                                                    newData[qIdx].options.push('');
+                                                                    setQuizData(newData);
+                                                                }}
+                                                                className="h-6 text-xs text-primary hover:text-primary/80 px-2 mt-2"
+                                                            >
+                                                                + Add Option
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* CODE SNIPPET BUILDER */}
+                            {formData.deliverable_type === 'CODE_SNIPPET' && (
+                                <div className="space-y-4 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
+                                            <Terminal size={18} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">Code Environment Configuration</h4>
+                                            <p className="text-xs text-slate-500">Setup the coding challenge environment</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="col-span-2 sm:col-span-1">
+                                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Language</label>
+                                            <Select
+                                                value={codeConfig.language}
+                                                onValueChange={(val) => setCodeConfig(prev => ({ ...prev, language: val }))}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select Language" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {PROGRAMMING_LANGUAGES.map(lang => (
+                                                        <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="col-span-2">
+                                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Starter Code (Optional)</label>
+                                            <div className="relative">
+                                                <textarea
+                                                    value={codeConfig.starter_code || ''}
+                                                    onChange={(e) => setCodeConfig(prev => ({ ...prev, starter_code: e.target.value }))}
+                                                    className="w-full h-48 bg-slate-900 text-slate-50 font-mono text-sm p-4 rounded-lg focus:ring-2 focus:ring-primary outline-none resize-none"
+                                                    placeholder="// Write starter code here..."
+                                                />
+                                                <div className="absolute top-2 right-2 text-[10px] text-slate-500 font-mono bg-slate-800 px-2 py-1 rounded">
+                                                    {codeConfig.language}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="space-y-4">
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Submission Instructions (Rich Text)</label>
                                 <RichTextEditor
@@ -422,27 +669,6 @@ export default function TaskEditor({ task, onClose, onUpdate, inline }: TaskEdit
                                     minHeight="140px"
                                 />
                             </div>
-                        </div>
-                    </section>
-
-                    {/* SECTION 7: INTERNAL NOTES */}
-                    <section className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-primary/5 shadow-sm overflow-hidden relative">
-                        <div className="mb-6">
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                                Internal Admin Notes
-                            </h2>
-                            <p className="text-sm text-slate-500">
-                                Admin only notes. Guidance for evaluators and grading rubrics.
-                            </p>
-                        </div>
-                        <div className="space-y-4">
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Grading Rubric & Guidance</label>
-                            <RichTextEditor
-                                value={formData.internal_notes || ""}
-                                onChange={(val: string) => setFormData(prev => ({ ...prev, internal_notes: val }))}
-                                placeholder="Add specific grading criteria..."
-                                minHeight="180px"
-                            />
                         </div>
                     </section>
 
@@ -491,6 +717,17 @@ export default function TaskEditor({ task, onClose, onUpdate, inline }: TaskEdit
                 </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+                <div className="mx-8 mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 rounded-xl flex items-center gap-3 text-red-600 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <AlertCircle size={18} />
+                    <p className="text-sm font-bold">{error}</p>
+                    <button onClick={() => setError(null)} className="ml-auto p-1 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-full transition-colors">
+                        <X size={14} />
+                    </button>
+                </div>
+            )}
+
             {/* Footer */}
             <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-8 py-6 flex items-center justify-between sticky bottom-0 z-20 shadow-sm">
                 <button
@@ -501,19 +738,13 @@ export default function TaskEditor({ task, onClose, onUpdate, inline }: TaskEdit
                 </button>
                 <div className="flex gap-4">
                     <button
-                        onClick={() => handleSave({ status: 'incomplete', shouldClose: false })}
-                        disabled={saving}
-                        className="px-6 py-3 text-sm font-semibold border border-primary/20 text-primary rounded-lg hover:bg-primary/5 transition-colors disabled:opacity-50"
-                    >
-                        Save Draft
-                    </button>
-                    <button
-                        onClick={() => handleSave({ status: 'ready', shouldClose: true })}
-                        disabled={saving}
+                        onClick={() => handleSave({ status: 'ready', shouldClose: true, source: 'local_publish' })}
+                        disabled={saving || uploading}
                         className="px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all disabled:opacity-50 flex items-center gap-2 font-semibold"
                     >
-                        {saving ? "Saving..." : "Publish & Return"}
-                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                        {uploading ? "Uploading..." : (saving && saveSource === 'local_publish' ? "Saving..." : "Publish & Return")}
+                        {!uploading && !saving && <span className="material-symbols-outlined text-sm">arrow_forward</span>}
+                        {uploading && <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                     </button>
                 </div>
             </div>

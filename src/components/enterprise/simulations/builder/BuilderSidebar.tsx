@@ -10,15 +10,22 @@ interface BuilderSidebarProps {
     completedSteps: BuilderStep[];
     user: User;
     canNavigate: boolean;
+    certificateEnabled?: boolean;
 }
 
 const steps = [
     { id: 'metadata' as BuilderStep, label: 'Program Metadata', icon: 'settings' },
+    { id: 'outcomes' as BuilderStep, label: 'Learning Outcomes', icon: 'school' },
     { id: 'tasks' as BuilderStep, label: 'Task Flow Builder', icon: 'account_tree' },
+    { id: 'assessment' as BuilderStep, label: 'Assessment & Submission', icon: 'quiz' },
     { id: 'branding' as BuilderStep, label: 'Employer Branding', icon: 'branding_watermark' },
+    { id: 'certification' as BuilderStep, label: 'Certificate Management', icon: 'verified' },
+    { id: 'visibility' as BuilderStep, label: 'Visibility & Access', icon: 'visibility' },
+    { id: 'analytics' as BuilderStep, label: 'Analytics (Preview)', icon: 'analytics' },
+    { id: 'review' as BuilderStep, label: 'Review & Publish', icon: 'publish' },
 ];
 
-export default function BuilderSidebar({ currentStep, onStepChange, completedSteps, user, canNavigate }: BuilderSidebarProps) {
+export default function BuilderSidebar({ currentStep, onStepChange, completedSteps, user, canNavigate, certificateEnabled = false }: BuilderSidebarProps) {
     return (
         <aside className="w-64 flex-shrink-0 border-r border-primary/10 bg-white dark:bg-slate-900 flex flex-col">
             {/* Logo */}
@@ -47,8 +54,44 @@ export default function BuilderSidebar({ currentStep, onStepChange, completedSte
                     Builder Steps
                 </div>
                 {steps.map((step) => {
+                    // Conditional Rendering for Certification
+                    if (step.id === 'certification' && !certificateEnabled) return null;
+
                     const isActive = currentStep === step.id;
-                    const isClickable = canNavigate || step.id === 'metadata';
+                    const isCompleted = completedSteps.includes(step.id);
+
+                    // Sequential Locking Logic
+                    let isLocked = true;
+                    const stepOrder: BuilderStep[] = ['metadata', 'outcomes', 'tasks', 'assessment', 'branding', 'certification', 'visibility', 'analytics', 'review'];
+                    const stepIndex = stepOrder.indexOf(step.id);
+
+                    if (stepIndex === 0) {
+                        isLocked = false;
+                    } else {
+                        // Check if previous step is completed
+                        // Special handling for certification skipping:
+                        // If previous step is branding, and we are at certification...
+                        // But wait, if certification is disabled, we don't render it (handled above).
+
+                        // General rule: Is the IMMEDIATE previous step completed?
+                        // If we skip certification (branding -> visibility), we need to check if branding is done when checking visibility lock.
+
+                        let prevStepId = stepOrder[stepIndex - 1];
+
+                        // Adjust previous step for Visibility if Certification is skipped
+                        if (step.id === 'visibility' && !certificateEnabled) {
+                            prevStepId = 'branding';
+                        }
+
+                        // If the previous step is completed, we unlock this one.
+                        // OR if we are just navigating back (handled by isClickable check later? No, isClickable checks lock)
+
+                        isLocked = !completedSteps.includes(prevStepId);
+                    }
+
+                    // Allow navigation if unlocked OR already completed (to revisit)
+                    // Also respect global canNavigate (e.g. if simulationId exists)
+                    const isClickable = (canNavigate && !isLocked) || isCompleted;
 
                     return (
                         <button
@@ -61,7 +104,7 @@ export default function BuilderSidebar({ currentStep, onStepChange, completedSte
                                     ? 'bg-primary/10 text-primary font-semibold'
                                     : isClickable
                                         ? 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
-                                        : 'text-slate-300 dark:text-slate-700 cursor-not-allowed'
+                                        : 'text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-60'
                                 }
                             `}
                         >
@@ -71,9 +114,14 @@ export default function BuilderSidebar({ currentStep, onStepChange, completedSte
                                 </span>
                                 <span className="truncate">{step.label}</span>
                             </div>
-                            {completedSteps.includes(step.id) && (
+                            {isCompleted && (
                                 <span className="material-symbols-outlined text-green-500 text-[18px] animate-in fade-in zoom-in duration-300">
                                     check_circle
+                                </span>
+                            )}
+                            {isLocked && !isCompleted && (
+                                <span className="material-symbols-outlined text-slate-300 text-[16px]">
+                                    lock
                                 </span>
                             )}
                         </button>
