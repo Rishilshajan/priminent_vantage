@@ -36,17 +36,22 @@ export default function ReviewPublish({ simulationId, onBack, canPublish }: Revi
         if (!simulationId || !canPublish) return;
         setPublishing(true);
 
-        // Final update to set status to published if needed, or just redirect
-        // Ideally we have a publish action
-        // For now, let's assume we just update visibility to public if it was draft? 
-        // Or strictly use the status field.
+        try {
+            const result = await publishSimulation(simulationId);
 
-        // Simulating publish action
-        // const result = await updateSimulation(simulationId, { status: 'published' });
-        // Since we don't have a direct 'publish' button in the builder usually, let's treat this as the final save.
+            if (result.error) {
+                alert(result.error); // Basic error handling, could be improved with a toast
+                setPublishing(false);
+                return;
+            }
 
-        // Redirect to dashboard
-        router.push('/enterprise/simulations');
+            // Redirect to dashboard on success
+            router.push('/enterprise/simulations');
+        } catch (err) {
+            console.error("Failed to publish:", err);
+            alert("An unexpected error occurred while publishing.");
+            setPublishing(false);
+        }
     };
 
     if (loading) {

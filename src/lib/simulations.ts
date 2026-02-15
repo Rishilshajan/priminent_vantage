@@ -34,6 +34,7 @@ export interface Simulation {
     simulation_skills?: SimulationSkill[];
     simulation_tasks?: SimulationTask[];
     grading_criteria?: string | null;
+    certificate_director_name?: string | null;
 }
 
 export interface SimulationTask {
@@ -109,6 +110,7 @@ export const SimulationMetadataSchema = z.object({
     analytics_tags: z.array(z.string()).default([]),
     certificate_enabled: z.boolean().default(true),
     grading_criteria: z.string().optional().nullable(),
+    certificate_director_name: z.string().optional().nullable(),
 });
 
 export const SimulationBrandingSchema = z.object({

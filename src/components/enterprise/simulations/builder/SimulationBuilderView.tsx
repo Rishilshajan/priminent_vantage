@@ -253,6 +253,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                 return (
                     <CertificationSetup
                         simulationId={simulationId!}
+                        organizationName={organization.name}
                         onBack={() => navigateToStep('branding')}
                         onNext={() => {
                             markStepCompleted('certification');
