@@ -13,8 +13,9 @@ export const metadata = {
     title: "Enterprise Dashboard - Prominent Vantage",
 }
 
-export default async function EnterpriseDashboardPage() {
-    const result = await getDashboardMetrics();
+export default async function EnterpriseDashboardPage({ searchParams }: { searchParams: { period?: string } }) {
+    const period = searchParams?.period || 'all';
+    const result = await getDashboardMetrics(period);
 
     if (result.error || !result.data) {
         return (
@@ -52,13 +53,21 @@ export default async function EnterpriseDashboardPage() {
                             <p className="text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider text-[11px]">Real-time performance metrics for {orgName}</p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Button variant="outline" className="h-11 px-5 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-2xl shadow-sm text-xs font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-all gap-2">
-                                <Calendar className="size-4" />
-                                Last 30 Days
+                            <Button
+                                asChild
+                                variant="outline"
+                                className={`h-11 px-5 border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm text-xs font-black uppercase tracking-widest transition-all gap-2 ${period === '30d' ? 'bg-slate-100 dark:bg-slate-800 text-primary' : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-primary'}`}
+                            >
+                                <a href={period === '30d' ? '/enterprise/dashboard' : '/enterprise/dashboard?period=30d'}>
+                                    <Calendar className="size-4" />
+                                    {period === '30d' ? 'Showing 30 Days' : 'Last 30 Days'}
+                                </a>
                             </Button>
-                            <Button className="h-11 px-6 bg-primary hover:bg-primary/90 text-white font-black rounded-2xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest gap-2">
-                                <Plus className="size-5" />
-                                New Simulation
+                            <Button asChild className="h-11 px-6 bg-primary hover:bg-primary/90 text-white font-black rounded-2xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest gap-2">
+                                <a href="/enterprise/simulations/create">
+                                    <Plus className="size-5" />
+                                    New Simulation
+                                </a>
                             </Button>
                         </div>
                     </div>

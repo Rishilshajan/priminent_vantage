@@ -1023,7 +1023,7 @@ export async function getAccessCodesData() {
 /**
  * Fetches metrics for the Enterprise Dashboard
  */
-export async function getDashboardMetrics() {
+export async function getDashboardMetrics(period: string = 'all') {
     const supabase = await createClient();
 
     try {
@@ -1063,35 +1063,117 @@ export async function getDashboardMetrics() {
 
         if (!member) return { error: "Organization not found" };
 
-        // 2. Mock metrics for now based on the design provided
-        // In a real scenario, these would be calculated from simulations/completions tables
+        const orgId = member.org_id;
+
+        // 2. Fetch Real Metrics
+
+        // Date Filtering Logic
+        let dateFilter = null;
+        if (period === '30d') {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            dateFilter = thirtyDaysAgo.toISOString();
+        }
+
+        // Fetch Simulations (for Active Programs)
+        const { data: simulations } = await supabase
+            .from('simulations')
+            .select('id, title, industry, status, duration, created_at, simulation_enrollments(count)')
+            .eq('org_id', orgId)
+            .eq('status', 'published')
+            .order('updated_at', { ascending: false });
+
+        // Fetch Enrollments (for Total Counts & Completion Rate)
+        // Better approach: Get all simulation IDs for this org first.
+        const { data: orgSims } = await supabase.from('simulations').select('id, industry').eq('org_id', orgId);
+        const simIds = orgSims?.map(s => s.id) || [];
+
+        let enrollmentsData: any[] = [];
+        if (simIds.length > 0) {
+            let query = supabase
+                .from('simulation_enrollments')
+                .select('id, status, enrolled_at, completed_at, simulation_id')
+                .in('simulation_id', simIds);
+
+            if (dateFilter) {
+                query = query.gte('enrolled_at', dateFilter);
+            }
+
+            const { data } = await query;
+            enrollmentsData = data || [];
+        }
+
+        const totalEnrollmentsCount = enrollmentsData.length;
+        const completedCount = enrollmentsData.filter(e => e.status === 'completed').length;
+
+        const completionRateValue = totalEnrollmentsCount > 0
+            ? ((completedCount / totalEnrollmentsCount) * 100).toFixed(1)
+            : "0.0";
+
+        // Calculated Stats
         const stats = {
-            totalEnrollments: { value: "24,592", change: "+12.4%", trend: "up" },
-            completionRate: { value: "68.4%", change: "+5.2%", trend: "up" },
-            avgTimeToComplete: { value: "4.2 Days", change: "Avg.", trend: "neutral" },
-            skillScore: { value: "4.8/5.0", change: "+0.8", trend: "up" }
+            totalEnrollments: { value: totalEnrollmentsCount.toLocaleString(), change: period === '30d' ? "Last 30 Days" : "All Time", trend: "neutral" },
+            completionRate: { value: `${completionRateValue}%`, change: "Avg.", trend: "neutral" },
+            avgTimeToComplete: { value: "4.2 Days", change: "Avg.", trend: "neutral" }, // Placeholder until we calculate time diff
+            skillScore: { value: "4.8/5.0", change: "+0.8", trend: "up" } // Placeholder
         };
 
+        // Chart Data (Mocking distribution for now as it requires complex grouping)
         const chartData = [
-            { month: "Jan", enrollments: 45, completions: 25 },
-            { month: "Feb", enrollments: 60, completions: 35 },
-            { month: "Mar", enrollments: 55, completions: 40 },
-            { month: "Apr", enrollments: 85, completions: 60 },
-            { month: "May", enrollments: 70, completions: 50 },
-            { month: "Jun", enrollments: 95, completions: 75 },
+            { month: "Jan", enrollments: Math.floor(totalEnrollmentsCount * 0.1), completions: Math.floor(completedCount * 0.1) },
+            { month: "Feb", enrollments: Math.floor(totalEnrollmentsCount * 0.15), completions: Math.floor(completedCount * 0.15) },
+            { month: "Mar", enrollments: Math.floor(totalEnrollmentsCount * 0.12), completions: Math.floor(completedCount * 0.12) },
+            { month: "Apr", enrollments: Math.floor(totalEnrollmentsCount * 0.2), completions: Math.floor(completedCount * 0.2) },
+            { month: "May", enrollments: Math.floor(totalEnrollmentsCount * 0.18), completions: Math.floor(completedCount * 0.18) },
+            { month: "Jun", enrollments: Math.floor(totalEnrollmentsCount * 0.25), completions: Math.floor(completedCount * 0.25) },
         ];
 
-        const activePrograms = [
-            { id: 1, name: "Q3 Market Analyst Simulation", department: "Finance & Investment", status: "STABLE", duration: "42 Days", enrolled: "1,240", rate: 85, color: "primary" },
-            { id: 2, name: "Cyber Response Protocol", department: "IT & Security", status: "SCALING", duration: "12 Days", enrolled: "856", rate: 72, color: "primary" },
-            { id: 3, name: "Legacy Systems Transition", department: "Operations", status: "CRITICAL", duration: "68 Days", enrolled: "412", rate: 28, color: "red" },
-        ];
+        // Active Programs Formatting
+        const activePrograms = simulations?.slice(0, 5).map(sim => {
+            const enrolledCount = sim.simulation_enrollments?.[0]?.count || 0;
+            // Mocking 'rate' and 'status' visual indicators for now
+            return {
+                id: sim.id,
+                name: sim.title,
+                department: sim.industry || "General",
+                status: "STABLE",
+                duration: sim.duration || "N/A",
+                enrolled: enrolledCount.toLocaleString(),
+                rate: Math.floor(Math.random() * 30) + 70, // Mock rate 70-100%
+                color: "primary"
+            };
+        }) || [];
 
-        const topDepartments = [
-            { name: "Human Resources", code: "HR", score: 94, color: "green" },
-            { name: "Engineering", code: "EN", score: 82, color: "primary" },
-            { name: "Sales", code: "SL", score: 65, color: "primary" },
-        ];
+        // Top Departments Logic
+        const departmentStats = new Map<string, { count: number, totalScore: number }>();
+        const simIndustryMap = new Map(orgSims?.map(s => [s.id, s.industry || 'General']));
+
+        enrollmentsData.forEach(enrollment => {
+            const industry = simIndustryMap.get(enrollment.simulation_id) || 'General';
+            const current = departmentStats.get(industry) || { count: 0, totalScore: 0 };
+
+            departmentStats.set(industry, {
+                count: current.count + 1,
+                totalScore: current.totalScore + (enrollment.status === 'completed' ? 100 : 50) // Mock score based on completion
+            });
+        });
+
+        const topDepartments = Array.from(departmentStats.entries())
+            .map(([name, stats]) => ({
+                name,
+                code: name.substring(0, 2).toUpperCase(),
+                score: Math.min(100, Math.round(stats.totalScore / stats.count)), // Average score
+                color: "primary" as const
+            }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 3);
+
+        // Fallback if no data
+        if (topDepartments.length === 0) {
+            topDepartments.push(
+                { name: "No Data", code: "NA", score: 0, color: "primary" }
+            );
+        }
 
         return {
             success: true,
@@ -1141,8 +1223,8 @@ export async function getSimulationsMetrics() {
             .from('simulations')
             .select(`
                 *,
-                simulation_tasks(count),
-                simulation_skills(count)
+                simulation_tasks(id),
+                simulation_skills(id)
             `)
             .eq('org_id', orgId)
             .order('updated_at', { ascending: false });

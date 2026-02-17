@@ -76,6 +76,7 @@ export default function SimulationsList({ simulations }: SimulationsListProps) {
             {simulations.map((simulation) => {
                 const taskCount = Array.isArray(simulation.simulation_tasks) ? simulation.simulation_tasks.length : 0;
                 const skillCount = Array.isArray(simulation.simulation_skills) ? simulation.simulation_skills.length : 0;
+                const bannerUrl = simulation.program_banner_url || simulation.company_logo_url;
 
                 return (
                     <div
@@ -83,20 +84,26 @@ export default function SimulationsList({ simulations }: SimulationsListProps) {
                         className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden group"
                     >
                         {/* Banner/Logo */}
-                        <div className="h-32 bg-gradient-to-br from-primary/10 to-primary/5 relative overflow-hidden">
-                            {simulation.program_banner_url ? (
+                        <div className="h-32 bg-gradient-to-br from-primary/10 to-primary/5 relative overflow-hidden group-hover:scale-105 transition-transform duration-500">
+                            {bannerUrl ? (
                                 <img
-                                    src={simulation.program_banner_url}
+                                    src={bannerUrl}
                                     alt={simulation.title}
                                     className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                    }}
                                 />
-                            ) : (
-                                <div className="flex items-center justify-center h-full">
-                                    <span className="material-symbols-outlined text-5xl text-primary/30">
-                                        account_tree
-                                    </span>
-                                </div>
-                            )}
+                            ) : null}
+
+                            {/* Fallback Icon */}
+                            <div className={`flex items-center justify-center h-full w-full absolute top-0 left-0 bg-gradient-to-br from-primary/10 to-primary/5 ${bannerUrl ? 'hidden' : ''}`}>
+                                <span className="material-symbols-outlined text-5xl text-primary/30">
+                                    account_tree
+                                </span>
+                            </div>
+
                             <div className="absolute top-3 right-3">
                                 {getStatusBadge(simulation.status)}
                             </div>

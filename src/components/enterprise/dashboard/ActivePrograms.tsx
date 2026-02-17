@@ -22,8 +22,8 @@ export default function ActivePrograms({ programs }: ActiveProgramsProps) {
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Active Programs</h3>
-                <Button variant="link" className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest p-0 h-auto">
-                    View All
+                <Button variant="link" asChild className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest p-0 h-auto">
+                    <a href="/enterprise/simulations">View All</a>
                 </Button>
             </div>
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -31,8 +31,8 @@ export default function ActivePrograms({ programs }: ActiveProgramsProps) {
                     <div key={program.id} className="p-5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group">
                         <div className="flex justify-between items-center mb-3">
                             <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest border ${program.status === "STABLE" ? "bg-green-50 text-green-700 border-green-100 dark:bg-green-500/10 dark:text-green-400 dark:border-green-900/30" :
-                                    program.status === "SCALING" ? "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-900/30" :
-                                        "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-900/30"
+                                program.status === "SCALING" ? "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-900/30" :
+                                    "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-900/30"
                                 }`}>
                                 {program.status}
                             </span>
