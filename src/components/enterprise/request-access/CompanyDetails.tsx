@@ -23,7 +23,7 @@ export function CompanyDetails({ register, control, errors }: CompanyDetailsProp
                     <Input
                         {...register("companyName", { required: true })}
                         className="w-full h-12 rounded-lg bg-background focus-visible:ring-primary px-4"
-                        placeholder="e.g. Prominent Solutions Pvt Ltd"
+                        placeholder="e.g. Priminent Solutions Pvt Ltd"
                     />
                 </div>
                 <div className="col-span-1">

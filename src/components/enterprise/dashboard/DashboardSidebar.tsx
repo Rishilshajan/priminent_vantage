@@ -7,7 +7,21 @@ import { Button } from "@/components/ui/button"
 import { signOut } from "@/actions/auth/shared.auth"
 
 
-export default function DashboardSidebar() {
+import { cn } from "@/lib/utils"
+
+interface DashboardSidebarProps {
+    orgName?: string;
+    className?: string;
+    onLinkClick?: () => void;
+    userProfile?: {
+        first_name: string;
+        last_name: string;
+        email: string;
+        role: string;
+    } | null;
+}
+
+export default function DashboardSidebar({ orgName = "Priminent", className, onLinkClick, userProfile }: DashboardSidebarProps) {
     const pathname = usePathname()
 
     const handleLogout = async () => {
@@ -16,7 +30,6 @@ export default function DashboardSidebar() {
             await signOut("/")
         }
     }
-
 
     const navItems = [
         { label: "Dashboard", href: "/enterprise/dashboard", icon: "dashboard" },
@@ -31,13 +44,13 @@ export default function DashboardSidebar() {
     ]
 
     return (
-        <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 h-screen sticky top-0 overflow-y-auto">
+        <aside className={cn("hidden lg:flex flex-col w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 h-screen sticky top-0 overflow-y-auto", className)}>
             <div className="p-6 flex items-center gap-3">
                 <div className="size-9 text-white flex items-center justify-center bg-primary rounded-lg shadow-lg shadow-primary/20">
                     <span className="material-symbols-outlined text-xl font-bold">diamond</span>
                 </div>
                 <div className="flex flex-col">
-                    <span className="font-bold text-base tracking-tight leading-none">Priminent</span>
+                    <span className="font-bold text-base tracking-tight leading-none">{orgName}</span>
                     <span className="text-[10px] text-primary font-black uppercase tracking-wider mt-0.5">Vantage</span>
                 </div>
             </div>
@@ -54,6 +67,7 @@ export default function DashboardSidebar() {
                                 ? "bg-primary/5 text-primary border-primary/10 shadow-sm"
                                 : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent"
                                 }`}
+                            onClick={onLinkClick}
                         >
                             <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
                             {item.label}
@@ -68,6 +82,7 @@ export default function DashboardSidebar() {
                         key={item.label}
                         href={item.href}
                         className="flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-xl border border-transparent"
+                        onClick={onLinkClick}
                     >
                         <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
                         {item.label}
@@ -76,23 +91,31 @@ export default function DashboardSidebar() {
             </nav>
 
             <div className="p-4 mt-auto">
-                <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded-2xl p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="size-8 rounded-lg bg-red-100 dark:bg-red-900/20 flex items-center justify-center text-red-600 dark:text-red-400">
-                            <span className="material-symbols-outlined text-[20px]">logout</span>
+                <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 mb-2">
+                    <div className="flex items-center gap-3">
+                        <div className="size-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                            <span className="material-symbols-outlined text-[20px]">person</span>
                         </div>
-                        <div className="flex flex-col">
-                            <p className="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-wider">Account</p>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">End your session</p>
+                        <div className="flex flex-col overflow-hidden">
+                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                {userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : "User"}
+                            </p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
+                                {userProfile?.email || "user@example.com"}
+                            </p>
+                            <p className="text-[9px] font-black text-primary uppercase tracking-wider mt-0.5">
+                                {orgName} • {userProfile?.role === 'admin' || userProfile?.role === 'super_admin' ? 'Enterprise Admin' : userProfile?.role || 'Member'}
+                            </p>
                         </div>
                     </div>
-                    <Button
-                        onClick={handleLogout}
-                        className="w-full h-9 text-[10px] font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg shadow-red-200 dark:shadow-none border-none transition-all"
-                    >
-                        Sign Out
-                    </Button>
                 </div>
+
+                <Button
+                    onClick={handleLogout}
+                    className="w-full h-9 text-[10px] font-black uppercase tracking-widest bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20 dark:text-red-400 dark:border-red-900/20 rounded-lg shadow-none transition-all"
+                >
+                    Sign Out
+                </Button>
             </div>
         </aside>
     )

@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import TeamAccessView from "@/components/enterprise/settings/team/TeamAccessView"
 
 export const metadata: Metadata = {
-    title: 'Enterprise Team & Role Management | Prominent Vantage',
+    title: 'Enterprise Team & Role Management | Priminent Vantage',
     description: 'Manage organization members, assign roles, and configure access permissions.',
 }
 

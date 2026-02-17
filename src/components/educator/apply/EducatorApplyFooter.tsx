@@ -41,7 +41,7 @@ export function EducatorApplyFooter() {
                     <span>Typical verification turnaround: 48 hours</span>
                 </div>
                 <div className="max-w-xs mx-auto text-center border-t border-slate-100 dark:border-slate-800 pt-6">
-                    © 2026 Prominent Vantage. All rights reserved. Secured by Enterprise Encryption.
+                    © 2026 Priminent Vantage. All rights reserved. Secured by Enterprise Encryption.
                 </div>
             </div>
         </div>

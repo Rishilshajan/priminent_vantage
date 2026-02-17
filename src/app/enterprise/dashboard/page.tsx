@@ -4,13 +4,13 @@ import DashboardHeader from "@/components/enterprise/dashboard/DashboardHeader"
 import StatsCards from "@/components/enterprise/dashboard/StatsCards"
 import PerformanceChart from "@/components/enterprise/dashboard/PerformanceChart"
 import ActivePrograms from "@/components/enterprise/dashboard/ActivePrograms"
-import TopDepartments from "@/components/enterprise/dashboard/TopDepartments"
+import TopInstructors from "@/components/enterprise/dashboard/TopInstructors"
 import ResourceGrid from "@/components/enterprise/dashboard/ResourceGrid"
 import { Button } from "@/components/ui/button"
 import { Calendar, Plus } from "lucide-react"
 
 export const metadata = {
-    title: "Enterprise Dashboard - Prominent Vantage",
+    title: "Enterprise Dashboard - Priminent Vantage",
 }
 
 export default async function EnterpriseDashboardPage(props: { searchParams: Promise<{ period?: string }> }) {
@@ -35,40 +35,40 @@ export default async function EnterpriseDashboardPage(props: { searchParams: Pro
         )
     }
 
-    const { organization, stats, chartData, activePrograms, topDepartments } = result.data;
+    const { organization, stats, chartData, activePrograms, topInstructors, userProfile } = result.data;
     const org = (Array.isArray(organization) ? organization[0] : organization) as any;
     const orgName = org?.name || "Organization";
 
     return (
         <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
-            <DashboardSidebar />
+            <DashboardSidebar orgName={orgName} userProfile={userProfile} />
 
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <DashboardHeader orgName={orgName} />
+                <DashboardHeader orgName={orgName} userProfile={userProfile} />
 
-                <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 space-y-8 custom-scrollbar">
                     {/* Welcome Section */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div>
                             <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Enterprise Overview</h1>
-                            <p className="text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider text-[11px]">Real-time performance metrics for {orgName}</p>
+                            <p className="text-[11px] md:text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">Real-time performance metrics for {orgName}</p>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                             <Button
                                 asChild
                                 variant="outline"
-                                className={`h-11 px-5 border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm text-xs font-black uppercase tracking-widest transition-all gap-2 ${period === '30d' ? 'bg-slate-100 dark:bg-slate-800 text-primary' : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-primary'}`}
+                                className={`h-11 px-5 border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm text-xs font-black uppercase tracking-widest transition-all gap-2 justify-center ${period === '30d' ? 'bg-slate-100 dark:bg-slate-800 text-primary' : 'bg-white dark:bg-slate-900 text-slate-500 hover:text-primary'}`}
                             >
                                 <a href={period === '30d' ? '/enterprise/dashboard' : '/enterprise/dashboard?period=30d'}>
                                     <Calendar className="size-4" />
                                     {period === '30d' ? 'Showing 30 Days' : 'Last 30 Days'}
                                 </a>
                             </Button>
-                            <Button asChild className="h-11 px-6 bg-primary hover:bg-primary/90 text-white font-black rounded-2xl shadow-xl shadow-primary/20 text-xs uppercase tracking-widest gap-2">
-                                <a href="/enterprise/simulations/create">
-                                    <Plus className="size-5" />
-                                    New Simulation
-                                </a>
+                            <Button
+                                className="h-11 px-5 bg-primary hover:bg-primary/90 text-white rounded-2xl shadow-lg shadow-primary/25 text-xs font-black uppercase tracking-widest transition-all gap-2 justify-center"
+                            >
+                                <Plus className="size-4" />
+                                New Simulation
                             </Button>
                         </div>
                     </div>
@@ -89,7 +89,7 @@ export default async function EnterpriseDashboardPage(props: { searchParams: Pro
                         {/* Secondary Column */}
                         <div className="lg:col-span-4 space-y-8">
                             <ActivePrograms programs={activePrograms} />
-                            <TopDepartments departments={topDepartments} />
+                            <TopInstructors instructors={topInstructors} />
                         </div>
                     </div>
                 </div>

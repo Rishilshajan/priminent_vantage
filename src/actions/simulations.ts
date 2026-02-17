@@ -287,7 +287,52 @@ export async function getSimulations() {
         return { data: simulations || [] };
     } catch (err: any) {
         console.error("Get simulations error:", err);
-        return { error: "Failed to fetch simulations" };
+        return { error: "Authentication required" };
+    }
+}
+/**
+ * Search simulations
+ */
+export async function searchSimulations(query: string) {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get user's organization
+        const { data: membership, error: membershipError } = await supabase
+            .from('organization_members')
+            .select('org_id')
+            .eq('user_id', user.id)
+            .single();
+
+        if (membershipError || !membership) {
+            return { error: "No organization found" };
+        }
+
+        const { data: simulations, error: simError } = await supabase
+            .from('simulations')
+            .select(`
+                *,
+                simulation_tasks (count),
+                simulation_skills (count)
+            `)
+            .eq('org_id', membership.org_id)
+            .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+            .order('created_at', { ascending: false });
+
+        if (simError) {
+            console.error("Search simulations error:", simError);
+            return { error: "Failed to search simulations" };
+        }
+
+        return { data: simulations || [] };
+    } catch (err: any) {
+        console.error("Search simulations error:", err);
+        return { error: "Failed to search simulations" };
     }
 }
 
@@ -892,3 +937,4 @@ export async function deleteAsset(assetId: string) {
         return { error: "Failed to delete asset" };
     }
 }
+

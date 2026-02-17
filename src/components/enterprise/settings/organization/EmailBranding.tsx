@@ -12,12 +12,12 @@ export default function EmailBranding() {
             <div className="p-6 space-y-6">
                 <div>
                     <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Sender Name</label>
-                    <input className="w-full h-11 px-4 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none" type="text" defaultValue="Prominent Vantage Talent Acquisition" />
+                    <input className="w-full h-11 px-4 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none" type="text" defaultValue="Priminent Vantage Talent Acquisition" />
                     <p className="text-[10px] text-slate-400 mt-1.5">The name candidates see in their inbox for automated communications.</p>
                 </div>
                 <div>
                     <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Email Signature</label>
-                    <textarea className="w-full p-4 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary font-mono outline-none" placeholder="Best regards,\nThe [Organization] Team" rows={4} defaultValue={`Best regards,\nThe Prominent Vantage Talent Team\nEmpowering Future Leaders`} />
+                    <textarea className="w-full p-4 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary font-mono outline-none" placeholder="Best regards,\nThe [Organization] Team" rows={4} defaultValue={`Best regards,\nThe Priminent Vantage Talent Team\nEmpowering Future Leaders`} />
                 </div>
             </div>
         </section>

@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import AnalyticsView from "@/components/enterprise/analytics/AnalyticsView"
 
 export const metadata: Metadata = {
-    title: 'Enterprise Analytics & Insights | Prominent Vantage',
+    title: 'Enterprise Analytics & Insights | Priminent Vantage',
     description: 'Deep dive into enterprise performance metrics, candidate engagement, and talent sourcing insights.',
 }
 

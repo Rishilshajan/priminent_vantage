@@ -16,7 +16,7 @@ export function RequestAccessCard() {
             </h2>
 
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-md mx-auto">
-                Ready to access our talent pool? Join the leading companies hiring with Prominent Vantage.
+                Ready to access our talent pool? Join the leading companies hiring with Priminent Vantage.
             </p>
 
             <Button size="lg" className="w-full h-14 text-lg font-bold shadow-lg shadow-primary/30 group mb-8" asChild>

@@ -11,7 +11,7 @@ export function EducatorBenefits() {
                     </span>
                 </h1>
                 <p className="text-lg text-muted-foreground max-w-md leading-relaxed">
-                    Join thousands of educators who use Prominent Vantage to bridge the gap between the classroom and the workplace. Integrate industry-backed simulations directly into your curriculum.
+                    Join thousands of educators who use Priminent Vantage to bridge the gap between the classroom and the workplace. Integrate industry-backed simulations directly into your curriculum.
                 </p>
             </div>
 

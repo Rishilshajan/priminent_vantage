@@ -23,7 +23,7 @@ export default function ConfirmationPage() {
                                         Request Received
                                     </h1>
                                     <p className="text-muted-foreground text-base md:text-lg font-normal leading-relaxed max-w-[720px]">
-                                        Thank you for your interest in Prominent Vantage! Your request for enterprise access has been successfully submitted. Our team is currently reviewing your application to ensure we provide the best onboarding experience tailored to your organization's needs.
+                                        Thank you for your interest in Priminent Vantage! Your request for enterprise access has been successfully submitted. Our team is currently reviewing your application to ensure we provide the best onboarding experience tailored to your organization's needs.
                                     </p>
                                 </div>
                                 <Link href="/" className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-primary text-primary-foreground text-base font-bold shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all hover:scale-[1.02]">

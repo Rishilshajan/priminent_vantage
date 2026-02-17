@@ -21,7 +21,7 @@ export default function BrandVisuals() {
                     </div>
                     <div>
                         <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">Default Footer Text</label>
-                        <input className="w-full h-11 px-4 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="e.g. © 2024 Prominent Vantage Corp. All Rights Reserved." type="text" defaultValue="© 2024 Prominent Vantage. Confidentially Transmitted." />
+                        <input className="w-full h-11 px-4 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="e.g. © 2024 Priminent Vantage Corp. All Rights Reserved." type="text" defaultValue="© 2024 Priminent Vantage. Confidentially Transmitted." />
                     </div>
                 </div>
             </div>

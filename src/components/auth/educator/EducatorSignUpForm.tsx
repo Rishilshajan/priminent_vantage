@@ -207,7 +207,7 @@ export function EducatorSignUpForm() {
                                 htmlFor="terms"
                                 className="text-xs text-muted-foreground cursor-pointer"
                             >
-                                I agree to the <Link href="/terms" className="text-primary hover:underline font-medium">Terms of Service</Link> and <Link href="/privacy" className="text-primary hover:underline font-medium">Privacy Policy</Link>. I consent to receive updates from Prominent Vantage.
+                                I agree to the <Link href="/terms" className="text-primary hover:underline font-medium">Terms of Service</Link> and <Link href="/privacy" className="text-primary hover:underline font-medium">Privacy Policy</Link>. I consent to receive updates from Priminent Vantage.
                             </label>
                             {errors.terms && (
                                 <p className="text-xs text-destructive font-medium">{errors.terms.message}</p>

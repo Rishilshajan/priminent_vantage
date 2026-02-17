@@ -4,7 +4,7 @@ import SimulationsView from "@/components/enterprise/simulations/SimulationsView
 import { Button } from "@/components/ui/button"
 
 export const metadata: Metadata = {
-    title: "Simulations - Prominent Vantage",
+    title: "Simulations - Priminent Vantage",
     description: "Manage and track your organization's custom virtual job simulations and learning environments.",
 }
 

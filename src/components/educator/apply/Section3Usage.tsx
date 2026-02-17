@@ -41,7 +41,7 @@ export function Section3Usage({ register, errors, setValue, watch }: Section3Pro
         <FormSection icon={ClipboardList} number="3" title="Intended Usage">
             <div className="space-y-8">
                 <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">How do you plan to use Prominent Vantage?</Label>
+                    <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">How do you plan to use Priminent Vantage?</Label>
                     <p className="text-xs text-slate-400 mb-2">Describe your educational goals and how our platform fits your curriculum.</p>
                     <Textarea
                         className={cn("min-h-[140px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:ring-primary/20 transition-all resize-none p-4",

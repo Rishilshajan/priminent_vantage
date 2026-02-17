@@ -12,7 +12,7 @@ export function EnterpriseHero() {
                 Transform your <span className="text-primary">early talent</span> recruiting strategy
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed">
-                Join top companies using Prominent Vantage to showcase their employer brand, upskill candidates, and hire the best diverse talent at scale through virtual job simulations.
+                Join top companies using Priminent Vantage to showcase their employer brand, upskill candidates, and hire the best diverse talent at scale through virtual job simulations.
             </p>
         </div>
     );

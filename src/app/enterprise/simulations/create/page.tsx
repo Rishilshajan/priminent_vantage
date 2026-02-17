@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import SimulationBuilderView from "@/components/enterprise/simulations/builder/SimulationBuilderView";
 
 export const metadata: Metadata = {
-    title: "Create Simulation | Prominent Vantage",
+    title: "Create Simulation | Priminent Vantage",
     description: "Build professional virtual job simulations to engage candidates and assess skills",
 };
 

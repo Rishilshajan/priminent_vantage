@@ -1037,15 +1037,24 @@ export async function getDashboardMetrics(period: string = 'all') {
             .eq('user_id', user.id)
             .maybeSingle();
 
+        // Fetch user profile for sidebar details (moved up to be available for all return paths)
+        const { data: userProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('first_name, last_name, email, role')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError) {
+            console.error("Error fetching user profile:", profileError);
+            // Decide if this should be a hard error or just return null for userProfile
+            // For now, we'll proceed, userProfile will be null
+        }
+
         // If not a direct member, check if the user is an admin/super_admin
         if (!member) {
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single();
-
-            if (profile?.role === 'admin' || profile?.role === 'super_admin') {
+            // The profile variable here was previously fetching only 'role'.
+            // Now we use the 'userProfile' fetched above.
+            if (userProfile?.role === 'admin' || userProfile?.role === 'super_admin') {
                 // For admins, show the most recently created active organization as a preview
                 const { data: recentOrg } = await supabase
                     .from('organizations')
@@ -1144,36 +1153,12 @@ export async function getDashboardMetrics(period: string = 'all') {
             };
         }) || [];
 
-        // Top Departments Logic
-        const departmentStats = new Map<string, { count: number, totalScore: number }>();
-        const simIndustryMap = new Map(orgSims?.map(s => [s.id, s.industry || 'General']));
-
-        enrollmentsData.forEach(enrollment => {
-            const industry = simIndustryMap.get(enrollment.simulation_id) || 'General';
-            const current = departmentStats.get(industry) || { count: 0, totalScore: 0 };
-
-            departmentStats.set(industry, {
-                count: current.count + 1,
-                totalScore: current.totalScore + (enrollment.status === 'completed' ? 100 : 50) // Mock score based on completion
-            });
-        });
-
-        const topDepartments = Array.from(departmentStats.entries())
-            .map(([name, stats]) => ({
-                name,
-                code: name.substring(0, 2).toUpperCase(),
-                score: Math.min(100, Math.round(stats.totalScore / stats.count)), // Average score
-                color: "primary" as const
-            }))
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 3);
-
-        // Fallback if no data
-        if (topDepartments.length === 0) {
-            topDepartments.push(
-                { name: "No Data", code: "NA", score: 0, color: "primary" }
-            );
-        }
+        // Top Instructors Logic (Mock for now)
+        const topInstructors = [
+            { id: '1', name: 'Sarah Wilson', role: 'Senior Engineer', score: 98, initials: 'SW' },
+            { id: '2', name: 'James Rodriguez', role: 'Product Lead', score: 95, initials: 'JR' },
+            { id: '3', name: 'Emily Chen', role: 'Data Scientist', score: 92, initials: 'EC' },
+        ];
 
         return {
             success: true,
@@ -1182,7 +1167,8 @@ export async function getDashboardMetrics(period: string = 'all') {
                 stats,
                 chartData,
                 activePrograms,
-                topDepartments
+                topInstructors,
+                userProfile
             }
         };
     } catch (err: any) {

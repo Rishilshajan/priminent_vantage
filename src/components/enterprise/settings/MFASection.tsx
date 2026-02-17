@@ -21,7 +21,7 @@ export default function MFASection() {
                 <div className="p-6 flex items-center justify-between gap-8">
                     <div className="flex-1">
                         <p className="text-sm font-bold text-slate-900 dark:text-white">Enforce MFA for All Users</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Requires every user in the 'Prominent Vantage' workspace to configure MFA upon their next login session.</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Requires every user in the 'Priminent Vantage' workspace to configure MFA upon their next login session.</p>
                     </div>
                     <Switch />
                 </div>
