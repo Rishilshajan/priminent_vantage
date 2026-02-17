@@ -13,8 +13,8 @@ export const metadata = {
     title: "Enterprise Dashboard - Prominent Vantage",
 }
 
-export default async function EnterpriseDashboardPage({ searchParams }: { searchParams: { period?: string } }) {
-    const period = searchParams?.period || 'all';
+export default async function EnterpriseDashboardPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
+    const { period = 'all' } = await searchParams;
     const result = await getDashboardMetrics(period);
 
     if (result.error || !result.data) {

@@ -22,7 +22,7 @@ export default function DashboardSidebar() {
         { label: "Dashboard", href: "/enterprise/dashboard", icon: "dashboard" },
         { label: "Simulations", href: "/enterprise/simulations", icon: "layers" },
         { label: "Candidates", href: "/enterprise/candidates", icon: "groups" },
-        { label: "Analytics", href: "#", icon: "insights" },
+        { label: "Analytics", href: "/enterprise/analytics", icon: "insights" },
     ]
 
     const orgItems = [
