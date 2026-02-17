@@ -27,7 +27,7 @@ export default function DashboardSidebar() {
 
     const orgItems = [
         { label: "Departments", href: "#", icon: "corporate_fare" },
-        { label: "Settings", href: "#", icon: "settings" },
+        { label: "Settings", href: "/enterprise/settings", icon: "settings" },
     ]
 
     return (
