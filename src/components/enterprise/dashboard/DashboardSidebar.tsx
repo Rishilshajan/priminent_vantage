@@ -21,7 +21,7 @@ export default function DashboardSidebar() {
     const navItems = [
         { label: "Dashboard", href: "/enterprise/dashboard", icon: "dashboard" },
         { label: "Simulations", href: "/enterprise/simulations", icon: "layers" },
-        { label: "Candidates", href: "#", icon: "groups" },
+        { label: "Candidates", href: "/enterprise/candidates", icon: "groups" },
         { label: "Analytics", href: "#", icon: "insights" },
     ]
 
