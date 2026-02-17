@@ -938,3 +938,90 @@ export async function deleteAsset(assetId: string) {
     }
 }
 
+/**
+ * Get all unique analytics tags used by an organization
+ */
+export async function getOrganizationTags() {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { error: "Authentication required" };
+
+        // Get user's organization
+        const { data: membership } = await supabase
+            .from('organization_members')
+            .select('org_id')
+            .eq('user_id', user.id)
+            .single();
+
+        if (!membership) return { error: "No organization found" };
+
+        const { data: simulations, error } = await supabase
+            .from('simulations')
+            .select('analytics_tags')
+            .eq('org_id', membership.org_id);
+
+        if (error) {
+            console.error("Error fetching tags:", error);
+            return { error: "Failed to fetch tags" };
+        }
+
+        // Deduplicate tags
+        const allTags = simulations?.flatMap(s => s.analytics_tags || []) || [];
+        const uniqueTags = Array.from(new Set(allTags)).sort();
+
+        return { data: uniqueTags };
+    } catch (error) {
+        console.error("Error in getOrganizationTags:", error);
+        return { error: "An unexpected error occurred" };
+    }
+}
+/**
+ * Get all unique skills used by modification organization
+ */
+export async function getOrganizationSkills() {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            return { error: "Authentication required" };
+        }
+
+        // Get user's organization
+        const { data: membership, error: membershipError } = await supabase
+            .from('organization_members')
+            .select('org_id')
+            .eq('user_id', user.id)
+            .single();
+
+        if (membershipError || !membership) {
+            return { error: "No organization found" };
+        }
+
+        // Get all unique skills from simulations belonging to this org
+        const { data: skills, error: skillsError } = await supabase
+            .from('simulation_skills')
+            .select(`
+                skill_name,
+                simulations!inner (
+                    org_id
+                )
+            `)
+            .eq('simulations.org_id', membership.org_id);
+
+        if (skillsError) {
+            console.error("Get org skills error:", skillsError);
+            return { error: "Failed to fetch skills" };
+        }
+
+        // Extract unique skill names
+        const uniqueSkills = Array.from(new Set(skills.map(s => s.skill_name))).sort();
+
+        return { data: uniqueSkills };
+    } catch (err: any) {
+        console.error("Get org skills error:", err);
+        return { error: "Failed to fetch skills" };
+    }
+}

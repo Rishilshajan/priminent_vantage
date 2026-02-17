@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createSimulation, updateSimulation, getSimulation } from "@/actions/simulations";
 import { INDUSTRIES, TARGET_ROLES, PROGRAM_TYPES, Simulation } from "@/lib/simulations";
+
 interface ProgramMetadataFormProps {
     simulationId: string | null;
     initialData?: Simulation | null;
@@ -87,13 +88,14 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
         }
     };
 
-    const handleSave = async () => {
+    const handleSave = async (): Promise<boolean> => {
         if (!formData.title.trim()) {
             alert('Please enter a program title');
-            return;
+            return false;
         }
 
         setSaving(true);
+        let success = false;
 
         const dataToSave = {
             ...formData,
@@ -106,6 +108,7 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
                 alert(result.error);
             } else {
                 onSaveSuccess?.();
+                success = true;
             }
         } else {
             // Create new simulation
@@ -117,20 +120,24 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
                 // THEN notify parent (which triggers reload)
                 onSimulationCreated(newId);
                 onSaveSuccess?.();
+                success = true;
             }
         }
 
         // Refresh data after save to ensure all joins/ids are synced
-        if (simulationId) {
+        if (simulationId && success) {
             await loadSimulation();
         }
 
         setSaving(false);
+        return success;
     };
 
     const handleNext = async () => {
-        await handleSave();
-        onNext();
+        const success = await handleSave();
+        if (success) {
+            onNext();
+        }
     };
 
     if (loading) {
@@ -154,9 +161,9 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Program Type */}
-                    <div className="col-span-2">
+                    <div className="col-span-1 md:col-span-2">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
                             Program Type
                         </label>
@@ -167,7 +174,7 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
                                     type="button"
                                     onClick={() => handleChange('program_type', type.value)}
                                     className={`
-                                        flex flex-col p-4 rounded-xl border-2 transition-all text-left
+                                        flex flex-col items-start p-4 rounded-xl border-2 transition-all text-left h-full
                                         ${formData.program_type === type.value
                                             ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
                                             : 'border-slate-100 dark:border-slate-800 hover:border-primary/30'
@@ -177,12 +184,15 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
                                     <span className={`text-sm font-bold mb-1 ${formData.program_type === type.value ? 'text-primary' : 'text-slate-700 dark:text-slate-200'}`}>
                                         {type.label}
                                     </span>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-normal leading-relaxed">
+                                        {type.description}
+                                    </p>
                                 </button>
                             ))}
                         </div>
                     </div>
                     {/* Program Title */}
-                    <div className="col-span-2">
+                    <div className="col-span-1 md:col-span-2">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                             Program Title *
                         </label>
@@ -196,7 +206,7 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
                     </div>
 
                     {/* Short Description */}
-                    <div className="col-span-2">
+                    <div className="col-span-1 md:col-span-2">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                             Short Description
                         </label>
@@ -211,7 +221,7 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
                     </div>
 
                     {/* Program Description */}
-                    <div className="col-span-2">
+                    <div className="col-span-1 md:col-span-2">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                             Program Description
                         </label>
@@ -257,6 +267,8 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
                             ))}
                         </select>
                     </div>
+
+
 
                 </div>
             </section>

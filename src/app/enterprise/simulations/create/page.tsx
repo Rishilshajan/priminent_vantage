@@ -37,10 +37,18 @@ export default async function CreateSimulationPage() {
         ? membership.organizations[0]
         : membership.organizations;
 
+    // Get user profile
+    const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
     return (
         <SimulationBuilderView
             organization={organization}
             user={user}
+            userProfile={userProfile}
         />
     );
 }

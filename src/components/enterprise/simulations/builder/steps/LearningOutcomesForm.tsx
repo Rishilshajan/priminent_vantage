@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createSimulation, updateSimulation, getSimulation, syncSimulationSkills } from "@/actions/simulations";
-import { ALL_SKILLS } from "@/lib/skills-data";
+import { createSimulation, updateSimulation, getSimulation, getOrganizationSkills, syncSimulationSkills } from "@/actions/simulations";
 import { Simulation } from "@/lib/simulations";
 
 interface LearningOutcomesFormProps {
@@ -18,18 +17,12 @@ interface LearningOutcomesFormProps {
 export default function LearningOutcomesForm({ simulationId, initialData, saveTrigger, onSaveSuccess, onNext, onBack }: LearningOutcomesFormProps) {
     const [learningOutcomes, setLearningOutcomes] = useState<string[]>(initialData?.learning_outcomes || []);
 
-    // transform initial skills
-    const getInitialSkills = () => {
-        if (!initialData) return [];
-        if (initialData.simulation_skills) {
-            return initialData.simulation_skills.map((s: any) => s.skill_name);
-        }
-        return [];
-    };
+    // Skills state
+    const [skills, setSkills] = useState<string[]>([]);
+    const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+    const [skillInput, setSkillInput] = useState('');
 
-    const [skills, setSkills] = useState<string[]>(getInitialSkills());
     const [newOutcome, setNewOutcome] = useState('');
-    const [skillValue, setSkillValue] = useState('');
 
     // Only loading if we have id but no data
     const [loading, setLoading] = useState(!!simulationId && !initialData);
@@ -38,14 +31,28 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
     const [editingOutcomeValue, setEditingOutcomeValue] = useState('');
 
     useEffect(() => {
+        // Fetch available skills from organization
+        const fetchSkills = async () => {
+            const result = await getOrganizationSkills();
+            if (result.data) {
+                setAvailableSkills(result.data);
+            }
+        };
+        fetchSkills();
+
         if (simulationId && !initialData) {
             loadSimulation();
         } else if (initialData) {
             // Update state if initialData changes (e.g. parent re-fetch)
             setLearningOutcomes(initialData.learning_outcomes || []);
+
+            // Extract skills from initialData
             if (initialData.simulation_skills) {
                 setSkills(initialData.simulation_skills.map((s: any) => s.skill_name));
+            } else if (initialData.skills) {
+                setSkills(initialData.skills.map((s: any) => typeof s === 'string' ? s : s.skill_name));
             }
+
             setLoading(false);
         }
     }, [simulationId, initialData]);
@@ -66,8 +73,6 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
 
             if (result.data.simulation_skills) {
                 setSkills(result.data.simulation_skills.map((s: any) => s.skill_name));
-            } else if (result.data.skills) { // Fallback check
-                setSkills(result.data.skills.map((s: any) => typeof s === 'string' ? s : s.skill_name));
             }
         }
         setLoading(false);
@@ -85,6 +90,7 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
             setNewOutcome('');
         }
 
+        // 1. Save outcomes
         const dataToSave = {
             learning_outcomes: finalLearningOutcomes,
         };
@@ -93,12 +99,10 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
         if (result.error) {
             alert(result.error);
         } else {
-            // Synchronize skills (don't block progress on sync error, but log it)
+            // 2. Sync skills
             const syncResult = await syncSimulationSkills(simulationId, skills);
             if (syncResult.error) {
                 console.error("Skill sync failed:", syncResult.error);
-                // Optional: alert user but still proceed? 
-                // alert("Skills saved with warnings: " + syncResult.error);
             }
 
             onSaveSuccess?.();
@@ -109,6 +113,21 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
         }
 
         setSaving(false);
+    };
+
+    const handleAddSkill = (e: React.KeyboardEvent<HTMLInputElement> | React.FocusEvent<HTMLInputElement>) => {
+        if (e.type === 'keydown' && (e as React.KeyboardEvent).key !== 'Enter' && (e as React.KeyboardEvent).key !== ',') return;
+        if (e.type === 'keydown') e.preventDefault();
+
+        const skill = skillInput.trim();
+        if (skill && !skills.includes(skill)) {
+            setSkills([...skills, skill]);
+            setSkillInput('');
+        }
+    };
+
+    const handleRemoveSkill = (skillToRemove: string) => {
+        setSkills(skills.filter(s => s !== skillToRemove));
     };
 
     if (loading) {
@@ -132,52 +151,49 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
                 </div>
 
                 <div className="space-y-6">
-                    {/* Skills Multi-select */}
+                    {/* Skill Tags - Company Specific */}
                     <div>
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            Skill Tags (Multi-select)
+                            Skill Tags
                         </label>
-                        <div className="flex flex-wrap gap-2 mb-3">
-                            {skills.map(skill => (
-                                <span key={skill} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold">
-                                    {skill}
-                                    <button onClick={() => setSkills(skills.filter(s => s !== skill))} className="hover:text-primary/70">
-                                        <span className="material-symbols-outlined text-sm">close</span>
-                                    </button>
-                                </span>
-                            ))}
-                        </div>
-                        <div className="flex gap-2">
-                            <input
-                                list="skills-list"
-                                value={skillValue}
-                                onChange={(e) => setSkillValue(e.target.value)}
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter' && skillValue.trim() && !skills.includes(skillValue.trim())) {
-                                        setSkills([...skills, skillValue.trim()]);
-                                        setSkillValue('');
-                                    }
-                                }}
-                                className="flex-1 bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
-                                placeholder="Type to search or add a skill..."
-                            />
-                            <datalist id="skills-list">
-                                {ALL_SKILLS.map(skill => (
-                                    <option key={skill} value={skill} />
+                        <div className="space-y-3">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    list="skill-tags"
+                                    value={skillInput}
+                                    onChange={(e) => setSkillInput(e.target.value)}
+                                    onKeyDown={handleAddSkill}
+                                    onBlur={handleAddSkill}
+                                    className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
+                                    placeholder="Type specific skills (e.g. Python, Agile, SQL)... Press Enter to add"
+                                />
+                                <datalist id="skill-tags">
+                                    {availableSkills.map(skill => (
+                                        <option key={skill} value={skill} />
+                                    ))}
+                                </datalist>
+                            </div>
+
+                            {/* Selected Skills */}
+                            <div className="flex flex-wrap gap-2">
+                                {skills.map(skill => (
+                                    <span key={skill} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                                        {skill}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveSkill(skill)}
+                                            className="hover:text-red-500 transition-colors"
+                                        >
+                                            <span className="material-symbols-outlined text-[14px]">close</span>
+                                        </button>
+                                    </span>
                                 ))}
-                            </datalist>
-                            <button
-                                onClick={() => {
-                                    if (skillValue.trim() && !skills.includes(skillValue.trim())) {
-                                        setSkills([...skills, skillValue.trim()]);
-                                        setSkillValue('');
-                                    }
-                                }}
-                                className="px-4 bg-slate-100 dark:bg-slate-800 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors"
-                            >
-                                Add
-                            </button>
+                            </div>
                         </div>
+                        <p className="text-xs text-slate-400 mt-2">
+                            Tag the relevant skills students will practice. These help in candidate analytics and matching.
+                        </p>
                     </div>
 
                     {/* Learning Outcomes */}

@@ -190,11 +190,11 @@ export const DIFFICULTY_LEVELS = [
 ] as const;
 
 export const PROGRAM_TYPES = [
-    { value: 'job_simulation', label: 'Job Simulation' },
-    { value: 'career_exploration', label: 'Career Exploration' },
-    { value: 'skill_sprint', label: 'Skill Sprint' },
-    { value: 'case_study', label: 'Case Study' },
-    { value: 'internship_preview', label: 'Internship Preview' },
+    { value: 'job_simulation', label: 'Job Simulation', description: 'Realistic, role-specific tasks that mimic daily work.' },
+    { value: 'career_exploration', label: 'Career Exploration', description: 'Broad industry overview to help candidates discover interests.' },
+    { value: 'skill_sprint', label: 'Skill Sprint', description: 'Short, focused challenges to test specific technical skills.' },
+    { value: 'case_study', label: 'Case Study', description: 'In-depth analysis of a specific business problem or scenario.' },
+    { value: 'internship_preview', label: 'Internship Preview', description: 'A sneak peek into intern life and responsibilities at your company.' },
 ] as const;
 
 export const AUDIENCE_LEVELS = [

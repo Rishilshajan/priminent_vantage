@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import BuilderSidebar from "./BuilderSidebar";
 import BuilderHeader from "./BuilderHeader";
 import TaskMapSidebar from "./TaskMapSidebar";
@@ -25,6 +26,7 @@ interface SimulationBuilderViewProps {
     };
     user: User;
     initialSimulationId?: string;
+    userProfile?: any; // Add userProfile prop
 }
 
 export type BuilderStep =
@@ -38,12 +40,12 @@ export type BuilderStep =
     | 'analytics'
     | 'review';
 
-export default function SimulationBuilderView({ organization, user, initialSimulationId }: SimulationBuilderViewProps) {
+export default function SimulationBuilderView({ organization, user, initialSimulationId, userProfile }: SimulationBuilderViewProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
+    // ... (existing code omitted for brevity) ...
 
-    // Initialize step from URL or fallback to state
     const stepFromUrl = searchParams.get('step') as BuilderStep | null;
     const [currentStep, setCurrentStep] = useState<BuilderStep>(stepFromUrl || 'metadata');
     const [simulationId, setSimulationId] = useState<string | null>(initialSimulationId || null);
@@ -53,6 +55,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
     const [saveTrigger, setSaveTrigger] = useState(0);
     const [isGlobalSaving, setIsGlobalSaving] = useState(false);
     const [simulationData, setSimulationData] = useState<Simulation | null>(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
 
     // Fetch simulation data to calculate persistence
     useEffect(() => {
@@ -183,8 +186,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                         onSaveSuccess={handleSaveSuccess}
                         onCertificateChange={setCertificateEnabled}
                         onNext={() => {
-                            markStepCompleted('metadata');
-                            setTimeout(() => navigateToStep('outcomes'), 10);
+                            setTimeout(() => navigateToStep('outcomes'), 100);
                         }}
                     />
                 );
@@ -196,8 +198,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                         saveTrigger={saveTrigger}
                         onSaveSuccess={handleSaveSuccess}
                         onNext={() => {
-                            markStepCompleted('outcomes');
-                            setTimeout(() => navigateToStep('tasks'), 10);
+                            setTimeout(() => navigateToStep('tasks'), 100);
                         }}
                         onBack={() => navigateToStep('metadata')}
                     />
@@ -210,8 +211,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                         saveTrigger={saveTrigger}
                         onSaveSuccess={handleSaveSuccess}
                         onNext={() => {
-                            markStepCompleted('tasks');
-                            setTimeout(() => navigateToStep('assessment'), 10);
+                            setTimeout(() => navigateToStep('assessment'), 100);
                         }}
                         onBack={() => navigateToStep('outcomes')}
                     />
@@ -225,7 +225,6 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                         onSaveSuccess={handleSaveSuccess}
                         onCertificateChange={setCertificateEnabled}
                         onNext={() => {
-                            markStepCompleted('assessment');
                             navigateToStep('branding');
                         }}
                         onBack={() => navigateToStep('tasks')}
@@ -239,7 +238,6 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                         onSaveSuccess={handleSaveSuccess}
                         certificateEnabled={certificateEnabled}
                         onNext={() => {
-                            markStepCompleted('branding');
                             if (certificateEnabled) {
                                 navigateToStep('certification');
                             } else {
@@ -256,7 +254,6 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                         organizationName={organization.name}
                         onBack={() => navigateToStep('branding')}
                         onNext={() => {
-                            markStepCompleted('certification');
                             navigateToStep('visibility');
                         }}
                     />
@@ -268,7 +265,6 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                         saveTrigger={saveTrigger}
                         onSaveSuccess={handleSaveSuccess}
                         onNext={() => {
-                            markStepCompleted('visibility');
                             navigateToStep('analytics');
                         }}
                         onBack={() => {
@@ -284,7 +280,6 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                 return (
                     <AnalyticsPreview
                         onNext={() => {
-                            markStepCompleted('analytics');
                             navigateToStep('review');
                         }}
                         onBack={() => navigateToStep('visibility')}
@@ -305,18 +300,41 @@ export default function SimulationBuilderView({ organization, user, initialSimul
 
     return (
         <div className="flex h-screen overflow-hidden bg-background-light dark:bg-background-dark">
-            {/* Left Sidebar - Navigation */}
-            <BuilderSidebar
-                currentStep={currentStep}
-                onStepChange={navigateToStep}
-                completedSteps={completedSteps}
-                user={user}
-                canNavigate={!!simulationId}
-                certificateEnabled={certificateEnabled}
-            />
+            {/* Desktop Sidebar - Hidden on Mobile */}
+            <div className="hidden lg:flex">
+                <BuilderSidebar
+                    currentStep={currentStep}
+                    onStepChange={navigateToStep}
+                    completedSteps={completedSteps}
+                    user={user}
+                    canNavigate={!!simulationId}
+                    certificateEnabled={certificateEnabled}
+                    userProfile={user.user_metadata} // Pass user metadata as profile
+                    orgName={organization.name}
+                />
+            </div>
+
+            {/* Mobile Sidebar - Drawer */}
+            <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                <SheetContent side="left" className="p-0 w-72 border-r border-primary/10">
+                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                    <BuilderSidebar
+                        currentStep={currentStep}
+                        onStepChange={navigateToStep}
+                        completedSteps={completedSteps}
+                        user={user}
+                        canNavigate={!!simulationId}
+                        certificateEnabled={certificateEnabled}
+                        className="w-full h-full border-none"
+                        onClose={() => setIsSidebarOpen(false)}
+                        userProfile={user.user_metadata} // Pass user metadata as profile
+                        orgName={organization.name}
+                    />
+                </SheetContent>
+            </Sheet>
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col overflow-hidden">
+            <main className="flex-1 flex flex-col overflow-hidden w-full">
                 {/* Header */}
                 <BuilderHeader
                     currentStep={currentStep}
@@ -324,10 +342,11 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                     lastSaved={lastSaved}
                     onSave={handleGlobalSave}
                     isSaving={isGlobalSaving}
+                    onOpenSidebar={() => setIsSidebarOpen(true)}
                 />
 
                 {/* Scrollable Form Body */}
-                <div className="flex-1 overflow-y-auto p-8">
+                <div className="flex-1 overflow-y-auto p-4 md:p-8">
                     <div className="max-w-4xl mx-auto">
                         {renderStep()}
                     </div>

@@ -35,9 +35,9 @@ export default async function SimulationsPage() {
         )
     }
 
-    const { organization, stats, simulations } = result.data
+    const { organization, stats, simulations, userProfile } = result.data
     const org = (Array.isArray(organization) ? organization[0] : organization) as any
     const orgName = org?.name || "Organization"
 
-    return <SimulationsView orgName={orgName} stats={stats} simulations={simulations} />
+    return <SimulationsView orgName={orgName} stats={stats} simulations={simulations} userProfile={userProfile} />
 }

@@ -65,15 +65,6 @@ export default function StatsCards({ stats }: StatsCardsProps) {
                         <div className={`p-2.5 ${card.bgColor} ${card.textColor} rounded-2xl group-hover:scale-110 transition-transform`}>
                             <span className="material-symbols-outlined text-2xl font-bold">{card.icon}</span>
                         </div>
-                        <div className={`flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full ${card.trend === "up" ? "bg-green-50 text-green-600 dark:bg-green-500/10" :
-                                card.trend === "down" ? "bg-red-50 text-red-600 dark:bg-red-500/10" :
-                                    "bg-slate-50 text-slate-500 dark:bg-slate-800"
-                            }`}>
-                            {card.trend === "up" && <TrendingUp className="size-3" />}
-                            {card.trend === "down" && <TrendingDown className="size-3" />}
-                            {card.trend === "neutral" && <Minus className="size-3" />}
-                            {card.change}
-                        </div>
                     </div>
                     <div>
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{card.label}</p>

@@ -1252,11 +1252,23 @@ export async function getSimulationsMetrics() {
             message: 'Simulations metrics fetched successfully'
         });
 
+        // Fetch user profile for sidebar details
+        const { data: userProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('first_name, last_name, email, role')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError) {
+            console.error("Error fetching user profile:", profileError);
+        }
+
         return {
             data: {
                 organization,
                 stats,
-                simulations: simulations || []
+                simulations: simulations || [],
+                userProfile
             }
         };
     } catch (err: any) {
