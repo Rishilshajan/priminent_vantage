@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import BuilderSidebar from "./BuilderSidebar";
 import BuilderHeader from "./BuilderHeader";
 import TaskMapSidebar from "./TaskMapSidebar";
@@ -74,6 +74,14 @@ export default function SimulationBuilderView({ organization, user, initialSimul
         setIsGlobalSaving(false);
     }, []);
 
+    // Helper to check if rich text has actual content
+    const hasContent = (html: string | null | undefined) => {
+        if (!html) return false;
+        // Strip tags and check for non-whitespace characters
+        const text = html.replace(/<[^>]*>/g, '').trim();
+        return text.length > 0;
+    };
+
     // Verify progress with linear dependency checks to prevent false completes
     const checkProgress = async () => {
         if (!simulationId) return;
@@ -113,7 +121,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             // 4. Assessment Check - Depends on Tasks
             if (completed.includes('tasks') &&
                 sim.duration && sim.difficulty_level && sim.target_audience &&
-                (sim.grading_criteria && sim.grading_criteria !== '<p><br></p>')
+                hasContent(sim.grading_criteria)
             ) {
                 completed.push('assessment');
             }
@@ -121,8 +129,8 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             // 5. Branding Check - Depends on Assessment
             if (completed.includes('assessment') &&
                 sim.company_logo_url && sim.banner_url &&
-                (sim.about_company && sim.about_company !== '<p><br></p>') &&
-                (sim.why_work_here && sim.why_work_here !== '<p><br></p>')
+                hasContent(sim.about_company) &&
+                hasContent(sim.why_work_here)
             ) {
                 completed.push('branding');
             }
@@ -336,6 +344,9 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                 <SheetContent side="left" className="p-0 w-72 border-r border-primary/10">
                     <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                    <SheetDescription className="sr-only">
+                        Navigation menu for simulation builder
+                    </SheetDescription>
                     <BuilderSidebar
                         currentStep={currentStep}
                         onStepChange={navigateToStep}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { updateSimulation, getSimulation } from "@/actions/simulations";
 import { VISIBILITY_OPTIONS } from "@/lib/simulations";
 
@@ -27,9 +27,12 @@ export default function VisibilityForm({ simulationId, saveTrigger, onSaveSucces
         }
     }, [simulationId]);
 
+    const lastSaveTrigger = useRef(saveTrigger || 0);
+
     useEffect(() => {
-        if (saveTrigger && saveTrigger > 0) {
+        if (saveTrigger && saveTrigger > lastSaveTrigger.current) {
             handleSave();
+            lastSaveTrigger.current = saveTrigger;
         }
     }, [saveTrigger]);
 
@@ -52,7 +55,7 @@ export default function VisibilityForm({ simulationId, saveTrigger, onSaveSucces
     };
 
     const handleSave = async (shouldAdvance = false) => {
-        if (!simulationId) return;
+        if (!simulationId || loading) return;
 
         setSaving(true);
 

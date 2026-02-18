@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createSimulation, updateSimulation, getSimulation } from "@/actions/simulations";
 import { INDUSTRIES, TARGET_ROLES, PROGRAM_TYPES, Simulation } from "@/lib/simulations";
 
@@ -50,9 +50,12 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
         }
     }, [simulationId, initialData]);
 
+    const lastSaveTrigger = useRef(saveTrigger || 0);
+
     useEffect(() => {
-        if (saveTrigger && saveTrigger > 0) {
+        if (saveTrigger && saveTrigger > lastSaveTrigger.current) {
             handleSave();
+            lastSaveTrigger.current = saveTrigger;
         }
     }, [saveTrigger]);
 
@@ -111,6 +114,7 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
     };
 
     const handleSave = async (): Promise<boolean> => {
+        if (loading) return false;
         // We allow saving partially filled forms (drafts), but we might want basic title validation at least for creation
         if (!simulationId && !formData.title.trim()) {
             setErrors({ title: "Program title is required to create a draft" });

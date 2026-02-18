@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createSimulation, updateSimulation, getSimulation, getOrganizationSkills, syncSimulationSkills } from "@/actions/simulations";
 import { Simulation } from "@/lib/simulations";
 
@@ -58,9 +58,12 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
         }
     }, [simulationId, initialData]);
 
+    const lastSaveTrigger = useRef(saveTrigger || 0);
+
     useEffect(() => {
-        if (saveTrigger && saveTrigger > 0) {
+        if (saveTrigger && saveTrigger > lastSaveTrigger.current) {
             handleSave();
+            lastSaveTrigger.current = saveTrigger;
         }
     }, [saveTrigger]);
 
@@ -92,7 +95,7 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
     };
 
     const handleSave = async (shouldAdvance = false) => {
-        if (!simulationId) return; // Should already exist by this step
+        if (!simulationId || loading) return; // Should already exist by this step
 
         if (shouldAdvance && !validateForm()) {
             return;

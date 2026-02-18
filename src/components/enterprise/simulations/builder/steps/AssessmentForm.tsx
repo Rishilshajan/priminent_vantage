@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { updateSimulation, getSimulation } from "@/actions/simulations";
 import { DURATIONS, DIFFICULTY_LEVELS, AUDIENCE_LEVELS, Simulation } from "@/lib/simulations";
 import RichTextEditor from "../RichTextEditor";
@@ -46,9 +46,12 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
         }
     }, [simulationId, initialData]);
 
+    const lastSaveTrigger = useRef(saveTrigger || 0);
+
     useEffect(() => {
-        if (saveTrigger && saveTrigger > 0) {
+        if (saveTrigger && saveTrigger > lastSaveTrigger.current) {
             handleSave();
+            lastSaveTrigger.current = saveTrigger;
         }
     }, [saveTrigger]);
 
@@ -105,7 +108,7 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
     }
 
     const handleSave = async (shouldAdvance = false) => {
-        if (!simulationId) return;
+        if (!simulationId || loading) return;
 
         if (shouldAdvance && !validateForm()) {
             // Scroll to top or first error

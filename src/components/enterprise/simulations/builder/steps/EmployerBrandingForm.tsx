@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getSimulation, updateSimulation, uploadAsset } from "@/actions/simulations";
 import { FILE_VALIDATION, validateFileType, validateFileSize } from "@/lib/s3-shared";
 import { cn } from "@/lib/utils";
@@ -55,28 +55,85 @@ export default function EmployerBrandingForm({
     }, [previewUrls]);
 
     useEffect(() => {
-        loadSimulation();
+        let mounted = true;
+        const load = async () => {
+            console.log("Loading simulation data for:", simulationId);
+            try {
+                const result = await getSimulation(simulationId);
+                if (mounted && result.data) {
+                    console.log("Loaded data:", result.data);
+                    setFormData(prev => ({
+                        ...prev,
+                        company_logo_url: result.data.company_logo_url || prev.company_logo_url || '',
+                        banner_url: result.data.banner_url || prev.banner_url || '',
+                        intro_video_url: result.data.intro_video_url || prev.intro_video_url || '',
+                        about_company: result.data.about_company || prev.about_company || '',
+                        why_work_here: result.data.why_work_here || prev.why_work_here || '',
+                    }));
+                }
+            } catch (error) {
+                console.error("Failed to load simulation:", error);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+        load();
+        return () => { mounted = false; };
     }, [simulationId]);
 
-    useEffect(() => {
-        if (saveTrigger && saveTrigger > 0) {
-            handleSave();
-        }
-    }, [saveTrigger]);
+
 
     const loadSimulation = async () => {
-        const result = await getSimulation(simulationId);
-        if (result.data) {
-            setFormData({
-                company_logo_url: result.data.company_logo_url || '',
-                banner_url: result.data.banner_url || '',
-                intro_video_url: result.data.intro_video_url || '',
-                about_company: result.data.about_company || '',
-                why_work_here: result.data.why_work_here || '',
-            });
+        try {
+            const result = await getSimulation(simulationId);
+            if (result.data) {
+                // Only update if we have data, to avoid blowing away state with empty strings if fetch fails partially
+                // But normally we trust the DB.
+                setFormData(prev => ({
+                    ...prev,
+                    company_logo_url: result.data.company_logo_url || prev.company_logo_url || '',
+                    banner_url: result.data.banner_url || prev.banner_url || '',
+                    intro_video_url: result.data.intro_video_url || prev.intro_video_url || '',
+                    about_company: result.data.about_company || prev.about_company || '',
+                    why_work_here: result.data.why_work_here || prev.why_work_here || '',
+                }));
+            }
+        } catch (error) {
+            console.error("Failed to load simulation:", error);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
+
+    const lastSaveTrigger = useRef(saveTrigger || 0);
+
+    const handleSave = useCallback(async () => {
+        if (loading) return; // Prevent saving before data is loaded
+
+        // Prevent catastrophic empty saves
+        if (!formData.company_logo_url &&
+            !formData.banner_url &&
+            !formData.about_company &&
+            !formData.why_work_here) {
+            return;
+        }
+        console.log("Saving Employer Branding Data:", formData);
+        const result = await updateSimulation(simulationId, formData);
+        if (result.error) {
+            console.error("Save failed:", result.error);
+            // Optionally set global error state here
+        } else {
+            onSaveSuccess?.();
+        }
+    }, [simulationId, formData, onSaveSuccess, loading]);
+
+    // Handle external save trigger
+    useEffect(() => {
+        if (saveTrigger && saveTrigger > lastSaveTrigger.current) {
+            handleSave();
+            lastSaveTrigger.current = saveTrigger;
+        }
+    }, [saveTrigger, handleSave]);
 
     const handleFileUpload = async (file: File, assetType: 'logo' | 'banner' | 'video') => {
         // Validate file
@@ -93,7 +150,7 @@ export default function EmployerBrandingForm({
         // Create local preview
         const previewUrl = URL.createObjectURL(file);
         setPreviewUrls(prev => {
-            // Revoke old preview if exists
+            // Revoke old preview
             if (prev[assetType] && prev[assetType].startsWith('blob:')) {
                 URL.revokeObjectURL(prev[assetType]);
             }
@@ -102,46 +159,58 @@ export default function EmployerBrandingForm({
 
         setUploadStatuses(prev => ({ ...prev, [assetType]: 'uploading' }));
 
-        // Use FormData for server action
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', file);
-        uploadFormData.append('simulationId', simulationId);
-        uploadFormData.append('assetType', assetType);
+        try {
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', file);
+            uploadFormData.append('simulationId', simulationId);
+            uploadFormData.append('assetType', assetType);
 
-        const result = await uploadAsset(uploadFormData);
+            const result = await uploadAsset(uploadFormData);
 
-        if (result.error) {
-            setUploadStatuses(prev => ({ ...prev, [assetType]: 'error' }));
-            alert(result.error);
-        } else if (result.data) {
-            setUploadStatuses(prev => ({ ...prev, [assetType]: 'success' }));
-
-            // Update form data with new URL
-            const fieldMapping = {
-                logo: 'company_logo_url',
-                banner: 'banner_url',
-                video: 'intro_video_url'
-            };
-            const urlField = fieldMapping[assetType] as keyof typeof formData;
-            const newFormData = { ...formData, [urlField]: result.data!.url };
-            setFormData(newFormData);
-
-            // Clear error if exists
-            if (errors[urlField]) {
-                const newErrors = { ...errors };
-                delete newErrors[urlField];
-                setErrors(newErrors);
+            if (result.error) {
+                throw new Error(result.error);
             }
 
-            // Save to simulation
-            await updateSimulation(simulationId, { [urlField]: result.data.url });
-        }
-    };
+            if (result.data) {
+                setUploadStatuses(prev => ({ ...prev, [assetType]: 'success' }));
 
-    const handleSave = async () => {
-        const result = await updateSimulation(simulationId, formData);
-        if (!result.error) {
-            onSaveSuccess?.();
+                const fieldMapping = {
+                    logo: 'company_logo_url',
+                    banner: 'banner_url',
+                    video: 'intro_video_url'
+                };
+                const urlField = fieldMapping[assetType] as keyof typeof formData;
+                const newUrl = result.data.url;
+
+                console.log(`Asset uploaded (${assetType}):`, newUrl);
+
+                // Update local state using functional update to avoid stale closure
+                setFormData(prev => ({ ...prev, [urlField]: newUrl }));
+
+                // Clear error
+                setErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors[urlField];
+                    return newErrors;
+                });
+
+                // Persist immediately to DB
+                // NOTE: We only update the specific field to avoid overwriting other fields 
+                // with stale data if verify/save runs concurrently.
+                const updateResult = await updateSimulation(simulationId, { [urlField]: newUrl });
+                if (updateResult.error) {
+                    console.error("Failed to persist asset URL to simulation:", updateResult.error);
+                    // Revert status to error if DB save fails
+                    setUploadStatuses(prev => ({ ...prev, [assetType]: 'error' }));
+                } else {
+                    // Trigger success callback to update progress/green tick
+                    onSaveSuccess?.();
+                }
+            }
+        } catch (error: any) {
+            console.error("Upload error:", error);
+            setUploadStatuses(prev => ({ ...prev, [assetType]: 'error' }));
+            alert(error.message || "Upload failed");
         }
     };
 
@@ -170,41 +239,27 @@ export default function EmployerBrandingForm({
     }
 
     return (
-        <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            {/* Header Section */}
-            <div className="flex items-end justify-between px-6 pb-2">
-                <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                        <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-sm border border-primary/10">
-                            <Globe size={24} />
-                        </div>
-                        <div className="space-y-0.5">
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                                    Employer Branding
-                                </h2>
-                                <span className="px-3 py-1 bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-black rounded-full uppercase tracking-[0.2em] shadow-lg shadow-slate-900/10">v2.0</span>
-                            </div>
-                            <p className="text-slate-400 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                                <CheckCircle2 size={12} className="text-green-500" />
-                                Culture & Strategic Positioning
-                            </p>
-                        </div>
-                    </div>
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <section className="bg-white dark:bg-slate-900 p-4 md:p-8 rounded-xl border border-primary/5 shadow-sm">
+                {/* Header */}
+                <div className="mb-8">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                        Employer Branding
+                    </h2>
+                    <p className="text-sm text-slate-500">
+                        Define your company's culture and strategic positioning.
+                    </p>
                 </div>
-            </div>
 
-            <section className="bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-200/60 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.03)] dark:shadow-none">
-
-                <div className="space-y-6">
+                <div className="space-y-8">
                     {/* Logo and Banner Upload */}
-                    <div className="grid grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {/* Company Logo */}
                         <div className="col-span-1">
                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                                 Company Logo
                             </label>
-                            <div className={`aspect-square bg-background-light dark:bg-slate-800 border-2 border-dashed border-primary/10 rounded-xl flex flex-col items-center justify-center p-4 text-center group hover:border-primary/40 cursor-pointer transition-all relative overflow-hidden ${errors.company_logo_url ? 'border-red-300 ring-1 ring-red-300/50' : ''}`}>
+                            <div className={`aspect-square bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center p-4 text-center group hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all relative overflow-hidden ${errors.company_logo_url ? 'border-red-300 ring-1 ring-red-300/50' : ''}`}>
                                 {previewUrls.logo || formData.company_logo_url ? (
                                     <img
                                         src={previewUrls.logo || formData.company_logo_url}
@@ -216,15 +271,16 @@ export default function EmployerBrandingForm({
                                     />
                                 ) : (
                                     <>
-                                        <span className="material-symbols-outlined text-primary/40 group-hover:text-primary mb-2">add_photo_alternate</span>
-                                        <p className="text-[10px] text-slate-400 font-semibold">Upload PNG/SVG</p>
+                                        <div className="mb-2 p-2 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:scale-110 transition-transform">
+                                            <span className="material-symbols-outlined text-slate-400 group-hover:text-primary">add_photo_alternate</span>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Upload Logo</p>
                                     </>
                                 )}
 
                                 {uploadStatuses.logo === 'uploading' && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 dark:bg-slate-900/60 z-10">
                                         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
-                                        <p className="text-[10px] text-primary font-bold uppercase tracking-tighter">Uploading...</p>
                                     </div>
                                 )}
 
@@ -237,14 +293,25 @@ export default function EmployerBrandingForm({
                                 />
                             </div>
                             {errors.company_logo_url && <p className="text-[10px] text-red-500 mt-2 font-bold uppercase tracking-wide">{errors.company_logo_url}</p>}
+
+                            {/* Guidelines */}
+                            <div className="mt-3 space-y-1">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase">Recommended</p>
+                                <ul className="text-[10px] text-slate-400 space-y-0.5 list-disc pl-3">
+                                    <li>500x500px (Min) - 1000x1000px (Ideal)</li>
+                                    <li>Format: PNG (Transparent preferred)</li>
+                                    <li>Aspect Ratio: 1:1 (Square)</li>
+                                    <li>File Size: Under 2MB</li>
+                                </ul>
+                            </div>
                         </div>
 
                         {/* Program Banner */}
-                        <div className="col-span-2">
+                        <div className="col-span-1 md:col-span-2">
                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                                 Program Banner
                             </label>
-                            <div className={`aspect-video bg-background-light dark:bg-slate-800 border-2 border-dashed border-primary/10 rounded-xl flex flex-col items-center justify-center p-4 text-center group hover:border-primary/40 cursor-pointer transition-all overflow-hidden relative ${errors.banner_url ? 'border-red-300 ring-1 ring-red-300/50' : ''}`}>
+                            <div className={`aspect-video bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center p-4 text-center group hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all overflow-hidden relative ${errors.banner_url ? 'border-red-300 ring-1 ring-red-300/50' : ''}`}>
                                 {previewUrls.banner || formData.banner_url ? (
                                     <img
                                         src={previewUrls.banner || formData.banner_url}
@@ -256,15 +323,16 @@ export default function EmployerBrandingForm({
                                     />
                                 ) : (
                                     <div className="flex flex-col items-center">
-                                        <span className="material-symbols-outlined text-primary/40 group-hover:text-primary mb-2">image</span>
-                                        <p className="text-[10px] text-slate-400 font-semibold">Upload Banner (1200x400)</p>
+                                        <div className="mb-2 p-3 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:scale-110 transition-transform">
+                                            <span className="material-symbols-outlined text-slate-400 group-hover:text-primary">image</span>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Upload Banner (1200x400)</p>
                                     </div>
                                 )}
 
                                 {uploadStatuses.banner === 'uploading' && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 dark:bg-slate-900/60 z-10">
                                         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
-                                        <p className="text-[10px] text-primary font-bold uppercase tracking-tighter">Uploading...</p>
                                     </div>
                                 )}
 
@@ -277,6 +345,22 @@ export default function EmployerBrandingForm({
                                 />
                             </div>
                             {errors.banner_url && <p className="text-[10px] text-red-500 mt-2 font-bold uppercase tracking-wide">{errors.banner_url}</p>}
+
+                            {/* Guidelines */}
+                            <div className="mt-3 space-y-1">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase">Required</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5">
+                                    <ul className="text-[10px] text-slate-400 space-y-0.5 list-disc pl-3">
+                                        <li>Resolution: 1200x400px (Exact)</li>
+                                        <li>Aspect Ratio: 3:1</li>
+                                        <li>Format: PNG or JPG</li>
+                                    </ul>
+                                    <ul className="text-[10px] text-slate-400 space-y-0.5 list-disc pl-3">
+                                        <li>Keep text centered (avoid edge cropping)</li>
+                                        <li>Use high contrast fonts</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -285,16 +369,16 @@ export default function EmployerBrandingForm({
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                             'Why Work Here' Video Content
                         </label>
-                        <div className="w-full bg-background-light dark:bg-slate-800 border-2 border-dashed border-primary/10 rounded-xl p-8 flex flex-col items-center justify-center text-center group hover:border-primary/40 cursor-pointer transition-all relative overflow-hidden">
+                        <div className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-8 flex flex-col items-center justify-center text-center group hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all relative overflow-hidden">
                             {previewUrls.video || formData.intro_video_url ? (
                                 <div className="text-sm text-slate-600 dark:text-slate-300 flex flex-col items-center">
-                                    <span className="material-symbols-outlined text-green-500 mb-2">check_circle</span>
-                                    <p className="font-semibold text-slate-900 dark:text-white">Video Ready</p>
-                                    <p className="text-[10px] text-slate-400">Click to change video</p>
+                                    <span className="material-symbols-outlined text-green-500 mb-2 text-2xl">check_circle</span>
+                                    <p className="font-bold text-slate-900 dark:text-white">Video Ready</p>
+                                    <p className="text-xs text-slate-400">Click to replace</p>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-primary rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                                         <span className="material-symbols-outlined">videocam</span>
                                     </div>
                                     <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Click to upload culture video</p>
@@ -305,8 +389,7 @@ export default function EmployerBrandingForm({
                             {uploadStatuses.video === 'uploading' && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-900/80 z-10">
                                     <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-3" />
-                                    <p className="text-xs text-primary font-bold uppercase tracking-wider">Uploading Video...</p>
-                                    <p className="text-[10px] text-slate-400 mt-1 italic">This may take a while depending on file size</p>
+                                    <p className="text-xs text-primary font-bold uppercase tracking-wider">Uploading...</p>
                                 </div>
                             )}
 
@@ -320,11 +403,10 @@ export default function EmployerBrandingForm({
                         </div>
                     </div>
 
-                    {/* Text Fields with Rich Text Editor */}
-                    <div className="space-y-8 pt-4">
+                    {/* Text Fields */}
+                    <div className="space-y-6">
                         <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <span className="size-1.5 rounded-full bg-primary" />
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                                 About the Company
                             </label>
                             <RichTextEditor
@@ -344,8 +426,7 @@ export default function EmployerBrandingForm({
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <span className="size-1.5 rounded-full bg-primary" />
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                                 Why Work Here
                             </label>
                             <RichTextEditor
@@ -368,33 +449,26 @@ export default function EmployerBrandingForm({
             </section>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between pt-8 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
                 <button
                     type="button"
                     onClick={onBack}
-                    className="group px-8 py-4 text-xs font-black border-2 border-slate-100 dark:border-slate-800 text-slate-500 rounded-2xl hover:bg-white dark:hover:bg-slate-800 hover:border-slate-200 transition-all flex items-center gap-3 uppercase tracking-widest shadow-sm"
+                    className="w-full sm:w-auto px-6 py-3 text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center sm:justify-start gap-2"
                 >
-                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                    Back to Assessment
+                    <span className="material-symbols-outlined text-sm">arrow_back</span>
+                    Back
                 </button>
 
-                <button
-                    type="button"
-                    onClick={handleNext}
-                    className="px-8 py-4 bg-green-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-green-700 shadow-xl shadow-green-600/20 transition-all flex items-center gap-3 group hover:scale-[1.02] active:scale-[0.98]"
-                >
-                    {certificateEnabled ? (
-                        <>
-                            Continue to Certification
-                            <Award size={18} className="group-hover:translate-x-1 transition-transform" />
-                        </>
-                    ) : (
-                        <>
-                            Continue to Visibility
-                            <Globe size={18} className="group-hover:translate-x-1 transition-transform" />
-                        </>
-                    )}
-                </button>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <button
+                        type="button"
+                        onClick={handleNext}
+                        className="w-full sm:w-auto px-6 py-3 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all flex items-center justify-center sm:justify-start gap-2"
+                    >
+                        {certificateEnabled ? 'Continue to Certification' : 'Continue to Visibility'}
+                        <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    </button>
+                </div>
             </div>
         </div>
     );

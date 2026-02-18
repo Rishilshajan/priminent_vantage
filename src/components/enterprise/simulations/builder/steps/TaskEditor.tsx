@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { SimulationTask } from "@/lib/simulations";
 import { updateTask, uploadAsset } from "@/actions/simulations";
 import {
@@ -103,10 +103,13 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
 
     const [error, setError] = useState<string | null>(null);
 
+    const lastSaveTrigger = useRef(saveTrigger || 0);
+
     // Listen for global save trigger
     useEffect(() => {
-        if (saveTrigger && saveTrigger > 0) {
+        if (saveTrigger && saveTrigger > lastSaveTrigger.current) {
             handleSave({ status: formData.status || 'incomplete', shouldClose: false, source: 'global' });
+            lastSaveTrigger.current = saveTrigger;
         }
     }, [saveTrigger]);
 

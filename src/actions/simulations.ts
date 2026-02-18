@@ -12,6 +12,7 @@ import {
     SimulationTaskSchema,
     canPublishSimulation,
 } from "@/lib/simulations";
+import { revalidatePath } from "next/cache";
 
 // ============================================
 // SIMULATION CRUD OPERATIONS
@@ -160,27 +161,27 @@ export async function updateSimulation(
         const { data: updated, error: updateError } = await supabase
             .from('simulations')
             .update({
-                title: data.title,
-                description: data.description,
-                short_description: data.short_description,
-                industry: data.industry,
-                target_role: data.target_role,
-                duration: data.duration,
-                difficulty_level: data.difficulty_level,
-                program_type: data.program_type,
-                learning_outcomes: data.learning_outcomes,
-                prerequisites: data.prerequisites,
-                target_audience: data.target_audience,
-                visibility: data.visibility,
-                analytics_tags: data.analytics_tags,
-                certificate_enabled: data.certificate_enabled,
-                company_logo_url: data.company_logo_url,
-                banner_url: data.banner_url,
-                intro_video_url: data.intro_video_url,
-                about_company: data.about_company,
-                why_work_here: data.why_work_here,
-                certificate_director_name: data.certificate_director_name,
-                grading_criteria: data.grading_criteria,
+                ...(data.title !== undefined && { title: data.title }),
+                ...(data.description !== undefined && { description: data.description }),
+                ...(data.short_description !== undefined && { short_description: data.short_description }),
+                ...(data.industry !== undefined && { industry: data.industry }),
+                ...(data.target_role !== undefined && { target_role: data.target_role }),
+                ...(data.duration !== undefined && { duration: data.duration }),
+                ...(data.difficulty_level !== undefined && { difficulty_level: data.difficulty_level }),
+                ...(data.program_type !== undefined && { program_type: data.program_type }),
+                ...(data.learning_outcomes !== undefined && { learning_outcomes: data.learning_outcomes }),
+                ...(data.prerequisites !== undefined && { prerequisites: data.prerequisites }),
+                ...(data.target_audience !== undefined && { target_audience: data.target_audience }),
+                ...(data.visibility !== undefined && { visibility: data.visibility }),
+                ...(data.analytics_tags !== undefined && { analytics_tags: data.analytics_tags }),
+                ...(data.certificate_enabled !== undefined && { certificate_enabled: data.certificate_enabled }),
+                ...(data.company_logo_url !== undefined && { company_logo_url: data.company_logo_url }),
+                ...(data.banner_url !== undefined && { banner_url: data.banner_url }),
+                ...(data.intro_video_url !== undefined && { intro_video_url: data.intro_video_url }),
+                ...(data.about_company !== undefined && { about_company: data.about_company }),
+                ...(data.why_work_here !== undefined && { why_work_here: data.why_work_here }),
+                ...(data.certificate_director_name !== undefined && { certificate_director_name: data.certificate_director_name }),
+                ...(data.grading_criteria !== undefined && { grading_criteria: data.grading_criteria }),
                 updated_at: new Date().toISOString(),
             })
             .eq('id', simulationId)
@@ -191,6 +192,8 @@ export async function updateSimulation(
             console.error("Update simulation error:", updateError);
             return { error: "Failed to update simulation" };
         }
+
+        revalidatePath(`/enterprise/simulations/edit/${simulationId}`);
 
         await logServerEvent({
             level: 'INFO',
