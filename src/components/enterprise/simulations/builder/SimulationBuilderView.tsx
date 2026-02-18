@@ -85,30 +85,45 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             setCertificateEnabled(certEnabled);
 
             // 1. Metadata Check (General Info) - No dependencies
-            if (sim.title) {
+            if (sim.title && sim.short_description && sim.description && sim.industry && sim.target_role && sim.program_type) {
                 completed.push('metadata');
             }
 
             // 2. Outcomes Check - Depends on Metadata
             if (completed.includes('metadata') && (
-                (sim.learning_outcomes && sim.learning_outcomes.length > 0) ||
-                (sim.simulation_skills && sim.simulation_skills.length > 0)
+                sim.learning_outcomes && sim.learning_outcomes.length > 0 &&
+                sim.simulation_skills && sim.simulation_skills.length > 0
             )) {
                 completed.push('outcomes');
             }
 
             // 3. Tasks Check - Depends on Outcomes
             if (completed.includes('outcomes') && sim.simulation_tasks && sim.simulation_tasks.length > 0) {
-                completed.push('tasks');
+                // STRICTER CHECK: At least one task must be meaningful (not just "New Task X" with no content)
+                const hasValidTask = sim.simulation_tasks.some((t: any) =>
+                    (t.title && !t.title.startsWith('New Task')) ||
+                    (t.introduction && t.introduction.trim().length > 0) ||
+                    (t.instructions && t.instructions.trim().length > 0)
+                );
+                if (hasValidTask) {
+                    completed.push('tasks');
+                }
             }
 
             // 4. Assessment Check - Depends on Tasks
-            if (completed.includes('tasks') && sim.duration && sim.difficulty_level) {
+            if (completed.includes('tasks') &&
+                sim.duration && sim.difficulty_level && sim.target_audience &&
+                (sim.grading_criteria && sim.grading_criteria !== '<p><br></p>')
+            ) {
                 completed.push('assessment');
             }
 
             // 5. Branding Check - Depends on Assessment
-            if (completed.includes('assessment') && sim.company_logo_url && sim.banner_url) {
+            if (completed.includes('assessment') &&
+                sim.company_logo_url && sim.banner_url &&
+                (sim.about_company && sim.about_company !== '<p><br></p>') &&
+                (sim.why_work_here && sim.why_work_here !== '<p><br></p>')
+            ) {
                 completed.push('branding');
             }
 
@@ -116,7 +131,10 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             // DEPENDS ON: Branding
             if (certEnabled) {
                 if (completed.includes('branding')) {
-                    completed.push('certification');
+                    // Start strict: require director name
+                    if (sim.certificate_director_name) {
+                        completed.push('certification');
+                    }
                 }
             }
 

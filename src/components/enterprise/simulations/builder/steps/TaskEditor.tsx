@@ -52,8 +52,16 @@ const DELIVERABLE_TYPES = [
     { id: 'FILE_UPLOAD', label: 'File Upload', icon: FileUp, description: 'Student uploads a PDF, DOCX, or other file' },
     { id: 'MULTIPLE_CHOICE', label: 'Multiple Choice', icon: ListChecks, description: 'Auto-graded quiz with options' },
     { id: 'CODE_SNIPPET', label: 'Code Snippet', icon: Code2, description: 'Code editor with syntax highlighting' },
-    { id: 'REFLECTION_ONLY', label: 'Reflection Only', icon: Eye, description: 'Student marks as complete after reading', disabled: true },
 ];
+
+interface DeliverableType {
+    id: string;
+    label: string;
+    icon: any;
+    description: string;
+    disabled?: boolean;
+}
+
 
 const PROGRAMMING_LANGUAGES = [
     { value: 'javascript', label: 'JavaScript' },
@@ -86,7 +94,11 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
     const [saving, setSaving] = useState(false);
     const [saveSource, setSaveSource] = useState<'global' | 'local_publish' | null>(null);
     const [uploading, setUploading] = useState(false);
-    const [videoLink, setVideoLink] = useState(task.video_url || "");
+    // Video Assets State
+    const [videoAssets, setVideoAssets] = useState<{ title: string; url: string; type: 'upload' | 'embed' }[]>(
+        task.video_assets || (task.video_url ? [{ title: 'Main Video', url: task.video_url, type: 'embed' }] : [])
+    );
+    const [newVideoUrl, setNewVideoUrl] = useState("");
     const [customMinutes, setCustomMinutes] = useState("");
 
     const [error, setError] = useState<string | null>(null);
@@ -116,7 +128,8 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
             ...formData,
             status: options.status || formData.status || 'incomplete',
             estimated_time: formData.estimated_time === 'Custom' ? `${customMinutes} mins` : formData.estimated_time,
-            video_url: videoLink,
+            video_url: videoAssets.length > 0 ? videoAssets[0].url : null, // Legacy support: keep first video as main url
+            video_assets: videoAssets,
             quiz_data: quizData,
             code_config: codeConfig,
         };
@@ -202,7 +215,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
     return (
         <div className={`flex flex-col h-full bg-slate-50 dark:bg-slate-950 ${!inline ? 'fixed inset-0 z-50 animate-in slide-in-from-right duration-500' : ''}`}>
             {/* Header */}
-            <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-8 py-4 flex items-center justify-between sticky top-0 z-20">
+            <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 md:px-8 md:py-4 flex items-center justify-between sticky top-0 z-20">
                 <div className="flex items-center gap-4">
                     <div className="size-10 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-lg shadow-lg shadow-primary/20">
                         {String(task.order_index || task.task_number || 1).padStart(2, '0')}
@@ -221,9 +234,9 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
 
             {/* Content Area */}
             <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar`}>
-                <div className="max-w-5xl mx-auto p-8 space-y-8">
+                <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8">
                     {/* SECTION 1: BASIC INFORMATION */}
-                    <section className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-primary/5 shadow-sm">
+                    <section className="bg-white dark:bg-slate-900 p-5 md:p-8 rounded-xl border border-primary/5 shadow-sm">
                         <div className="mb-6">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                                 Basic Information
@@ -296,7 +309,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                     </section>
 
                     {/* SECTION 2: TASK OVERVIEW */}
-                    <section className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-primary/5 shadow-sm">
+                    <section className="bg-white dark:bg-slate-900 p-5 md:p-8 rounded-xl border border-primary/5 shadow-sm">
                         <div className="mb-6">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                                 Task Overview
@@ -317,7 +330,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                     </section>
 
                     {/* SECTION 3: LEARNING OBJECTIVES */}
-                    <section className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-primary/5 shadow-sm">
+                    <section className="bg-white dark:bg-slate-900 p-5 md:p-8 rounded-xl border border-primary/5 shadow-sm">
                         <div className="mb-6">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                                 Learning Objectives
@@ -358,7 +371,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                     </section>
 
                     {/* SECTION 4: TASK INSTRUCTIONS */}
-                    <section className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-primary/5 shadow-sm">
+                    <section className="bg-white dark:bg-slate-900 p-5 md:p-8 rounded-xl border border-primary/5 shadow-sm">
                         <div className="mb-6">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                                 Detailed Instructions
@@ -379,7 +392,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                     </section>
 
                     {/* SECTION 5: SUPPORTING MATERIALS */}
-                    <section className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-primary/5 shadow-sm">
+                    <section className="bg-white dark:bg-slate-900 p-5 md:p-8 rounded-xl border border-primary/5 shadow-sm">
                         <div className="mb-6">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                                 Supporting Materials
@@ -417,57 +430,82 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                             </div>
 
                             <div className="space-y-4">
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Video Resource (YouTube, Loom)</label>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Video Resources (YouTube, Loom)</label>
+
+                                {/* List of Added Videos */}
+                                <div className="space-y-3 mb-4">
+                                    {videoAssets.map((video, idx) => (
+                                        <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
+                                            <div className="size-10 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-red-500 shadow-sm">
+                                                <Video size={20} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{video.title || 'Video Resource'}</p>
+                                                <p className="text-[9px] text-slate-400 uppercase font-black truncate">{video.url}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => setVideoAssets(prev => prev.filter((_, i) => i !== idx))}
+                                                className="text-slate-300 hover:text-red-500 transition-colors p-2"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Add New Video Input */}
                                 <div className="space-y-2">
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
-                                            value={videoLink}
-                                            onChange={e => setVideoLink(e.target.value)}
+                                            value={newVideoUrl}
+                                            onChange={e => setNewVideoUrl(e.target.value)}
                                             className="flex-1 bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
-                                            placeholder="Paste host URL"
+                                            placeholder="Paste YouTube or Loom URL"
                                         />
                                         <button
                                             onClick={() => {
                                                 const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
                                                 const loomRegex = /^(https?:\/\/)?(www\.)?loom\.com\/share\/.+$/;
 
-                                                if (youtubeRegex.test(videoLink) || loomRegex.test(videoLink)) {
+                                                if (youtubeRegex.test(newVideoUrl) || loomRegex.test(newVideoUrl)) {
                                                     // Valid case
-                                                    const btn = document.getElementById('verify-btn');
+                                                    const provider = youtubeRegex.test(newVideoUrl) ? 'YouTube Video' : 'Loom Video';
+                                                    setVideoAssets(prev => [...prev, {
+                                                        title: provider,
+                                                        url: newVideoUrl,
+                                                        type: 'embed'
+                                                    }]);
+                                                    setNewVideoUrl(""); // Clear input
+
+                                                    // Visual Feedback (optional)
+                                                    const btn = document.getElementById('add-video-btn');
                                                     if (btn) {
-                                                        btn.textContent = 'Verified!';
-                                                        btn.classList.add('bg-green-500', 'text-white');
-                                                        btn.classList.remove('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800');
-                                                        setTimeout(() => {
-                                                            btn.textContent = 'Verify';
-                                                            btn.classList.remove('bg-green-500', 'text-white');
-                                                            btn.classList.add('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800');
-                                                        }, 2000);
+                                                        btn.textContent = 'Added!';
+                                                        setTimeout(() => { btn.textContent = 'Add Video'; }, 2000);
                                                     }
                                                 } else {
                                                     // Invalid case
-                                                    const btn = document.getElementById('verify-btn');
+                                                    const btn = document.getElementById('add-video-btn');
                                                     if (btn) {
+                                                        const originalText = btn.textContent;
                                                         btn.textContent = 'Invalid URL';
                                                         btn.classList.add('bg-red-500', 'text-white');
-                                                        btn.classList.remove('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800');
                                                         setTimeout(() => {
-                                                            btn.textContent = 'Verify';
+                                                            btn.textContent = 'Add Video';
                                                             btn.classList.remove('bg-red-500', 'text-white');
-                                                            btn.classList.add('bg-slate-100', 'text-slate-600', 'dark:bg-slate-800');
                                                         }, 2000);
                                                     }
                                                 }
                                             }}
-                                            id="verify-btn"
-                                            className="px-6 bg-slate-100 dark:bg-slate-800 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors text-xs font-bold w-24"
+                                            id="add-video-btn"
+                                            className="px-4 bg-slate-100 dark:bg-slate-800 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors text-xs font-bold whitespace-nowrap"
                                         >
-                                            Verify
+                                            Add Video
                                         </button>
                                     </div>
                                     <p className="text-[10px] text-slate-400 pl-1">
-                                        Supported: YouTube, Loom
+                                        Supported: YouTube, Loom. Videos are not downloaded, only linked.
                                     </p>
                                 </div>
                             </div>
@@ -475,7 +513,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                     </section>
 
                     {/* SECTION 6: DELIVERABLE TYPE */}
-                    <section className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-primary/5 shadow-sm">
+                    <section className="bg-white dark:bg-slate-900 p-5 md:p-8 rounded-xl border border-primary/5 shadow-sm">
                         <div className="mb-6">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                                 Student Submission
@@ -486,7 +524,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                         </div>
                         <div className="space-y-8">
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {DELIVERABLE_TYPES.map(type => (
+                                {DELIVERABLE_TYPES.map((type: any) => (
                                     <button
                                         key={type.id}
                                         disabled={type.disabled}
@@ -673,7 +711,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                     </section>
 
                     {/* SECTION 8: ACCESS & VISIBILITY */}
-                    <section className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-primary/5 shadow-sm">
+                    <section className="bg-white dark:bg-slate-900 p-5 md:p-8 rounded-xl border border-primary/5 shadow-sm">
                         <div className="mb-6">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                                 Access & Visibility
@@ -729,7 +767,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
             )}
 
             {/* Footer */}
-            <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-8 py-6 flex items-center justify-between sticky bottom-0 z-20 shadow-sm">
+            <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 py-4 md:px-8 md:py-6 flex items-center justify-between sticky bottom-0 z-20 shadow-sm">
                 <button
                     onClick={onClose}
                     className="text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors"

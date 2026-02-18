@@ -124,7 +124,7 @@ export default function BuilderSidebar({ currentStep, onStepChange, completedSte
                                 </span>
                                 <span className="truncate">{step.label}</span>
                             </div>
-                            {isCompleted && (
+                            {isCompleted && !isActive && (
                                 <span className="material-symbols-outlined text-green-500 text-[18px] animate-in fade-in zoom-in duration-300">
                                     check_circle
                                 </span>

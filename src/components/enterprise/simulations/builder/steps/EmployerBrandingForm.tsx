@@ -41,6 +41,8 @@ export default function EmployerBrandingForm({
     });
     const [loading, setLoading] = useState(true);
 
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
     // Cleanup object URLs on unmount
     useEffect(() => {
         return () => {
@@ -121,7 +123,15 @@ export default function EmployerBrandingForm({
                 video: 'intro_video_url'
             };
             const urlField = fieldMapping[assetType] as keyof typeof formData;
-            setFormData(prev => ({ ...prev, [urlField]: result.data!.url }));
+            const newFormData = { ...formData, [urlField]: result.data!.url };
+            setFormData(newFormData);
+
+            // Clear error if exists
+            if (errors[urlField]) {
+                const newErrors = { ...errors };
+                delete newErrors[urlField];
+                setErrors(newErrors);
+            }
 
             // Save to simulation
             await updateSimulation(simulationId, { [urlField]: result.data.url });
@@ -135,7 +145,22 @@ export default function EmployerBrandingForm({
         }
     };
 
+    const validateForm = () => {
+        const newErrors: Record<string, string> = {};
+        if (!formData.company_logo_url) newErrors.company_logo_url = "Company logo is required";
+        if (!formData.banner_url) newErrors.banner_url = "Program banner is required";
+        if (!formData.about_company || formData.about_company === '<p><br></p>') newErrors.about_company = "Company description is required";
+        if (!formData.why_work_here || formData.why_work_here === '<p><br></p>') newErrors.why_work_here = "Why Work Here section is required";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    }
+
     const handleNext = async () => {
+        if (!validateForm()) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
         await handleSave();
         onNext();
     };
@@ -179,7 +204,7 @@ export default function EmployerBrandingForm({
                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                                 Company Logo
                             </label>
-                            <div className="aspect-square bg-background-light dark:bg-slate-800 border-2 border-dashed border-primary/10 rounded-xl flex flex-col items-center justify-center p-4 text-center group hover:border-primary/40 cursor-pointer transition-all relative overflow-hidden">
+                            <div className={`aspect-square bg-background-light dark:bg-slate-800 border-2 border-dashed border-primary/10 rounded-xl flex flex-col items-center justify-center p-4 text-center group hover:border-primary/40 cursor-pointer transition-all relative overflow-hidden ${errors.company_logo_url ? 'border-red-300 ring-1 ring-red-300/50' : ''}`}>
                                 {previewUrls.logo || formData.company_logo_url ? (
                                     <img
                                         src={previewUrls.logo || formData.company_logo_url}
@@ -211,6 +236,7 @@ export default function EmployerBrandingForm({
                                     disabled={uploadStatuses.logo === 'uploading'}
                                 />
                             </div>
+                            {errors.company_logo_url && <p className="text-[10px] text-red-500 mt-2 font-bold uppercase tracking-wide">{errors.company_logo_url}</p>}
                         </div>
 
                         {/* Program Banner */}
@@ -218,7 +244,7 @@ export default function EmployerBrandingForm({
                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                                 Program Banner
                             </label>
-                            <div className="aspect-video bg-background-light dark:bg-slate-800 border-2 border-dashed border-primary/10 rounded-xl flex flex-col items-center justify-center p-4 text-center group hover:border-primary/40 cursor-pointer transition-all overflow-hidden relative">
+                            <div className={`aspect-video bg-background-light dark:bg-slate-800 border-2 border-dashed border-primary/10 rounded-xl flex flex-col items-center justify-center p-4 text-center group hover:border-primary/40 cursor-pointer transition-all overflow-hidden relative ${errors.banner_url ? 'border-red-300 ring-1 ring-red-300/50' : ''}`}>
                                 {previewUrls.banner || formData.banner_url ? (
                                     <img
                                         src={previewUrls.banner || formData.banner_url}
@@ -250,6 +276,7 @@ export default function EmployerBrandingForm({
                                     disabled={uploadStatuses.banner === 'uploading'}
                                 />
                             </div>
+                            {errors.banner_url && <p className="text-[10px] text-red-500 mt-2 font-bold uppercase tracking-wide">{errors.banner_url}</p>}
                         </div>
                     </div>
 
@@ -302,10 +329,18 @@ export default function EmployerBrandingForm({
                             </label>
                             <RichTextEditor
                                 value={formData.about_company}
-                                onChange={(val) => setFormData(prev => ({ ...prev, about_company: val }))}
+                                onChange={(val) => {
+                                    setFormData(prev => ({ ...prev, about_company: val }));
+                                    if (errors.about_company) {
+                                        const newErrors = { ...errors };
+                                        delete newErrors.about_company;
+                                        setErrors(newErrors);
+                                    }
+                                }}
                                 placeholder="Describe your company culture, mission, and achievements..."
                                 minHeight="240px"
                             />
+                            {errors.about_company && <p className="text-[10px] text-red-500 mt-2 font-bold uppercase tracking-wide">{errors.about_company}</p>}
                         </div>
 
                         <div>
@@ -315,10 +350,18 @@ export default function EmployerBrandingForm({
                             </label>
                             <RichTextEditor
                                 value={formData.why_work_here}
-                                onChange={(val) => setFormData(prev => ({ ...prev, why_work_here: val }))}
+                                onChange={(val) => {
+                                    setFormData(prev => ({ ...prev, why_work_here: val }));
+                                    if (errors.why_work_here) {
+                                        const newErrors = { ...errors };
+                                        delete newErrors.why_work_here;
+                                        setErrors(newErrors);
+                                    }
+                                }}
                                 placeholder="What makes your company unique? Mention benefits, growth opportunities, etc."
                                 minHeight="240px"
                             />
+                            {errors.why_work_here && <p className="text-[10px] text-red-500 mt-2 font-bold uppercase tracking-wide">{errors.why_work_here}</p>}
                         </div>
                     </div>
                 </div>

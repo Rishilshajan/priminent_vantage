@@ -24,6 +24,8 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
         program_type: (initialData?.program_type || 'job_simulation') as any,
     });
 
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
     // Only fetch if we have an ID but no initial data
     const [loading, setLoading] = useState(!!simulationId && !initialData);
     const [saving, setSaving] = useState(false);
@@ -68,9 +70,9 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
                 target_role: result.data.target_role || '',
                 program_type: result.data.program_type || 'job_simulation',
             });
-            // We still need to notify parent about certificate status even if not in this form, 
-            // but ideally the parent fetches it. 
-            // However, onCertificateChange is passed here. 
+            // We still need to notify parent about certificate status even if not in this form,
+            // but ideally the parent fetches it.
+            // However, onCertificateChange is passed here.
             // Let's keep it safe:
             if (result.data.certificate_enabled !== undefined) {
                 onCertificateChange?.(result.data.certificate_enabled);
@@ -81,6 +83,14 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
 
     const handleChange = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+        // Clear error when user types
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
 
         // Notify parent immediately if certificate setting changes
         if (field === 'certificate_enabled') {
@@ -88,9 +98,22 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
         }
     };
 
+    const validateForm = () => {
+        const newErrors: Record<string, string> = {};
+        if (!formData.title.trim()) newErrors.title = "Program title is required";
+        if (!formData.short_description.trim()) newErrors.short_description = "Short description is required";
+        if (!formData.description.trim()) newErrors.description = "Program description is required";
+        if (!formData.industry) newErrors.industry = "Industry selection is required";
+        if (!formData.target_role) newErrors.target_role = "Target role selection is required";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSave = async (): Promise<boolean> => {
-        if (!formData.title.trim()) {
-            alert('Please enter a program title');
+        // We allow saving partially filled forms (drafts), but we might want basic title validation at least for creation
+        if (!simulationId && !formData.title.trim()) {
+            setErrors({ title: "Program title is required to create a draft" });
             return false;
         }
 
@@ -134,6 +157,11 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
     };
 
     const handleNext = async () => {
+        if (!validateForm()) {
+            // Scroll to first error? Or just show them.
+            return;
+        }
+
         const success = await handleSave();
         if (success) {
             onNext();
@@ -200,72 +228,77 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
                             type="text"
                             value={formData.title}
                             onChange={(e) => handleChange('title', e.target.value)}
-                            className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
+                            className={`w-full bg-background-light dark:bg-slate-800 border rounded-lg focus:ring-primary focus:border-primary text-sm p-3 ${errors.title ? 'border-red-500 ring-1 ring-red-500/20' : 'border-primary/10'}`}
                             placeholder="e.g. Data Analytics Strategic Sprint"
                         />
+                        {errors.title && <p className="text-[10px] text-red-500 mt-1 font-bold uppercase tracking-wide">{errors.title}</p>}
                     </div>
 
                     {/* Short Description */}
                     <div className="col-span-1 md:col-span-2">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            Short Description
+                            Short Description *
                         </label>
                         <input
                             type="text"
                             value={formData.short_description}
                             onChange={(e) => handleChange('short_description', e.target.value)}
-                            className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
+                            className={`w-full bg-background-light dark:bg-slate-800 border rounded-lg focus:ring-primary focus:border-primary text-sm p-3 ${errors.short_description ? 'border-red-500 ring-1 ring-red-500/20' : 'border-primary/10'}`}
                             placeholder="Brief one-line summary"
                             maxLength={200}
                         />
+                        {errors.short_description && <p className="text-[10px] text-red-500 mt-1 font-bold uppercase tracking-wide">{errors.short_description}</p>}
                     </div>
 
                     {/* Program Description */}
                     <div className="col-span-1 md:col-span-2">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            Program Description
+                            Program Description *
                         </label>
                         <textarea
                             value={formData.description}
                             onChange={(e) => handleChange('description', e.target.value)}
-                            className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
+                            className={`w-full bg-background-light dark:bg-slate-800 border rounded-lg focus:ring-primary focus:border-primary text-sm p-3 ${errors.description ? 'border-red-500 ring-1 ring-red-500/20' : 'border-primary/10'}`}
                             placeholder="Provide a detailed overview for candidates..."
                             rows={4}
                         />
+                        {errors.description && <p className="text-[10px] text-red-500 mt-1 font-bold uppercase tracking-wide">{errors.description}</p>}
                     </div>
 
                     {/* Industry */}
                     <div>
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            Industry
+                            Industry *
                         </label>
                         <select
                             value={formData.industry}
                             onChange={(e) => handleChange('industry', e.target.value)}
-                            className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
+                            className={`w-full bg-background-light dark:bg-slate-800 border rounded-lg focus:ring-primary focus:border-primary text-sm p-3 ${errors.industry ? 'border-red-500 ring-1 ring-red-500/20' : 'border-primary/10'}`}
                         >
                             <option value="">Select Industry</option>
                             {INDUSTRIES.map(industry => (
                                 <option key={industry} value={industry}>{industry}</option>
                             ))}
                         </select>
+                        {errors.industry && <p className="text-[10px] text-red-500 mt-1 font-bold uppercase tracking-wide">{errors.industry}</p>}
                     </div>
 
                     {/* Target Role */}
                     <div>
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            Target Role
+                            Target Role *
                         </label>
                         <select
                             value={formData.target_role}
                             onChange={(e) => handleChange('target_role', e.target.value)}
-                            className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
+                            className={`w-full bg-background-light dark:bg-slate-800 border rounded-lg focus:ring-primary focus:border-primary text-sm p-3 ${errors.target_role ? 'border-red-500 ring-1 ring-red-500/20' : 'border-primary/10'}`}
                         >
                             <option value="">Select Role</option>
                             {TARGET_ROLES.map(role => (
                                 <option key={role} value={role}>{role}</option>
                             ))}
                         </select>
+                        {errors.target_role && <p className="text-[10px] text-red-500 mt-1 font-bold uppercase tracking-wide">{errors.target_role}</p>}
                     </div>
 
 
@@ -279,7 +312,7 @@ export default function ProgramMetadataForm({ simulationId, initialData, saveTri
                 <button
                     type="button"
                     onClick={handleNext}
-                    disabled={!formData.title.trim() || saving}
+                    disabled={saving}
                     className="px-6 py-3 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                     Continue to Learning Outcomes

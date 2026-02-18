@@ -180,6 +180,7 @@ export async function updateSimulation(
                 about_company: data.about_company,
                 why_work_here: data.why_work_here,
                 certificate_director_name: data.certificate_director_name,
+                grading_criteria: data.grading_criteria,
                 updated_at: new Date().toISOString(),
             })
             .eq('id', simulationId)

@@ -29,6 +29,7 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
     const [saving, setSaving] = useState(false);
     const [editingOutcomeIndex, setEditingOutcomeIndex] = useState<number | null>(null);
     const [editingOutcomeValue, setEditingOutcomeValue] = useState('');
+    const [errors, setErrors] = useState<string[]>([]);
 
     useEffect(() => {
         // Fetch available skills from organization
@@ -49,8 +50,8 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
             // Extract skills from initialData
             if (initialData.simulation_skills) {
                 setSkills(initialData.simulation_skills.map((s: any) => s.skill_name));
-            } else if (initialData.skills) {
-                setSkills(initialData.skills.map((s: any) => typeof s === 'string' ? s : s.skill_name));
+            } else if ((initialData as any).skills) {
+                setSkills((initialData as any).skills.map((s: any) => typeof s === 'string' ? s : s.skill_name));
             }
 
             setLoading(false);
@@ -78,10 +79,27 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
         setLoading(false);
     };
 
+    const validateForm = () => {
+        const newErrors: string[] = [];
+        if (skills.length === 0) {
+            newErrors.push("At least one skill tag is required.");
+        }
+        if (learningOutcomes.length === 0) {
+            newErrors.push("At least one learning outcome is required.");
+        }
+        setErrors(newErrors);
+        return newErrors.length === 0;
+    };
+
     const handleSave = async (shouldAdvance = false) => {
         if (!simulationId) return; // Should already exist by this step
 
+        if (shouldAdvance && !validateForm()) {
+            return;
+        }
+
         setSaving(true);
+        setErrors([]);
 
         // Collect pending input values
         let finalLearningOutcomes = [...learningOutcomes];
@@ -150,6 +168,20 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
                     </p>
                 </div>
 
+                {errors.length > 0 && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-lg animate-in fade-in slide-in-from-top-2">
+                        <div className="flex items-start gap-3">
+                            <span className="material-symbols-outlined text-red-500 text-sm mt-0.5">error</span>
+                            <div className="flex-1">
+                                <h4 className="text-xs font-bold text-red-700 uppercase tracking-wide mb-1">Validation Errors</h4>
+                                <ul className="list-disc list-inside text-xs text-red-600 space-y-1">
+                                    {errors.map((err, i) => <li key={i}>{err}</li>)}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="space-y-6">
                     {/* Skill Tags - Company Specific */}
                     <div>
@@ -165,7 +197,7 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
                                     onChange={(e) => setSkillInput(e.target.value)}
                                     onKeyDown={handleAddSkill}
                                     onBlur={handleAddSkill}
-                                    className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
+                                    className={`w-full bg-background-light dark:bg-slate-800 border rounded-lg focus:ring-primary focus:border-primary text-sm p-3 ${skills.length === 0 && errors.length > 0 ? 'border-red-300 ring-1 ring-red-300/50' : 'border-primary/10'}`}
                                     placeholder="Type specific skills (e.g. Python, Agile, SQL)... Press Enter to add"
                                 />
                                 <datalist id="skill-tags">
@@ -233,7 +265,7 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
                                         <span className="flex-1 text-sm text-slate-600 dark:text-slate-300">{outcome}</span>
                                     )}
 
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                         {editingOutcomeIndex !== index && (
                                             <button
                                                 onClick={() => {
@@ -266,7 +298,7 @@ export default function LearningOutcomesForm({ simulationId, initialData, saveTr
                                         setNewOutcome('');
                                     }
                                 }}
-                                className="flex-1 bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
+                                className={`flex-1 bg-background-light dark:bg-slate-800 border rounded-lg focus:ring-primary focus:border-primary text-sm p-3 ${learningOutcomes.length === 0 && errors.length > 0 ? 'border-red-300 ring-1 ring-red-300/50' : 'border-primary/10'}`}
                                 placeholder="Add a specific outcome (e.g. Understand backend service architecture)"
                             />
                             <button

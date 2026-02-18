@@ -28,6 +28,7 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
     // Only load if id exists but no data
     const [loading, setLoading] = useState(!!simulationId && !initialData);
     const [saving, setSaving] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (simulationId && !initialData) {
@@ -78,10 +79,39 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
         if (field === 'certificate_enabled') {
             onCertificateChange(value);
         }
+
+        // Clear errors
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
     };
+
+    const validateForm = () => {
+        const newErrors: Record<string, string> = {};
+        if (!formData.duration) newErrors.duration = "Please select a duration";
+        if (!formData.difficulty_level) newErrors.difficulty_level = "Please select a difficulty level";
+        if (!formData.target_audience) newErrors.target_audience = "Please select a target audience";
+        // Simple check for empty HTML or text
+        if (!formData.grading_criteria || formData.grading_criteria === '<p><br></p>') {
+            newErrors.grading_criteria = "Please provide grading criteria";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    }
 
     const handleSave = async (shouldAdvance = false) => {
         if (!simulationId) return;
+
+        if (shouldAdvance && !validateForm()) {
+            // Scroll to top or first error
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
 
         setSaving(true);
         const result = await updateSimulation(simulationId, formData as any);
@@ -116,13 +146,13 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-8">
                     {/* Estimated Duration */}
-                    <div>
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                             Estimated Duration
                         </label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {DURATIONS.slice(0, 3).map(duration => (
                                 <button
                                     key={duration}
@@ -140,7 +170,7 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
                                 </button>
                             ))}
                         </div>
-                        <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                             {DURATIONS.slice(3).map(duration => (
                                 <button
                                     key={duration}
@@ -158,14 +188,16 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
                                 </button>
                             ))}
                         </div>
+                        {errors.duration && <p className="text-[10px] text-red-500 mt-2 font-bold uppercase tracking-wide">{errors.duration}</p>}
                     </div>
 
                     {/* Difficulty Level */}
-                    <div>
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                             Difficulty Level
                         </label>
-                        <div className="flex items-center gap-2">
+                        {/* Difficulty Options - Always Row on Desktop, Stack on Mobile */}
+                        <div className="flex flex-col sm:flex-row gap-3">
                             {DIFFICULTY_LEVELS.map(level => (
                                 <button
                                     key={level.value}
@@ -183,6 +215,7 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
                                 </button>
                             ))}
                         </div>
+                        {errors.difficulty_level && <p className="text-[10px] text-red-500 mt-2 font-bold uppercase tracking-wide">{errors.difficulty_level}</p>}
                     </div>
 
                     {/* Prerequisites */}
@@ -190,12 +223,11 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                             Prerequisites (Optional)
                         </label>
-                        <input
-                            type="text"
-                            value={formData.prerequisites || ''}
-                            onChange={(e) => handleChange('prerequisites', e.target.value)}
-                            className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3"
-                            placeholder="e.g. Basic Python knowledge, Familiarity with Excel"
+                        <RichTextEditor
+                            value={formData.prerequisites || ""}
+                            onChange={(val: string) => handleChange('prerequisites', val)}
+                            placeholder="e.g. Basic Python knowledge, Familiarity with Excel..."
+                            minHeight="150px"
                         />
                     </div>
 
@@ -213,6 +245,7 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
                                 <option key={level.value} value={level.value}>{level.label}</option>
                             ))}
                         </select>
+                        {errors.target_audience && <p className="text-[10px] text-red-500 mt-1 font-bold uppercase tracking-wide">{errors.target_audience}</p>}
                     </div>
 
                     {/* Certificate Enabled */}
@@ -236,6 +269,7 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
                             </div>
                         </div>
                     </div>
+
                     {/* Grading Criteria / Rubric */}
                     <div className="col-span-2 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
@@ -250,6 +284,7 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
                             placeholder="Enter detailed grading rubric or assessment criteria..."
                             minHeight="200px"
                         />
+                        {errors.grading_criteria && <p className="text-[10px] text-red-500 mt-2 font-bold uppercase tracking-wide">{errors.grading_criteria}</p>}
                     </div>
                 </div>
             </section>
@@ -266,7 +301,6 @@ export default function AssessmentForm({ simulationId, initialData, saveTrigger,
                 </button>
 
                 <div className="flex items-center gap-3">
-
                     <button
                         type="button"
                         onClick={() => handleSave(true)}
