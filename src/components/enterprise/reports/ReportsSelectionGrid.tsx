@@ -114,9 +114,9 @@ export default function ReportsSelectionGrid({ simulations }: ReportsSelectionGr
                                     </div>
                                 </div>
 
-                                <button className="size-10 bg-primary text-white rounded-xl flex items-center justify-center hover:bg-primary/90 transition-all shadow-md shadow-primary/20 active:scale-95 group/arrow">
+                                <a href={`/enterprise/reports/${sim.id}/impact`} className="size-10 bg-primary text-white rounded-xl flex items-center justify-center hover:bg-primary/90 transition-all shadow-md shadow-primary/20 active:scale-95 group/arrow">
                                     <ArrowRight className="size-5 group-hover/arrow:translate-x-0.5 transition-transform" />
-                                </button>
+                                </a>
                             </div>
                         </div>
                     </div>
