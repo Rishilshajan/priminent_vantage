@@ -62,43 +62,38 @@ export default function BuilderHeader({ currentStep, simulationId, lastSaved, on
                     <span className="material-symbols-outlined">menu</span>
                 </button>
 
-                <div className="flex items-center gap-2">
-                    <h1 className="text-lg font-bold text-slate-900 dark:text-white truncate max-w-[150px] sm:max-w-xs md:max-w-none">
+                <div className="flex items-center gap-2 overflow-hidden">
+                    <h1 className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white truncate">
                         {stepTitles[currentStep]}
                     </h1>
-                    <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-widest">
+                    <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-widest flex-shrink-0">
                         {simulationId ? 'In Progress' : 'New'}
                     </span>
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 md:gap-4">
-                <span className="hidden md:inline text-xs text-slate-400 italic">
-                    {getLastSavedText()}
+            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+                <span className="text-[10px] md:text-xs text-slate-400 italic text-right">
+                    <span className="hidden sm:inline">Draft Saved at </span>
+                    {lastSaved ? lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not saved'}
                 </span>
-
                 {simulationId && (
-                    <>
-                        <button
-                            onClick={onSave}
-                            disabled={isSaving}
-                            className={`px-3 md:px-4 py-2 text-xs md:text-sm font-semibold border border-primary/20 text-primary rounded-lg hover:bg-primary/5 transition-colors ${isSaving ? 'opacity-50 cursor-wait' : ''}`}
-                        >
-                            {isSaving ? 'Saving...' : <span className="hidden sm:inline">Save Draft</span>}
-                            {!isSaving && <span className="sm:hidden">Save</span>}
-                        </button>
-
-                        <button
-                            onClick={handlePublish}
-                            disabled={isPublishing}
-                            className="px-3 md:px-4 py-2 text-xs md:text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                        >
-                            {isPublishing ? 'Publishing...' : <span className="hidden sm:inline">Publish Simulation</span>}
-                            {!isPublishing && <span className="sm:hidden">Publish</span>}
-                        </button>
-                    </>
+                    <button
+                        onClick={() => {
+                            if (currentStep === 'analytics') {
+                                alert('Nothing to update in preview mode.');
+                                return;
+                            }
+                            onSave();
+                        }}
+                        disabled={isSaving}
+                        className={`px-3 md:px-4 py-2 text-xs md:text-sm font-semibold border border-primary/20 text-primary rounded-lg hover:bg-primary/5 transition-colors ${isSaving ? 'opacity-50 cursor-wait' : ''}`}
+                    >
+                        {isSaving ? 'Saving...' : <span className="hidden sm:inline">Save Draft</span>}
+                        {!isSaving && <span className="sm:hidden">Save</span>}
+                    </button>
                 )}
             </div>
-        </header>
+        </header >
     );
 }

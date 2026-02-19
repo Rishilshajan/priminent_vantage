@@ -160,7 +160,10 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             // 8. Analytics Check (Preview)
             // DEPENDS ON: Visibility
             if (completed.includes('visibility')) {
-                completed.push('analytics');
+                // Check if user has viewed and continued from analytics (persisted via hidden tag)
+                if (sim.analytics_tags && sim.analytics_tags.includes('__analytics_viewed__')) {
+                    completed.push('analytics');
+                }
             }
 
             // 9. Review Check Check (Not auto-completed)
@@ -278,6 +281,8 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                     <CertificationSetup
                         simulationId={simulationId!}
                         organizationName={organization.name}
+                        saveTrigger={saveTrigger}
+                        onSaveSuccess={handleSaveSuccess}
                         onBack={() => navigateToStep('branding')}
                         onNext={() => {
                             navigateToStep('visibility');
@@ -305,6 +310,8 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             case 'analytics':
                 return (
                     <AnalyticsPreview
+                        simulationId={simulationId}
+                        onSaveSuccess={handleSaveSuccess}
                         onNext={() => {
                             navigateToStep('review');
                         }}

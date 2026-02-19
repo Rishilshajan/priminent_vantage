@@ -35,6 +35,8 @@ export interface Simulation {
     simulation_tasks?: SimulationTask[];
     grading_criteria?: string | null;
     certificate_director_name?: string | null;
+    certificate_director_title?: string | null;
+    certificate_signature_url?: string | null;
 }
 
 export interface SimulationTask {
@@ -81,7 +83,7 @@ export interface SimulationAsset {
     id: string;
     simulation_id: string;
     task_id: string | null;
-    asset_type: 'logo' | 'banner' | 'video' | 'pdf' | 'dataset' | 'document';
+    asset_type: 'logo' | 'banner' | 'video' | 'pdf' | 'dataset' | 'document' | 'signature';
     file_name: string;
     file_url: string;
     file_size: number | null;
@@ -111,6 +113,8 @@ export const SimulationMetadataSchema = z.object({
     certificate_enabled: z.boolean().default(true),
     grading_criteria: z.string().optional().nullable(),
     certificate_director_name: z.string().optional().nullable(),
+    certificate_director_title: z.string().optional().nullable(),
+    certificate_signature_url: z.string().optional().nullable(),
 });
 
 export const SimulationBrandingSchema = z.object({

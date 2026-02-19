@@ -15,7 +15,7 @@ interface Simulation {
     difficulty_level: string | null;
     status: 'draft' | 'published';
     company_logo_url: string | null;
-    program_banner_url: string | null;
+    banner_url: string | null;
     created_at: string;
     updated_at: string;
     simulation_tasks?: any[];
@@ -76,7 +76,7 @@ export default function SimulationsList({ simulations }: SimulationsListProps) {
             {simulations.map((simulation) => {
                 const taskCount = Array.isArray(simulation.simulation_tasks) ? simulation.simulation_tasks.length : 0;
                 const skillCount = Array.isArray(simulation.simulation_skills) ? simulation.simulation_skills.length : 0;
-                const bannerUrl = simulation.program_banner_url || simulation.company_logo_url;
+                const bannerUrl = simulation.banner_url;
 
                 return (
                     <div
@@ -84,7 +84,7 @@ export default function SimulationsList({ simulations }: SimulationsListProps) {
                         className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col h-full"
                     >
                         {/* Banner/Logo */}
-                        <div className="h-32 bg-gradient-to-br from-primary/10 to-primary/5 relative overflow-hidden group-hover:scale-105 transition-transform duration-500">
+                        <div className="aspect-[3/1] bg-gradient-to-br from-primary/10 to-primary/5 relative overflow-hidden group-hover:scale-105 transition-transform duration-500">
                             {bannerUrl ? (
                                 <img
                                     src={bannerUrl}

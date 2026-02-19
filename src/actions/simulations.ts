@@ -181,6 +181,8 @@ export async function updateSimulation(
                 ...(data.about_company !== undefined && { about_company: data.about_company }),
                 ...(data.why_work_here !== undefined && { why_work_here: data.why_work_here }),
                 ...(data.certificate_director_name !== undefined && { certificate_director_name: data.certificate_director_name }),
+                ...(data.certificate_director_title !== undefined && { certificate_director_title: data.certificate_director_title }),
+                ...(data.certificate_signature_url !== undefined && { certificate_signature_url: data.certificate_signature_url }),
                 ...(data.grading_criteria !== undefined && { grading_criteria: data.grading_criteria }),
                 updated_at: new Date().toISOString(),
             })
@@ -795,7 +797,7 @@ export async function removeSkill(simulationId: string, skillName: string) {
 export async function uploadAsset(formData: FormData) {
     try {
         const simulationId = formData.get('simulationId') as string;
-        const assetType = formData.get('assetType') as 'logo' | 'banner' | 'video' | 'pdf' | 'dataset' | 'document';
+        const assetType = formData.get('assetType') as 'logo' | 'banner' | 'video' | 'pdf' | 'dataset' | 'document' | 'signature';
         const taskId = formData.get('taskId') as string | undefined;
         const file = formData.get('file') as File;
 
@@ -850,6 +852,7 @@ export async function uploadAsset(formData: FormData) {
             pdf: 'tasks',
             dataset: 'tasks',
             document: 'tasks',
+            signature: 'signatures',
         };
 
         const folder = folderMap[assetType] || 'misc';

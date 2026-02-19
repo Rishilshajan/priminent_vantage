@@ -1,69 +1,148 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getSimulation, updateSimulation } from "@/actions/simulations";
-import { Simulation, SimulationSkill } from "@/lib/simulations";
+import { useState, useEffect, useRef } from "react";
+import { getSimulation, updateSimulation, uploadAsset } from "@/actions/simulations";
+import { Simulation } from "@/lib/simulations";
 import {
     Award,
     ArrowLeft,
-    ArrowRight,
     CheckCircle2,
-    UserCheck,
-    Globe,
     QrCode,
     Printer,
     Share2,
     Verified,
-    Activity
+    Activity,
+    Globe,
+    Upload
 } from "lucide-react";
+import QRCode from "react-qr-code";
 import { cn } from "@/lib/utils";
 
 interface CertificationSetupProps {
     simulationId: string;
     organizationName: string;
+    saveTrigger?: number; // Added for consistency
+    onSaveSuccess?: () => void; // Added for consistency
     onBack: () => void;
     onNext?: () => void;
 }
 
-export default function CertificationSetup({ simulationId, organizationName, onBack, onNext }: CertificationSetupProps) {
+export default function CertificationSetup({ simulationId, organizationName, saveTrigger, onSaveSuccess, onBack, onNext }: CertificationSetupProps) {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [simulation, setSimulation] = useState<Simulation | null>(null);
     const [directorName, setDirectorName] = useState("");
+    const [directorTitle, setDirectorTitle] = useState("");
+    const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
+
+    // Save Trigger Logic
+    const lastSaveTrigger = useRef(saveTrigger || 0);
 
     useEffect(() => {
         loadSimulation();
     }, [simulationId]);
 
-    const loadSimulation = async () => {
-        const result = await getSimulation(simulationId);
-        if (result.data) {
-            setSimulation(result.data);
-            setDirectorName(result.data.certificate_director_name || "");
+    useEffect(() => {
+        if (saveTrigger && saveTrigger > lastSaveTrigger.current) {
+            handleSave();
+            lastSaveTrigger.current = saveTrigger;
         }
-        setLoading(false);
+    }, [saveTrigger]);
+
+    const loadSimulation = async () => {
+        if (!simulationId) return;
+
+        try {
+            const result = await getSimulation(simulationId);
+            if (result.data) {
+                setSimulation(result.data);
+                setDirectorName(result.data.certificate_director_name || "");
+                setDirectorTitle(result.data.certificate_director_title || "");
+                setSignatureUrl(result.data.certificate_signature_url || null);
+            }
+        } catch (error) {
+            console.error("Failed to load simulation:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSave = async () => {
+        if (loading) return;
+
         setSaving(true);
-        await updateSimulation(simulationId, {
-            certificate_director_name: directorName
+        // We persist data even if director name is empty, as users might clear it
+        const result = await updateSimulation(simulationId, {
+            certificate_director_name: directorName,
+            certificate_director_title: directorTitle,
+            certificate_signature_url: signatureUrl,
+            ...(simulation?.certificate_enabled !== undefined && { certificate_enabled: simulation.certificate_enabled })
         });
-        setSaving(false);
+
+        if (!result.error) {
+            onSaveSuccess?.();
+            setSaving(false);
+            return true;
+        } else {
+            console.error("Failed to save certification setup:", result.error);
+            alert(`Failed to save: ${result.error}`);
+            setSaving(false);
+            return false;
+        }
     };
 
     const handleNext = async () => {
-        await handleSave();
-        onNext?.();
+        const success = await handleSave();
+        if (success) {
+            onNext?.();
+        }
+    };
+
+    const handleSignatureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Basic validation
+        if (!file.type.startsWith("image/")) {
+            alert("Please upload a valid image file.");
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            alert("File size must be less than 2MB.");
+            return;
+        }
+
+        setUploading(true);
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("simulationId", simulationId);
+            formData.append("assetType", "signature");
+
+            const result = await uploadAsset(formData);
+
+            if (result.error) {
+                alert(result.error);
+            } else if (result.data?.url) {
+                setSignatureUrl(result.data.url);
+                // We rely on the main handleSave to persist this change
+                // This makes the UI feedback instant
+            }
+        } catch (error) {
+            console.error("Upload failed:", error);
+            alert("Failed to upload signature.");
+        } finally {
+            setUploading(false);
+        }
     };
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-96">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                    <p className="text-sm font-bold text-slate-400 animate-pulse uppercase tracking-widest">Architecting Preview...</p>
-                </div>
+            <div className="flex items-center justify-center h-64">
+                <span className="text-slate-400">Loading...</span>
             </div>
         );
     }
@@ -72,6 +151,7 @@ export default function CertificationSetup({ simulationId, organizationName, onB
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* Inject Fonts for Certificate Preview ONLY */}
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@600&display=swap');
@@ -79,276 +159,294 @@ export default function CertificationSetup({ simulationId, organizationName, onB
                 .font-signature { font-family: 'Dancing Script', cursive; }
             `}} />
 
-            {/* Header Section */}
-            <div className="flex items-end justify-between px-6 pb-2">
-                <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                        <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-sm border border-primary/10">
-                            <Award size={24} />
-                        </div>
-                        <div className="space-y-0.5">
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                                    Certification Setup
-                                </h2>
-                                <span className="px-3 py-1 bg-primary text-white text-[10px] font-black rounded-full uppercase tracking-[0.2em] shadow-lg shadow-primary/20">PREMIUM</span>
-                            </div>
-                            <p className="text-slate-400 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                                <CheckCircle2 size={12} className="text-green-500" />
-                                Credentialing & Authority
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Configuration Sidebar */}
-                <div className="lg:col-span-1 space-y-6">
-                    <section className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200/60 dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
-                        <div className="space-y-8">
-                            <div>
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
-                                    Certificate Signature
-                                </label>
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-bold text-slate-500 uppercase">Company Director</p>
-                                        <input
-                                            type="text"
-                                            value={directorName}
-                                            onChange={(e) => setDirectorName(e.target.value)}
-                                            placeholder="e.g. James Thompson"
-                                            className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-primary focus:ring-0 transition-all font-semibold"
-                                        />
-                                        <p className="text-[10px] text-slate-400 italic">
-                                            This name will appear as the "Hiring Manager" on the official certificate.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
-                                    Verification Features
-                                </h4>
-                                <div className="space-y-4">
-                                    {[
-                                        { icon: <QrCode size={14} />, label: "Dynamic QR Verification" },
-                                        { icon: <Activity size={14} />, label: "Skills Achievement Ledger" },
-                                        { icon: <Share2 size={14} />, label: "LinkedIn Integration" },
-                                        { icon: <Verified size={14} />, label: "Blockchain Validity Check" },
-                                    ].map((feature, i) => (
-                                        <div key={i} className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-                                            <div className="size-6 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                                                {feature.icon}
-                                            </div>
-                                            <span className="text-xs font-bold">{feature.label}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <div className="p-6 bg-primary/5 rounded-2xl border border-primary/10">
-                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
-                            <Verified size={12} />
-                            Strategic Note
-                        </p>
-                        <p className="text-xs text-slate-500 leading-relaxed italic">
-                            The certificate is dual-branded with Vantage and your organization to maximize talent brand exposure.
-                        </p>
-                    </div>
+            {/* Standard Header */}
+            <section className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-primary/5 shadow-sm space-y-8">
+                <div className="mb-6">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                        Certificate Configuration
+                    </h2>
+                    <p className="text-sm text-slate-500">
+                        Customize the credentials and verification details for student certificates.
+                    </p>
                 </div>
 
-                {/* Certificate Preview */}
-                <div className="lg:col-span-2">
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between px-4">
-                            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-3">
-                                <div className="size-2 rounded-full bg-green-500 animate-pulse" />
-                                Achievement Preview
-                            </h3>
-                            <div className="flex gap-2">
-                                <div className="px-4 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full flex items-center gap-2 shadow-sm">
-                                    <Printer size={12} className="text-slate-400" />
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Print Ready</span>
-                                </div>
-                            </div>
+                {/* Top Configuration Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Left: Director Details */}
+                    <div className="space-y-6">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                Signatory Name
+                            </label>
+                            <input
+                                type="text"
+                                value={directorName}
+                                onChange={(e) => setDirectorName(e.target.value)}
+                                placeholder="e.g. James Thompson"
+                                className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3 font-medium"
+                            />
                         </div>
 
-                        {/* Certificate Template Container */}
-                        <div className="relative group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-indigo-500/20 rounded-[2.5rem] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                Job Title / Position
+                            </label>
+                            <input
+                                type="text"
+                                value={directorTitle}
+                                onChange={(e) => setDirectorTitle(e.target.value)}
+                                placeholder="e.g. Hiring Manager"
+                                className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3 font-medium"
+                            />
+                        </div>
 
-                            {/* Certificate UI */}
-                            <div className="relative aspect-[1.414/1] bg-white text-slate-800 shadow-2xl rounded-[1.5rem] overflow-hidden border-[12px] border-primary/5 p-16 flex flex-col justify-between selection:bg-primary/20">
-                                {/* Watermark Grid */}
-                                <div className="absolute inset-0 pointer-events-none opacity-[0.03]"
-                                    style={{ backgroundImage: 'radial-gradient(circle, #5B3FD4 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-
-                                {/* Inner Border */}
-                                <div className="absolute inset-4 border border-primary/40 pointer-events-none rounded-lg" />
-
-                                {/* Certificate Content */}
-                                <div className="relative z-10 h-full flex flex-col justify-between">
-                                    {/* Header */}
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-primary p-2 rounded-lg shadow-lg shadow-primary/20">
-                                                <Activity size={24} className="text-white" />
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                Signature Upload
+                            </label>
+                            <div className="flex items-center gap-4">
+                                <div className="relative group w-full">
+                                    <div className={cn(
+                                        "h-24 w-full border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all overflow-hidden",
+                                        uploading ? "opacity-50 cursor-not-allowed" : ""
+                                    )}>
+                                        {signatureUrl ? (
+                                            <div className="relative w-full h-full p-2">
+                                                <img
+                                                    src={signatureUrl}
+                                                    alt="Signature"
+                                                    className="w-full h-full object-contain"
+                                                />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                                    <span className="text-xs text-white bg-black/50 px-2 py-1 rounded">Update</span>
+                                                </div>
                                             </div>
-                                            <span className="font-black text-lg tracking-tighter text-slate-900 uppercase">
-                                                Priminent Vantage
-                                            </span>
-                                        </div>
-                                        {simulation?.company_logo_url ? (
-                                            <img src={simulation.company_logo_url} className="h-12 object-contain grayscale opacity-60" alt="Partner Logo" />
                                         ) : (
-                                            <div className="w-32 h-12 border border-dashed border-slate-200 rounded-lg flex items-center justify-center text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                                                Partner Logo
+                                            <div className="flex flex-col items-center gap-1 text-slate-400">
+                                                <Upload size={20} />
+                                                <span className="text-xs font-medium">Upload Signature</span>
                                             </div>
                                         )}
+                                        <input
+                                            type="file"
+                                            className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                            onChange={handleSignatureUpload}
+                                            accept="image/png, image/jpeg"
+                                            disabled={uploading}
+                                        />
                                     </div>
-
-                                    {/* Main Title Area */}
-                                    <div className="text-center space-y-10">
-                                        <div className="space-y-4">
-                                            <div className="flex justify-center mb-2">
-                                                <Verified size={56} className="text-primary text-opacity-80" />
-                                            </div>
-                                            <h2 className="text-4xl md:text-5xl font-certificate-title font-bold uppercase tracking-wide text-slate-800 leading-none">
-                                                Certificate of Completion
-                                            </h2>
-                                            <p className="text-lg italic text-slate-500 tracking-wide">
-                                                Issued by <span className="font-semibold text-slate-700">Priminent Vantage</span> in collaboration with <span className="font-semibold text-slate-700">{organizationName}</span>
-                                            </p>
+                                    {uploading && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-slate-900/50">
+                                            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                                         </div>
-
-                                        <div className="space-y-4">
-                                            <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-600">
-                                                This certificate is proudly presented to
-                                            </p>
-                                            <h3 className="text-6xl md:text-7xl font-certificate-title text-primary tracking-tight">
-                                                John Doe
-                                            </h3>
-                                        </div>
-
-                                        <div className="max-w-2xl mx-auto space-y-8">
-                                            <p className="text-xl text-slate-700 leading-relaxed">
-                                                For successfully completing the <span className="font-bold border-b-2 border-primary/20 text-slate-800">{simulation?.title || "Professional Strategy"}</span> job simulation, demonstrating industry-ready excellence.
-                                            </p>
-
-                                            <div className="flex items-center justify-center gap-3 py-4 border-y border-slate-100">
-                                                <span className="text-sm font-bold uppercase tracking-tighter text-primary shrink-0">Skills Demonstrated:</span>
-                                                <div className="flex flex-wrap justify-center gap-x-3 gap-y-2">
-                                                    {skills.map((skill, idx) => (
-                                                        <div key={idx} className="flex items-center gap-3">
-                                                            <span className="text-sm font-medium text-slate-500">{skill}</span>
-                                                            {idx < skills.length - 1 && <div className="size-1 rounded-full bg-slate-300" />}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Footer / Signatures */}
-                                    <div className="flex justify-between items-end">
-                                        <div className="flex gap-20">
-                                            <div className="text-center space-y-2">
-                                                <div className="font-signature text-4xl text-slate-800 h-10 flex items-end justify-center">
-                                                    A. Sterling
-                                                </div>
-                                                <div className="w-48 border-t border-slate-300 pt-2">
-                                                    <p className="text-[10px] font-bold text-slate-800 uppercase tracking-widest">
-                                                        Program Director
-                                                    </p>
-                                                    <p className="text-[9px] text-slate-500 uppercase">
-                                                        Priminent Vantage
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="text-center space-y-2">
-                                                <div className="font-signature text-4xl text-slate-800 h-10 flex items-end justify-center min-w-[12rem]">
-                                                    {directorName || "J. Thompson"}
-                                                </div>
-                                                <div className="w-48 border-t border-slate-300 pt-2">
-                                                    <p className="text-[10px] font-bold text-slate-800 uppercase tracking-widest">
-                                                        Hiring Manager
-                                                    </p>
-                                                    <p className="text-[9px] text-slate-500 uppercase tracking-tight">
-                                                        {organizationName}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-end gap-6 text-right">
-                                            <div className="mb-1 space-y-0.5">
-                                                <p className="text-[9px] font-mono font-medium text-slate-400 uppercase tracking-tight">Date: FEB 15, 2026</p>
-                                                <p className="text-[9px] font-mono font-medium text-slate-400 uppercase tracking-tight">ID: PV-FIN-375-B92</p>
-                                                <p className="text-[9px] font-mono font-medium text-slate-400 uppercase tracking-tight">Issued: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                            </div>
-                                            <div className="flex flex-col items-center">
-                                                <div className="size-16 bg-white p-1 border border-slate-100 shadow-sm mb-1">
-                                                    <QrCode size={56} className="text-slate-300 grayscale" />
-                                                </div>
-                                                <span className="text-[8px] font-bold text-slate-400 tracking-tighter uppercase">Scan to Verify</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Bottom features list for Enterprise understanding */}
-                        <div className="pt-8 text-center max-w-2xl mx-auto">
-                            <p className="text-xs text-slate-500 leading-relaxed mb-6">
-                                This high-end certificate is generated dynamically for technology corporate partners.
-                                All placeholders will be replaced with real-time metadata upon issuance.
+                            <p className="text-[10px] text-slate-400 mt-2">
+                                Recommended: a transparent PNG image (approx. 300x100px).
                             </p>
-                            <div className="flex justify-center gap-8">
-                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                    <Verified size={14} />
-                                    100% Authentic
+                        </div>
+                    </div>
+
+                    {/* Right: Verification Features List */}
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-100 dark:border-slate-800 h-fit">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                            Active Verification Features
+                        </h4>
+                        <div className="space-y-3">
+                            {[
+                                { icon: <QrCode size={14} />, label: "Dynamic QR Verification", active: true },
+                                { icon: <Activity size={14} />, label: "Skills Achievement Ledger", active: true },
+                                { icon: <Share2 size={14} />, label: "LinkedIn Integration", active: true },
+                            ].map((feature, i) => (
+                                <div key={i} className="flex items-center gap-3">
+                                    <div className={`size-6 rounded-full flex items-center justify-center ${feature.active ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+                                        <CheckCircle2 size={12} />
+                                    </div>
+                                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{feature.label}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                    <Share2 size={14} />
-                                    LinkedIn Ready
-                                </div>
-                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                    <QrCode size={14} />
-                                    Cloud Verified
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Strategic Note */}
+                <div className="flex gap-3 items-start p-4 bg-primary/5 rounded-xl border border-primary/10 w-full">
+                    <Activity size={16} className="text-primary mt-0.5 shrink-0" />
+                    <div className="space-y-1">
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                            Dual-Branded Credential
+                        </p>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                            The certificate is co-branded with Vantage and your organization to maximize talent brand exposure.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Bottom: Certificate Preview */}
+                <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
+                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6 text-center">
+                        Certificate Preview
+                    </h3>
+
+                    {/* Right Column: Preview */}
+                    <div className="space-y-4">
+                        <div className="flex flex-col items-center space-y-8">
+                            {/* Certificate Template Container */}
+                            <div className="w-full flex justify-center">
+                                {/* 
+                                    Certificate Aspect Ratio: 1600/1131 (approx 1.414) 
+                                    Export Requirement: 3508 x 2480 px (300 DPI) for PDF 
+                                */}
+                                <div className="relative w-full max-w-[1600px] aspect-[0.7] md:aspect-[1600/1131] bg-white text-slate-800 shadow-2xl rounded-lg md:rounded-2xl overflow-hidden border-[4px] md:border-[14px] border-[#e8e1f0] px-1 pt-3 pb-2 md:px-12 md:py-6 flex flex-col justify-between select-none">
+
+                                    {/* Top Premium Strip */}
+                                    <div className="absolute top-0 left-0 w-full h-1.5 md:h-3 bg-[#4e2a84]" />
+
+                                    {/* Watermark Grid */}
+                                    <div className="absolute inset-0 pointer-events-none opacity-[0.03]"
+                                        style={{ backgroundImage: 'radial-gradient(circle, #4e2a84 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+
+                                    {/* Certificate Content */}
+                                    <div className="relative z-10 h-full flex flex-col justify-between space-y-2 md:space-y-5">
+                                        {/* Header */}
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-1.5 md:gap-2">
+                                                <div className="bg-[#4e2a84] p-1 md:p-1.5 rounded md:rounded-lg">
+                                                    <Activity className="size-3 md:size-5 text-white" />
+                                                </div>
+                                                <span className="font-bold text-[8px] md:text-base tracking-tight text-[#4e2a84] uppercase">
+                                                    Priminent Vantage
+                                                </span>
+                                            </div>
+                                            {simulation?.company_logo_url ? (
+                                                <img src={simulation.company_logo_url} className="h-6 md:h-10 object-contain" alt="Company Logo" />
+                                            ) : (
+                                                <div className="px-2 py-1 md:px-3 md:py-1.5 border border-dashed border-slate-200 rounded text-[6px] md:text-[10px] font-bold text-slate-300 uppercase">
+                                                    Company Logo
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Main Title Area */}
+                                        <div className="text-center space-y-1.5 md:space-y-4">
+                                            <div className="space-y-0.5 md:space-y-1">
+                                                <h2 className="text-xl md:text-4xl lg:text-5xl font-certificate-title font-bold uppercase tracking-wide text-slate-900 leading-none">
+                                                    Certificate of Completion
+                                                </h2>
+                                                <div className="w-8 md:w-16 h-0.5 md:h-1 bg-[#4e2a84] mx-auto rounded-full opacity-20" />
+                                                <p className="text-[8px] md:text-base italic text-slate-500 tracking-wide">
+                                                    This certifies that
+                                                </p>
+                                            </div>
+
+                                            <div className="space-y-1 md:space-y-2">
+                                                <h3 className="text-2xl md:text-5xl lg:text-6xl font-certificate-title text-[#4e2a84] tracking-tight">
+                                                    John Doe
+                                                </h3>
+                                                <div className="max-w-2xl mx-auto">
+                                                    <p className="text-[8px] md:text-base text-slate-600 leading-relaxed px-2 md:px-4">
+                                                        Has successfully completed the <span className="font-bold text-slate-900 border-b md:border-b-2 border-[#e8e1f0]">{simulation?.title || "Professional Strategy"}</span> <span className="capitalize">{simulation?.program_type?.replace(/_/g, ' ') || "job simulation"}</span>, demonstrating professional excellence and industry readiness.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Footer / Signatures */}
+                                        <div className="mt-1 md:mt-2 border-t border-slate-100 pt-1.5 md:pt-2">
+                                            <div className="flex justify-between items-end mb-1.5 md:mb-2 px-4 md:px-12">
+                                                {/* Left Signature - Vantage CEO */}
+                                                <div className="text-center w-24 md:w-56 space-y-0.5 md:space-y-1 relative">
+                                                    {/* Text Block */}
+                                                    <div className="pb-1 md:pb-2 leading-none">
+                                                        <p className="text-[7px] md:text-sm font-bold text-slate-800 uppercase tracking-wider">A. Sterling</p>
+                                                        <p className="text-[6px] md:text-xs font-medium text-slate-600 uppercase tracking-wide">CEO, Priminent Vantage</p>
+                                                    </div>
+
+                                                    {/* Signature Image (Simulated with Font for Vantage) */}
+                                                    <div className="border-t border-slate-300 pt-0.5 md:pt-1 flex justify-center">
+                                                        <div className="font-signature text-sm md:text-2xl text-slate-800 h-6 md:h-10 flex items-center justify-center transform -rotate-2">
+                                                            A. Sterling
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Right Signature - Company Head */}
+                                                <div className="text-center w-24 md:w-56 space-y-0.5 md:space-y-1 relative">
+                                                    {/* Text Block */}
+                                                    <div className="pb-1 md:pb-2 leading-none">
+                                                        <p className="text-[7px] md:text-sm font-bold text-slate-800 uppercase tracking-wider">
+                                                            {directorName || "James Thompson"}
+                                                        </p>
+                                                        <p className="text-[6px] md:text-xs font-medium text-slate-600 uppercase tracking-wide">
+                                                            {directorTitle || "Hiring Director"}, {organizationName || "Your Company"}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Signature Image or Fallback */}
+                                                    <div className="border-t border-slate-300 pt-0.5 md:pt-1 flex justify-center">
+                                                        {signatureUrl ? (
+                                                            <div className="h-6 md:h-10 flex items-center justify-center">
+                                                                <img src={signatureUrl} className="max-h-full max-w-full object-contain filter grayscale contrast-125" alt="Signature" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="font-signature text-sm md:text-2xl text-slate-800 h-6 md:h-10 flex items-center justify-center transform -rotate-2">
+                                                                {directorName || "James Thompson"}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Verification Footer */}
+                                            <div className="flex justify-between items-center text-[5px] md:text-[10px] text-slate-400 font-mono border-t border-slate-50 pt-1 px-1">
+                                                <div className="flex items-center gap-1 md:gap-2">
+                                                    <div className="size-1 md:size-1.5 rounded-full bg-[#4e2a84]" />
+                                                    <span>ID: PV-{simulationId?.slice(0, 8).toUpperCase() || "DEMO"}</span>
+                                                </div>
+
+                                                <div className="text-right flex items-center gap-2 md:gap-4">
+                                                    <div className="space-y-0">
+                                                        <div className="uppercase tracking-wider">Issued: {new Date().toLocaleDateString()}</div>
+                                                    </div>
+
+                                                    <div className="bg-white p-0.5 md:p-1 border border-slate-100 shadow-sm rounded md:rounded-md">
+                                                        {/* Dynamic QR Placeholder */}
+                                                        <QrCode className="size-5 md:size-10 text-[#4e2a84]" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between pt-8 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between">
                 <button
                     type="button"
                     onClick={onBack}
-                    className="group px-8 py-4 text-xs font-black border-2 border-slate-100 dark:border-slate-800 text-slate-500 rounded-2xl hover:bg-white dark:hover:bg-slate-800 hover:border-slate-200 transition-all flex items-center gap-3 uppercase tracking-widest shadow-sm"
+                    className="px-6 py-3 text-sm font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
                 >
-                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                    Back to Branding
+                    <ArrowLeft size={16} />
+                    Back
                 </button>
 
-                <button
-                    type="button"
-                    onClick={handleNext}
-                    disabled={saving}
-                    className="px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all flex items-center gap-3 group hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
-                >
-                    {saving ? "Saving Changes..." : "Global Visibility & Access"}
-                    {!saving && <Globe size={18} className="group-hover:translate-x-1 transition-transform" />}
-                </button>
-            </div>
-        </div>
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={handleNext}
+                        disabled={saving}
+                        className="px-6 py-3 text-sm font-semibold bg-primary text-white rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all disabled:opacity-50 flex items-center gap-2"
+                    >
+                        {saving ? "Saving..." : "Continue to Visibility"}
+                    </button>
+                </div>
+            </div >
+        </div >
     );
 }
