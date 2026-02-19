@@ -36,6 +36,7 @@ export default function DashboardSidebar({ orgName = "Priminent", className, onL
         { label: "Simulations", href: "/enterprise/simulations", icon: "layers" },
         { label: "Candidates", href: "/enterprise/candidates", icon: "groups" },
         { label: "Analytics", href: "/enterprise/analytics", icon: "insights" },
+        { label: "Simulation Reports", href: "/enterprise/reports", icon: "summarize" },
     ]
 
     const orgItems = [

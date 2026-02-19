@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { deleteSimulation } from "@/actions/simulations";
+import { cn } from "@/lib/utils";
 
 interface Simulation {
     id: string;
@@ -51,20 +52,6 @@ export default function SimulationsList({ simulations }: SimulationsListProps) {
         }
     };
 
-    const getStatusBadge = (status: string) => {
-        if (status === 'published') {
-            return (
-                <span className="text-[9px] font-extrabold px-2 py-1 rounded bg-green-100 text-green-700 uppercase tracking-wider">
-                    Published
-                </span>
-            );
-        }
-        return (
-            <span className="text-[9px] font-extrabold px-2 py-1 rounded bg-orange-100 text-orange-700 uppercase tracking-wider">
-                Draft
-            </span>
-        );
-    };
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -81,15 +68,15 @@ export default function SimulationsList({ simulations }: SimulationsListProps) {
                 return (
                     <div
                         key={simulation.id}
-                        className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden group flex flex-col h-full"
+                        className="group relative bg-white dark:bg-[#1f162e] rounded-[24px] border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col h-full"
                     >
-                        {/* Banner/Logo */}
-                        <div className="aspect-[3/1] bg-gradient-to-br from-primary/10 to-primary/5 relative overflow-hidden group-hover:scale-105 transition-transform duration-500">
+                        {/* Image Container */}
+                        <div className="h-40 w-full bg-slate-100 dark:bg-slate-900 overflow-hidden relative flex-shrink-0">
                             {bannerUrl ? (
                                 <img
                                     src={bannerUrl}
                                     alt={simulation.title}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-[1500ms] ease-out"
                                     onError={(e) => {
                                         e.currentTarget.style.display = 'none';
                                         e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -103,77 +90,79 @@ export default function SimulationsList({ simulations }: SimulationsListProps) {
                                     account_tree
                                 </span>
                             </div>
-
-                            <div className="absolute top-3 right-3">
-                                {getStatusBadge(simulation.status)}
-                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-40"></div>
                         </div>
 
                         {/* Content */}
-                        <div className="p-5 space-y-4 flex flex-col flex-1">
-                            {/* Title & Description */}
+                        <div className="p-6 flex-1 flex flex-col justify-between">
                             <div>
-                                <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-2 mb-1">
+                                <h3 className="font-black text-lg text-slate-900 dark:text-white tracking-tight leading-tight group-hover:text-primary transition-colors duration-300 mb-6 line-clamp-2 min-h-[3rem]">
                                     {simulation.title}
                                 </h3>
-                                <p className="text-xs text-slate-500 line-clamp-2">
-                                    {simulation.short_description || simulation.description || 'No description'}
-                                </p>
-                            </div>
 
-                            {/* Meta Info */}
-                            <div className="flex flex-wrap gap-2 text-[10px] text-slate-500">
-                                {simulation.industry && (
-                                    <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded">
-                                        {simulation.industry}
-                                    </span>
-                                )}
-                                {simulation.target_role && (
-                                    <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded">
-                                        {simulation.target_role}
-                                    </span>
-                                )}
-                                {simulation.duration && (
-                                    <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded">
-                                        {simulation.duration}
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Stats */}
-                            <div className="flex items-center gap-4 text-xs text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800 mt-auto">
-                                <div className="flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-sm">task</span>
-                                    <span>{taskCount} tasks</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-sm">psychology</span>
-                                    <span>{skillCount} skills</span>
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-[20px] border border-slate-100 dark:border-white/5">
+                                        <span className="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                                            <span className="material-symbols-outlined text-[10px]">task</span>
+                                            Tasks
+                                        </span>
+                                        <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                            {taskCount}
+                                        </span>
+                                    </div>
+                                    <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-[20px] border border-slate-100 dark:border-white/5">
+                                        <span className="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                                            <span className="material-symbols-outlined text-[10px]">psychology</span>
+                                            Skills
+                                        </span>
+                                        <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                            {skillCount}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Updated Date */}
-                            <p className="text-[10px] text-slate-400">
-                                Updated {formatDate(simulation.updated_at)}
-                            </p>
+                            <div className="mt-auto border-t border-slate-100 dark:border-white/5 pt-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="size-7 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                                                <span className="material-symbols-outlined text-base">calendar_today</span>
+                                            </div>
+                                            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                                                {formatDate(simulation.updated_at)}
+                                            </span>
+                                        </div>
 
-                            {/* Action Buttons */}
-                            <div className="flex gap-2 pt-2">
-                                <button
-                                    onClick={() => handleEdit(simulation.id)}
-                                    className="flex-1 px-4 py-2 text-xs font-semibold bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-1"
-                                >
-                                    <span className="material-symbols-outlined text-sm">edit</span>
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(simulation.id, simulation.title)}
-                                    disabled={deleting === simulation.id}
-                                    className="px-4 py-2 text-xs font-semibold border border-red-200 text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
-                                >
-                                    <span className="material-symbols-outlined text-sm">delete</span>
-                                    {deleting === simulation.id ? 'Deleting...' : 'Delete'}
-                                </button>
+                                        <span className={cn(
+                                            "px-2 py-0.5 text-[8px] font-black rounded-full uppercase tracking-widest text-white shadow-sm transition-colors",
+                                            simulation.status === "published" ? "bg-emerald-500" : "bg-amber-500"
+                                        )}>
+                                            {simulation.status === "published" ? "Published" : "Draft"}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-3 pb-2">
+                                    <button
+                                        onClick={() => handleEdit(simulation.id)}
+                                        className="flex-1 h-11 bg-primary dark:bg-primary/90 text-white rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/80 transition-all shadow-lg shadow-primary/20 active:scale-[0.98]"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">edit</span>
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(simulation.id, simulation.title)}
+                                        disabled={deleting === simulation.id}
+                                        className="h-11 px-4 border border-red-200 dark:border-red-900/30 text-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-all disabled:opacity-50 flex items-center justify-center active:scale-95"
+                                        title="Delete Simulation"
+                                    >
+                                        <span className="material-symbols-outlined text-lg font-bold">
+                                            {deleting === simulation.id ? 'sync' : 'delete'}
+                                        </span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
