@@ -343,7 +343,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                     user={user}
                     canNavigate={!!simulationId}
                     certificateEnabled={certificateEnabled}
-                    userProfile={user.user_metadata} // Pass user metadata as profile
+                    userProfile={userProfile}
                     orgName={organization.name}
                 />
             </div>
@@ -364,7 +364,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                         certificateEnabled={certificateEnabled}
                         className="w-full h-full border-none"
                         onClose={() => setIsSidebarOpen(false)}
-                        userProfile={user.user_metadata} // Pass user metadata as profile
+                        userProfile={userProfile}
                         orgName={organization.name}
                     />
                 </SheetContent>

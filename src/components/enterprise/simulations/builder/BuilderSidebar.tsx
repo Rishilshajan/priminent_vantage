@@ -140,29 +140,37 @@ export default function BuilderSidebar({ currentStep, onStepChange, completedSte
             </nav>
 
             {/* User Profile & Sign Out - Fixed Bottom */}
-            <div className="flex-shrink-0 p-4 border-t border-primary/5 bg-slate-50/50 dark:bg-slate-900/50 space-y-4">
-                <div className="flex items-center gap-3 px-1">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-xs ring-2 ring-white dark:ring-slate-900 shadow-sm">
-                        {user.email?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold truncate text-slate-900 dark:text-white">
-                            {user?.email || "User"}
-                        </p>
-                        <p className="text-[10px] text-slate-400 truncate uppercase tracking-tighter">
-                            Enterprise Admin • {userProfile?.role || 'Admin'}
-                        </p>
+            <div className="p-4 border-t border-primary/5 mt-auto">
+                <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 mb-2">
+                    <div className="flex items-center gap-3">
+                        <div className="size-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                            <span className="material-symbols-outlined text-[20px]">person</span>
+                        </div>
+                        <div className="flex flex-col overflow-hidden">
+                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                {userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : "User"}
+                            </p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
+                                {userProfile?.email || user?.email || "user@example.com"}
+                            </p>
+                            <p className="text-[9px] font-black text-primary uppercase tracking-wider mt-0.5">
+                                {orgName} • {userProfile?.role === 'admin' || userProfile?.role === 'super_admin' ? 'Enterprise Admin' : userProfile?.role || 'Member'}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
                 <Button
                     onClick={async () => {
-                        const { createClient } = await import("@/lib/supabase/client");
-                        const supabase = createClient();
-                        await supabase.auth.signOut();
-                        window.location.href = "/";
+                        const confirmed = window.confirm("Are you sure you want to log out?");
+                        if (confirmed) {
+                            const { createClient } = await import("@/lib/supabase/client");
+                            const supabase = createClient();
+                            await supabase.auth.signOut();
+                            window.location.href = "/";
+                        }
                     }}
-                    className="w-full h-9 text-[10px] font-black uppercase tracking-widest bg-white hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-100 dark:bg-slate-800 dark:hover:bg-red-900/10 dark:text-slate-400 dark:hover:text-red-400 dark:border-slate-700 dark:hover:border-red-900/20 rounded-lg shadow-sm transition-all"
+                    className="w-full h-9 text-[10px] font-black uppercase tracking-widest bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20 dark:text-red-400 dark:border-red-900/20 rounded-lg shadow-none transition-all"
                 >
                     Sign Out
                 </Button>

@@ -90,11 +90,19 @@ export default async function EditSimulationPage({ params }: { params: Promise<{
         ? membership.organizations[0]
         : membership.organizations;
 
+    // Get user profile
+    const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
     return (
         <SimulationBuilderView
             organization={organization as any}
             user={user}
             initialSimulationId={id}
+            userProfile={userProfile}
         />
     );
 }
