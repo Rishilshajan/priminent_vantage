@@ -323,6 +323,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                     <ReviewPublish
                         simulationId={simulationId}
                         onBack={() => navigateToStep('analytics')}
+                        onEdit={(step: string) => navigateToStep(step as BuilderStep)}
                         canPublish={completedSteps.includes('analytics')}
                     />
                 );

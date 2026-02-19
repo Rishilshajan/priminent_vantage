@@ -235,7 +235,8 @@ export async function getSimulation(simulationId: string) {
             .select(`
                 *,
                 simulation_tasks (*),
-                simulation_skills (*)
+                simulation_skills (*),
+                organizations (name)
             `)
             .eq('id', simulationId)
             .single();

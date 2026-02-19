@@ -37,6 +37,7 @@ export interface Simulation {
     certificate_director_name?: string | null;
     certificate_director_title?: string | null;
     certificate_signature_url?: string | null;
+    organizations?: { name: string } | null;
 }
 
 export interface SimulationTask {
