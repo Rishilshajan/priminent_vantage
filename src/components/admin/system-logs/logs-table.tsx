@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { SystemLog } from "@/lib/logger"
+import { SystemLog } from "@/lib/logger/index"
 
 interface LogTableProps {
     onSelectLog: (id: string) => void

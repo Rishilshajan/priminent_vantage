@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-// ============================================
-// TYPE DEFINITIONS
-// ============================================
-
 export interface Simulation {
     id: string;
     org_id: string;
@@ -59,8 +55,6 @@ export interface SimulationTask {
     status: 'incomplete' | 'ready';
     created_at: string;
     updated_at: string;
-
-    // Legacy support (optional, keep if needed during migration)
     task_number?: number;
     description?: string | null;
     estimated_duration?: string | null;
@@ -68,7 +62,7 @@ export interface SimulationTask {
     what_you_learn?: string[] | null;
     supporting_docs?: { name: string; url: string }[];
     video_assets?: { title: string; url: string; type: 'upload' | 'embed' }[];
-    quiz_data?: any; // { question: string, options: string[], answer: number }[]
+    quiz_data?: any;
     code_config?: { language: string; starter_code?: string };
 }
 
@@ -92,10 +86,6 @@ export interface SimulationAsset {
     uploaded_by: string | null;
     created_at: string;
 }
-
-// ============================================
-// VALIDATION SCHEMAS
-// ============================================
 
 export const SimulationMetadataSchema = z.object({
     title: z.string().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
@@ -147,16 +137,12 @@ export const SimulationTaskSchema = z.object({
     order_index: z.number().optional(),
     task_number: z.number().optional(),
     sort_order: z.number().optional(),
-    quiz_data: z.any().optional().nullable(), // Using z.any() for flexibility, valid type: { question: string, options: string[], answer: number }[]
+    quiz_data: z.any().optional().nullable(),
     code_config: z.object({
         language: z.string().default('javascript'),
         starter_code: z.string().optional()
     }).optional().nullable(),
 });
-
-// ============================================
-// CONSTANTS
-// ============================================
 
 export const INDUSTRIES = [
     'Financial Services',
@@ -243,20 +229,14 @@ export const VISIBILITY_OPTIONS = [
     },
 ] as const;
 
-// ============================================
-// HELPERS
-// ============================================
-
 export function canPublishSimulation(simulation: Simulation, tasks: SimulationTask[] = []): { canPublish: boolean; errors: string[] } {
     const errors: string[] = [];
-
     if (!simulation.title) errors.push("Title is required");
     if (!simulation.description) errors.push("Description is required");
     if (!simulation.industry) errors.push("Industry is required");
     if (!simulation.target_role) errors.push("Target role is required");
     if (!simulation.company_logo_url) errors.push("Company logo is required");
     if (!simulation.banner_url) errors.push("Banner image is required");
-
     if (tasks.length === 0) {
         errors.push("At least one task is required");
     } else {
@@ -265,7 +245,6 @@ export function canPublishSimulation(simulation: Simulation, tasks: SimulationTa
             errors.push("At least one task must be marked as 'Ready'");
         }
     }
-
     return {
         canPublish: errors.length === 0,
         errors

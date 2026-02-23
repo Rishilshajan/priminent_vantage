@@ -51,8 +51,8 @@ export interface SystemLog {
     action_category: 'SECURITY' | 'ORGANIZATION' | 'CONTENT' | 'SYSTEM'
     target_resource_type?: string | null
     target_resource_id?: string | null
-    resource_type?: string | null // Alias for backward compatibility if needed, but better to use target_resource_type
-    resource_id?: string | null   // Alias
+    resource_type?: string | null
+    resource_id?: string | null
     params: Record<string, unknown>
     result: Record<string, unknown>
     tags: string[]
@@ -60,8 +60,6 @@ export interface SystemLog {
 
 /**
  * Logs a system event from a Client Component.
- * Uses the browser-side Supabase client.
- * Maps the nested Master Schema to flattened DB columns.
  */
 export async function logSystemEvent(logData: CreateSystemLogParams) {
     const supabase = createClient()
@@ -73,28 +71,18 @@ export async function logSystemEvent(logData: CreateSystemLogParams) {
             timestamp: logData.timestamp || new Date().toISOString(),
             level: logData.level,
             message: logData.message || null,
-
-            // Actor Details
             actor_type: logData.actor?.type,
             actor_id: logData.actor?.id,
             actor_name: logData.actor?.name,
             actor_role: logData.actor?.role,
             actor_ip: logData.actor?.ip,
             actor_user_agent: logData.actor?.user_agent,
-
-            // Organization Context
             org_id: logData.organization?.org_id,
             org_name: logData.organization?.org_name,
-
-            // Action Details
             action_code: logData.action.code,
             action_category: logData.action.category,
-
-            // Target Resource
             target_resource_type: logData.target?.resource_type,
             target_resource_id: logData.target?.resource_id,
-
-            // Data
             params: logData.params || {},
             result: logData.result || {},
             tags: logData.tags || [],
@@ -106,7 +94,6 @@ export async function logSystemEvent(logData: CreateSystemLogParams) {
 
         if (error) {
             console.error('Failed to write system log (client):', JSON.stringify(error, null, 2))
-            console.error('Payload:', JSON.stringify(payload, null, 2))
         }
     } catch (err) {
         console.error('Exception writing system log (client):', err)

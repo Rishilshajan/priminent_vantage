@@ -1,6 +1,6 @@
 import { searchSimulations } from "@/actions/simulations"
 import { getEnterpriseUser } from "@/actions/enterprise"
-import { getCandidateActivity } from "@/actions/candidate.actions" // Reusing this for now as it supports search
+import { getCandidateActivity } from "@/actions/candidate/candidate.actions" // Reusing this for now as it supports search
 import DashboardSidebar from "@/components/enterprise/dashboard/DashboardSidebar"
 import DashboardHeader from "@/components/enterprise/dashboard/DashboardHeader"
 import Link from "next/link"
@@ -21,7 +21,7 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
     ]);
 
     const simulations = simulationsResult.data || [];
-    const candidates = candidatesResult.data || [];
+    const candidates = 'data' in candidatesResult ? candidatesResult.data : [];
     const userProfile = userResult?.userProfile || null;
     const orgName = userResult?.orgName || "Enterprise";
 

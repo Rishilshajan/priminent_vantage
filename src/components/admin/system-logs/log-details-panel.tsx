@@ -1,5 +1,5 @@
 import { Braces, X, Copy, Share2, ChevronLeft } from "lucide-react"
-import { SystemLog } from "@/lib/logger"
+import { SystemLog } from "@/lib/logger/index"
 
 interface LogDetailsPanelProps {
     log: SystemLog

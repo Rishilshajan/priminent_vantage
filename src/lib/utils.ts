@@ -1,10 +1,12 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+// Merges Tailwind class names using clsx and tailwind-merge to resolve conflicts
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
+// Formats a date string as a human-readable relative time string (e.g. '2 hours ago')
 export function formatRelativeTime(dateString: string): string {
     const date = new Date(dateString);
     const now = new Date();
@@ -18,6 +20,7 @@ export function formatRelativeTime(dateString: string): string {
     return date.toLocaleDateString();
 }
 
+// Formats a date string to a short readable date (e.g. 'Feb 23, 2026')
 export function formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -25,6 +28,7 @@ export function formatDate(dateString: string): string {
         day: 'numeric'
     });
 }
+// Checks if an email domain matches a website domain (supports subsets like mit.edu vs user@cs.mit.edu)
 export function getDomainMatch(email: string, website: string): boolean {
     if (!email || !website) return false;
 

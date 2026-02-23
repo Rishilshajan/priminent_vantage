@@ -16,7 +16,7 @@ import {
     GraduationCap
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { logSystemEvent } from "@/lib/logger"
+import { logSystemEvent } from "@/lib/logger/index"
 
 export function AdminSidebar({ user, isOpen, onClose }: { user: any, isOpen: boolean, onClose: () => void }) {
     const pathname = usePathname()

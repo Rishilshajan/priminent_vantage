@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getSimulation, updateSimulation, uploadAsset } from "@/actions/simulations";
-import { FILE_VALIDATION, validateFileType, validateFileSize } from "@/lib/s3-shared";
+import { FILE_VALIDATION, validateFileType, validateFileSize } from "@/lib/s3/shared";
 import { cn } from "@/lib/utils";
 import RichTextEditor from "../RichTextEditor";
 import { ArrowLeft, ArrowRight, CheckCircle2, Award, Globe } from "lucide-react";

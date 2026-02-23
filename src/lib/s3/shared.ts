@@ -1,31 +1,22 @@
 export interface UploadFileParams {
     file: File | Buffer;
     fileName: string;
-    folder: string; // e.g., "logos", "banners", "videos", "tasks"
+    folder: string;
     orgId: string;
     simulationId?: string;
     taskId?: string;
     contentType?: string;
 }
 
-/**
- * Validate file type
- */
 export function validateFileType(file: File, allowedTypes: string[]): boolean {
     return allowedTypes.includes(file.type);
 }
 
-/**
- * Validate file size (in MB)
- */
 export function validateFileSize(file: File, maxSizeMB: number): boolean {
     const fileSizeMB = file.size / (1024 * 1024);
     return fileSizeMB <= maxSizeMB;
 }
 
-/**
- * File validation constants
- */
 export const FILE_VALIDATION = {
     LOGO: {
         allowedTypes: ['image/png', 'image/svg+xml', 'image/jpeg'],

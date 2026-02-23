@@ -9,7 +9,7 @@ import { LogTable } from "./logs-table"
 import { LogDetailsPanel } from "./log-details-panel"
 import { Download, Bell, Menu } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { SystemLog, logSystemEvent } from "@/lib/logger"
+import { SystemLog, logSystemEvent } from "@/lib/logger/index"
 
 export function SystemLogsContent({ profile }: { profile: any }) {
     const searchParams = useSearchParams()

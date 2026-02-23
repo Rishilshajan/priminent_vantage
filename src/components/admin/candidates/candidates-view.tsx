@@ -8,7 +8,7 @@ import { EngagementFunnel } from "./engagement-funnel"
 import { AnalyticsFilters } from "./analytics-filters"
 import { CandidateActivity } from "./candidate-activity"
 import { Search, Download, Bell, Menu, RefreshCcw } from "lucide-react"
-import { getCandidateStats, getCandidateActivity } from "@/actions/candidate.actions"
+import { getCandidateStats, getCandidateActivity } from "@/actions/candidate/candidate.actions"
 import { useDebounce } from "../../../hooks/use-debounce"
 
 export default function CandidatesDashboardView({ profile }: { profile: any }) {
@@ -28,8 +28,8 @@ export default function CandidatesDashboardView({ profile }: { profile: any }) {
                 getCandidateActivity(search)
             ])
 
-            if (statsRes.success) setStats(statsRes.stats)
-            if (activityRes.success && activityRes.data) setActivities(activityRes.data)
+            if ('stats' in statsRes) setStats(statsRes.stats)
+            if ('data' in activityRes) setActivities(activityRes.data)
         } catch (error) {
             console.error("Error loading candidate data:", error)
         } finally {

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 
 export const adminService = {
+    // Fetches the full profile record for an admin user by their auth user ID
     async getProfile(userId: string) {
         const supabase = await createClient()
         const { data, error } = await supabase
@@ -12,7 +13,4 @@ export const adminService = {
         if (error) throw error
         return data
     },
-
-    // Placeholder for other admin actions found in components
-    // logic from access-codes, candidates, etc. will be moved here as needed
 }

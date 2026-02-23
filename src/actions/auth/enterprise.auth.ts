@@ -1,7 +1,7 @@
 'use server'
 
 import { authService } from '@/lib/auth/auth.service'
-import { logServerEvent } from "@/lib/logger-server"
+import { logServerEvent } from "@/lib/logger/server"
 import { getBaseUrl } from '@/lib/utils/url'
 
 

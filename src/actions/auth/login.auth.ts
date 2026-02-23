@@ -1,7 +1,7 @@
 'use server'
 
 import { authService } from '@/lib/auth/auth.service'
-import { logServerEvent } from "@/lib/logger-server"
+import { logServerEvent } from "@/lib/logger/server"
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 

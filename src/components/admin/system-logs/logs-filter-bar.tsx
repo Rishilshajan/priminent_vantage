@@ -1,6 +1,6 @@
 import { Search, Calendar, Filter, X } from "lucide-react"
 import { useState } from "react"
-import { LogLevel } from "@/lib/logger"
+import { LogLevel } from "@/lib/logger/index"
 
 export interface LogFilters {
     search: string
