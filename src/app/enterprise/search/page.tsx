@@ -1,4 +1,5 @@
 import { searchSimulations } from "@/actions/simulations"
+import { getEnterpriseUser } from "@/actions/enterprise"
 import { getCandidateActivity } from "@/actions/candidate.actions" // Reusing this for now as it supports search
 import DashboardSidebar from "@/components/enterprise/dashboard/DashboardSidebar"
 import DashboardHeader from "@/components/enterprise/dashboard/DashboardHeader"
@@ -13,20 +14,23 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
     const query = searchParams.q || "";
 
     // Fetch data in parallel
-    const [simulationsResult, candidatesResult] = await Promise.all([
+    const [simulationsResult, candidatesResult, userResult] = await Promise.all([
         searchSimulations(query),
-        getCandidateActivity(query)
+        getCandidateActivity(query),
+        getEnterpriseUser()
     ]);
 
     const simulations = simulationsResult.data || [];
     const candidates = candidatesResult.data || [];
+    const userProfile = userResult?.userProfile || null;
+    const orgName = userResult?.orgName || "Enterprise";
 
     return (
         <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
-            <DashboardSidebar orgName="Enterprise" /> {/* Fallback - should fetch proper name */}
+            <DashboardSidebar orgName={orgName} userProfile={userProfile} />
 
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <DashboardHeader orgName="Enterprise" />
+                <DashboardHeader orgName={orgName} userProfile={userProfile} />
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 custom-scrollbar">
                     <div className="flex flex-col gap-2">

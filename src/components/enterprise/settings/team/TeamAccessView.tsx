@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import DashboardSidebar from "@/components/enterprise/dashboard/DashboardSidebar"
+import DashboardHeader from "@/components/enterprise/dashboard/DashboardHeader"
 import SettingsNav from "@/components/enterprise/settings/SettingsNav"
 import DomainAccessControl from "./DomainAccessControl"
 import TeamMembersTable from "./TeamMembersTable"
@@ -9,13 +10,19 @@ import PermissionDrawer from "./PermissionDrawer"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, Bell, UserPlus } from "lucide-react"
 
-export default function TeamAccessView() {
+interface TeamAccessViewProps {
+    userProfile?: any;
+    orgName?: string;
+}
+
+export default function TeamAccessView({ userProfile, orgName }: TeamAccessViewProps) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
     return (
         <div className="flex h-screen overflow-hidden bg-[#F8F9FC] dark:bg-[#191022]">
-            <DashboardSidebar />
+            <DashboardSidebar orgName={orgName} userProfile={userProfile} />
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+                <DashboardHeader orgName={orgName || "Enterprise"} userProfile={userProfile} />
                 <SettingsNav />
 
                 {/* Top Header Content Overlay (if needed for specific header actions unique to this page) */}

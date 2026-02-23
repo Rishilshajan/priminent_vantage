@@ -12,6 +12,7 @@ interface EmployerBrandingFormProps {
     onNext: () => void;
     onBack: () => void;
     certificateEnabled?: boolean;
+    orgBranding?: any;
 }
 
 export default function EmployerBrandingForm({
@@ -20,7 +21,8 @@ export default function EmployerBrandingForm({
     onSaveSuccess,
     onNext,
     onBack,
-    certificateEnabled = true
+    certificateEnabled = true,
+    orgBranding
 }: EmployerBrandingFormProps) {
     const [formData, setFormData] = useState({
         company_logo_url: '',
@@ -62,6 +64,11 @@ export default function EmployerBrandingForm({
                 const result = await getSimulation(simulationId);
                 if (mounted && result.data) {
                     console.log("Loaded data:", result.data);
+
+                    if (result.data.organization_id) {
+                        // Branding is now handled at the parent level and passed via prop
+                    }
+
                     setFormData(prev => ({
                         ...prev,
                         company_logo_url: result.data.company_logo_url || prev.company_logo_url || '',
@@ -80,6 +87,14 @@ export default function EmployerBrandingForm({
         load();
         return () => { mounted = false; };
     }, [simulationId]);
+
+    // Enforce Org Defaults - Branding is now passed as a prop, but we still want to ensure formData stays in sync for the preview if needed
+    // However, the rendering logic will prioritize orgBranding anyway.
+    useEffect(() => {
+        if (orgBranding?.logo_url) {
+            setFormData(prev => ({ ...prev, company_logo_url: orgBranding.logo_url }));
+        }
+    }, [orgBranding]);
 
 
 
@@ -259,52 +274,49 @@ export default function EmployerBrandingForm({
                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                                 Company Logo
                             </label>
-                            <div className={`aspect-square bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center p-4 text-center group hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all relative overflow-hidden ${errors.company_logo_url ? 'border-red-300 ring-1 ring-red-300/50' : ''}`}>
-                                {previewUrls.logo || formData.company_logo_url ? (
-                                    <img
-                                        src={previewUrls.logo || formData.company_logo_url}
-                                        alt="Logo"
-                                        className={cn(
-                                            "absolute inset-0 w-full h-full object-contain p-4 transition-opacity",
-                                            uploadStatuses.logo === 'uploading' ? 'opacity-50' : 'opacity-100'
-                                        )}
-                                    />
-                                ) : (
-                                    <>
-                                        <div className="mb-2 p-2 rounded-full bg-slate-100 dark:bg-slate-800 group-hover:scale-110 transition-transform">
-                                            <span className="material-symbols-outlined text-slate-400 group-hover:text-primary">add_photo_alternate</span>
+
+                            {orgBranding?.logo_url ? (
+                                <div className="space-y-4">
+                                    <div className="relative group">
+                                        <div className="aspect-square bg-slate-50 dark:bg-slate-800/50 border-2 border-solid border-slate-200 dark:border-slate-700 rounded-xl flex flex-col items-center justify-center p-4 relative overflow-hidden">
+                                            <img
+                                                src={orgBranding.logo_url}
+                                                alt="Organization Logo"
+                                                className="absolute inset-0 w-full h-full object-contain p-4"
+                                            />
+                                            <div className="absolute inset-0 bg-slate-50/10 dark:bg-slate-900/10 flex flex-col items-center justify-center pointer-events-none">
+                                                <div className="bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-2">
+                                                    <span className="material-symbols-outlined text-sm text-primary">lock</span>
+                                                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Universal Org Asset</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Upload Logo</p>
-                                    </>
-                                )}
-
-                                {uploadStatuses.logo === 'uploading' && (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 dark:bg-slate-900/60 z-10">
-                                        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
                                     </div>
-                                )}
+                                    <p className="text-[10px] text-slate-400 italic text-center">Managed at organization level</p>
+                                </div>
+                            ) : (
+                                <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-xl border border-amber-100 dark:border-amber-900/30 flex flex-col items-center justify-center text-center space-y-4">
+                                    <div className="bg-amber-100 dark:bg-amber-900/40 p-3 rounded-full">
+                                        <Globe className="size-6 text-amber-600 dark:text-amber-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-amber-900 dark:text-amber-100">Setup Required</p>
+                                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                                            Your company logo must be configured in <b>Organization Branding</b> settings.
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => window.open('/enterprise/settings?tab=branding', '_blank')}
+                                        className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                                    >
+                                        Go to Settings
+                                    </button>
+                                </div>
+                            )}
 
-                                <input
-                                    type="file"
-                                    accept="image/png,image/svg+xml,image/jpeg"
-                                    onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'logo')}
-                                    className="absolute inset-0 opacity-0 cursor-pointer z-20"
-                                    disabled={uploadStatuses.logo === 'uploading'}
-                                />
-                            </div>
-                            {errors.company_logo_url && <p className="text-[10px] text-red-500 mt-2 font-bold uppercase tracking-wide">{errors.company_logo_url}</p>}
-
-                            {/* Guidelines */}
-                            <div className="mt-3 space-y-1">
-                                <p className="text-[10px] font-bold text-slate-500 uppercase">Recommended</p>
-                                <ul className="text-[10px] text-slate-400 space-y-0.5 list-disc pl-3">
-                                    <li>500x500px (Min) - 1000x1000px (Ideal)</li>
-                                    <li>Format: PNG (Transparent preferred)</li>
-                                    <li>Aspect Ratio: 1:1 (Square)</li>
-                                    <li>File Size: Under 2MB</li>
-                                </ul>
-                            </div>
+                            {errors.company_logo_url && !orgBranding?.logo_url && <p className="text-[10px] text-red-500 mt-2 font-bold uppercase tracking-wide">{errors.company_logo_url}</p>}
                         </div>
+
 
                         {/* Program Banner */}
                         <div className="col-span-1 md:col-span-2">

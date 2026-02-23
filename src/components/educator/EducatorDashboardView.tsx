@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { GraduationCap } from "lucide-react"
 import { EducatorSidebar } from "./EducatorSidebar"
 import { EducatorStats } from "./EducatorStats"
@@ -11,6 +12,28 @@ interface EducatorDashboardViewProps {
 }
 
 export default function EducatorDashboardView({ profile }: EducatorDashboardViewProps) {
+    const [orgBranding, setOrgBranding] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchOrgBranding = async () => {
+            try {
+                const { getOrganizationBranding } = await import("@/actions/enterprise");
+                const result = await getOrganizationBranding();
+                if (result && result.success && result.data) {
+                    setOrgBranding(result.data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch org branding", err);
+            }
+        };
+        fetchOrgBranding();
+    }, []);
+
+    // Brand color style
+    const brandColorStyle = orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {};
+    const brandColorText = orgBranding?.brand_color ? { color: orgBranding.brand_color } : {};
+    const brandBorderColor = orgBranding?.brand_color ? { borderColor: orgBranding.brand_color } : {};
+
     return (
         <div className="relative flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark font-display">
             <EducatorSidebar user={profile} />
@@ -30,7 +53,7 @@ export default function EducatorDashboardView({ profile }: EducatorDashboardView
                     </div>
 
                     {/* Apply as Educator Banner */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-primary to-blue-600 p-8 shadow-2xl">
+                    <div className="relative overflow-hidden rounded-2xl p-8 shadow-2xl" style={brandColorStyle}>
                         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
                         <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div className="flex items-center gap-4">
@@ -44,7 +67,8 @@ export default function EducatorDashboardView({ profile }: EducatorDashboardView
                             </div>
                             <Link
                                 href="/educators/apply"
-                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-bold text-primary shadow-lg transition-all hover:bg-white/90 hover:shadow-xl hover:-translate-y-0.5"
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-bold shadow-lg transition-all hover:bg-white/90 hover:shadow-xl hover:-translate-y-0.5"
+                                style={brandColorText}
                             >
                                 <GraduationCap className="size-5" />
                                 Apply Now
@@ -52,14 +76,18 @@ export default function EducatorDashboardView({ profile }: EducatorDashboardView
                         </div>
                     </div>
 
-                    <EducatorStats />
-                    <EducatorCurrentSimulations />
-
-                    <footer className="pb-10 pt-4 text-center text-sm text-text-secondary dark:text-gray-500">
-                        © 2026 Priminent Vantage. Empowering future careers through simulation.
-                    </footer>
+                    {/* Content Sections */}
+                    <div className="flex flex-col gap-10">
+                        <EducatorStats />
+                        <EducatorCurrentSimulations orgBranding={orgBranding} />
+                    </div>
                 </div>
             </main>
+
+            {/* Premium Footer */}
+            <footer className="border-t border-border-color bg-white px-8 py-12 dark:bg-[#1e1429] dark:border-white/10" style={brandColorStyle}>
+                {orgBranding?.footer_text || "© 2026 Priminent Vantage. Empowering future educators through simulation."}
+            </footer>
         </div>
     )
 }

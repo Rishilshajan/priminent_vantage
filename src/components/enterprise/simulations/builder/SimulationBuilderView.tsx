@@ -17,6 +17,7 @@ import VisibilityForm from "./steps/VisibilityForm";
 import AnalyticsPreview from "./steps/AnalyticsPreview";
 import ReviewPublish from "./steps/ReviewPublish";
 import { getSimulation } from "@/actions/simulations";
+import { getBrandingByOrgId } from "@/actions/enterprise";
 import { Simulation } from "@/lib/simulations";
 
 interface SimulationBuilderViewProps {
@@ -26,7 +27,7 @@ interface SimulationBuilderViewProps {
     };
     user: User;
     initialSimulationId?: string;
-    userProfile?: any; // Add userProfile prop
+    userProfile?: any;
 }
 
 export type BuilderStep =
@@ -44,7 +45,6 @@ export default function SimulationBuilderView({ organization, user, initialSimul
     const searchParams = useSearchParams();
     const router = useRouter();
     const pathname = usePathname();
-    // ... (existing code omitted for brevity) ...
 
     const stepFromUrl = searchParams.get('step') as BuilderStep | null;
     const [currentStep, setCurrentStep] = useState<BuilderStep>(stepFromUrl || 'metadata');
@@ -55,14 +55,20 @@ export default function SimulationBuilderView({ organization, user, initialSimul
     const [saveTrigger, setSaveTrigger] = useState(0);
     const [isGlobalSaving, setIsGlobalSaving] = useState(false);
     const [simulationData, setSimulationData] = useState<Simulation | null>(null);
+    const [orgBranding, setOrgBranding] = useState<any>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
 
-    // Fetch simulation data to calculate persistence
-    useEffect(() => {
-        if (simulationId) {
-            checkProgress();
+    // Unified branding fetcher
+    const fetchBranding = useCallback(async (orgId: string) => {
+        try {
+            const brandResult = await getBrandingByOrgId(orgId);
+            if (brandResult?.success) {
+                setOrgBranding(brandResult.data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch org branding in builder:", err);
         }
-    }, [simulationId, lastSaved]); // Re-check when saved
+    }, []);
 
     const handleGlobalSave = () => {
         setIsGlobalSaving(true);
@@ -77,13 +83,12 @@ export default function SimulationBuilderView({ organization, user, initialSimul
     // Helper to check if rich text has actual content
     const hasContent = (html: string | null | undefined) => {
         if (!html) return false;
-        // Strip tags and check for non-whitespace characters
         const text = html.replace(/<[^>]*>/g, '').trim();
         return text.length > 0;
     };
 
     // Verify progress with linear dependency checks to prevent false completes
-    const checkProgress = async () => {
+    const checkProgress = useCallback(async () => {
         if (!simulationId) return;
         const result = await getSimulation(simulationId);
         if (result.data) {
@@ -92,12 +97,12 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             const certEnabled = sim.certificate_enabled !== false;
             setCertificateEnabled(certEnabled);
 
-            // 1. Metadata Check (General Info) - No dependencies
+            // 1. Metadata Check
             if (sim.title && sim.short_description && sim.description && sim.industry && sim.target_role && sim.program_type) {
                 completed.push('metadata');
             }
 
-            // 2. Outcomes Check - Depends on Metadata
+            // 2. Outcomes Check
             if (completed.includes('metadata') && (
                 sim.learning_outcomes && sim.learning_outcomes.length > 0 &&
                 sim.simulation_skills && sim.simulation_skills.length > 0
@@ -105,9 +110,8 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                 completed.push('outcomes');
             }
 
-            // 3. Tasks Check - Depends on Outcomes
+            // 3. Tasks Check
             if (completed.includes('outcomes') && sim.simulation_tasks && sim.simulation_tasks.length > 0) {
-                // STRICTER CHECK: At least one task must be meaningful (not just "New Task X" with no content)
                 const hasValidTask = sim.simulation_tasks.some((t: any) =>
                     (t.title && !t.title.startsWith('New Task')) ||
                     (t.introduction && t.introduction.trim().length > 0) ||
@@ -118,7 +122,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                 }
             }
 
-            // 4. Assessment Check - Depends on Tasks
+            // 4. Assessment Check
             if (completed.includes('tasks') &&
                 sim.duration && sim.difficulty_level && sim.target_audience &&
                 hasContent(sim.grading_criteria)
@@ -126,7 +130,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                 completed.push('assessment');
             }
 
-            // 5. Branding Check - Depends on Assessment
+            // 5. Branding Check
             if (completed.includes('assessment') &&
                 sim.company_logo_url && sim.banner_url &&
                 hasContent(sim.about_company) &&
@@ -136,10 +140,8 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             }
 
             // 6. Certification Check
-            // DEPENDS ON: Branding
             if (certEnabled) {
                 if (completed.includes('branding')) {
-                    // Start strict: require director name
                     if (sim.certificate_director_name) {
                         completed.push('certification');
                     }
@@ -147,7 +149,6 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             }
 
             // 7. Visibility Check
-            // DEPENDS ON: Certification (if enabled) OR Branding (if disabled)
             let prevForVisibility: BuilderStep = 'branding';
             if (certEnabled) {
                 prevForVisibility = 'certification';
@@ -157,21 +158,36 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                 completed.push('visibility');
             }
 
-            // 8. Analytics Check (Preview)
-            // DEPENDS ON: Visibility
+            // 8. Analytics Check
             if (completed.includes('visibility')) {
-                // Check if user has viewed and continued from analytics (persisted via hidden tag)
                 if (sim.analytics_tags && sim.analytics_tags.includes('__analytics_viewed__')) {
                     completed.push('analytics');
                 }
             }
 
-            // 9. Review Check Check (Not auto-completed)
-
             setCompletedSteps(completed);
             setSimulationData(sim);
+
+            // Fetch Org Branding once we have the org_id from the simulation
+            if (sim.org_id && !orgBranding) {
+                fetchBranding(sim.org_id);
+            }
         }
-    };
+    }, [simulationId, orgBranding, fetchBranding]);
+
+    // Fetch simulation data to calculate persistence
+    useEffect(() => {
+        if (simulationId) {
+            checkProgress();
+        }
+    }, [simulationId, lastSaved, checkProgress]);
+
+    // Re-fetch branding when user enters branding/certification steps
+    useEffect(() => {
+        if (simulationData?.org_id && (currentStep === 'branding' || currentStep === 'certification')) {
+            fetchBranding(simulationData.org_id);
+        }
+    }, [currentStep, simulationData?.org_id, fetchBranding]);
 
     // Sync state with URL when step changes
     const navigateToStep = (step: BuilderStep) => {
@@ -189,15 +205,8 @@ export default function SimulationBuilderView({ organization, user, initialSimul
         }
     }, [searchParams, currentStep]);
 
-    const markStepCompleted = (step: BuilderStep) => {
-        if (!completedSteps.includes(step)) {
-            setCompletedSteps(prev => [...prev, step]);
-        }
-    };
-
     const handleSimulationCreated = (id: string) => {
         setSimulationId(id);
-        // If we're on the /create page, redirect to the /edit page immediately
         if (pathname.includes('/simulations/create')) {
             router.push(`/enterprise/simulations/edit/${id}?step=metadata`);
         }
@@ -266,6 +275,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                         saveTrigger={saveTrigger}
                         onSaveSuccess={handleSaveSuccess}
                         certificateEnabled={certificateEnabled}
+                        orgBranding={orgBranding}
                         onNext={() => {
                             if (certificateEnabled) {
                                 navigateToStep('certification');
@@ -283,6 +293,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                         organizationName={organization.name}
                         saveTrigger={saveTrigger}
                         onSaveSuccess={handleSaveSuccess}
+                        orgBranding={orgBranding}
                         onBack={() => navigateToStep('branding')}
                         onNext={() => {
                             navigateToStep('visibility');
@@ -334,7 +345,6 @@ export default function SimulationBuilderView({ organization, user, initialSimul
 
     return (
         <div className="flex h-screen overflow-hidden bg-background-light dark:bg-background-dark">
-            {/* Desktop Sidebar - Hidden on Mobile */}
             <div className="hidden lg:flex">
                 <BuilderSidebar
                     currentStep={currentStep}
@@ -348,7 +358,6 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                 />
             </div>
 
-            {/* Mobile Sidebar - Drawer */}
             <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
                 <SheetContent side="left" className="p-0 w-72 border-r border-primary/10">
                     <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
@@ -370,9 +379,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                 </SheetContent>
             </Sheet>
 
-            {/* Main Content Area */}
             <main className="flex-1 flex flex-col overflow-hidden w-full">
-                {/* Header */}
                 <BuilderHeader
                     currentStep={currentStep}
                     simulationId={simulationId}
@@ -382,18 +389,12 @@ export default function SimulationBuilderView({ organization, user, initialSimul
                     onOpenSidebar={() => setIsSidebarOpen(true)}
                 />
 
-                {/* Scrollable Form Body */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-8">
                     <div className="max-w-4xl mx-auto">
                         {renderStep()}
                     </div>
                 </div>
             </main>
-
-            {/* Right Sidebar - Task Map (Hidden as requested) */}
-            {/* {simulationId && (
-                <TaskMapSidebar simulationId={simulationId} />
-            )} */}
         </div>
     );
 }

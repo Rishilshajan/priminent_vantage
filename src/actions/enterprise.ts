@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logServerEvent } from "@/lib/logger-server";
 import { z } from "zod";
 import { createHash, randomBytes } from "node:crypto";
+import { uploadToS3, deleteFromS3 } from "@/lib/s3";
 
 /**
  * Generates a random 9-character alphanumeric access code (Format: XXX-XXX-XXX)
@@ -1274,6 +1275,205 @@ export async function getSimulationsMetrics() {
     } catch (err: any) {
         console.error("Simulations metrics error:", err);
         return { error: "Failed to load simulations metrics." };
+    }
+}
+
+
+/**
+ * Fetches user profile for sidebar display
+ */
+export async function getEnterpriseUser() {
+    const supabase = await createClient();
+
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+
+        const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name, email, role')
+            .eq('id', user.id)
+            .single();
+
+        // Get Org Name
+        const { data: member } = await supabase
+            .from('organization_members')
+            .select('organizations(name)')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        const orgName = member?.organizations ? (member.organizations as any).name : "Enterprise";
+
+        return { userProfile, orgName };
+    } catch (err) {
+        console.error("Error fetching enterprise user:", err);
+        return null;
+    }
+}
+
+export async function getBrandingByOrgId(orgId: string) {
+    const supabase = await createClient();
+    try {
+        const { data: org } = await supabase
+            .from('organizations')
+            .select('*')
+            .eq('id', orgId)
+            .single();
+
+        return { success: true, data: org };
+    } catch (err: any) {
+        console.error("Error fetching branding by ID:", err);
+        return { success: false, error: err.message };
+    }
+}
+
+export async function getOrganizationBranding() {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+
+        const { data: member } = await supabase
+            .from('organization_members')
+            .select('org_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        if (!member) return null;
+
+        const { data: org } = await supabase
+            .from('organizations')
+            .select('*')
+            .eq('id', member.org_id)
+            .single();
+
+        return { success: true, data: org };
+    } catch (err: any) {
+        console.error("Error fetching branding:", err);
+        return { success: false, error: err.message };
+    }
+}
+
+export async function updateOrganizationBranding(data: any) {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, error: "Unauthorized" };
+
+        const { data: member } = await supabase
+            .from('organization_members')
+            .select('org_id, role')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        if (!member || !['admin', 'billing'].includes(member.role)) {
+            return { success: false, error: "Unauthorized: Admin access required" };
+        }
+
+        // Fetch user profile for audit
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', user.id)
+            .single();
+
+        const updatedBy = profile ? `${profile.first_name} ${profile.last_name}`.trim() : user.email;
+
+        const { error } = await supabase
+            .from('organizations')
+            .update({
+                ...data,
+                last_updated_at: new Date().toISOString(),
+                last_updated_by: updatedBy
+            })
+            .eq('id', member.org_id);
+
+        if (error) throw error;
+
+        return { success: true };
+    } catch (err: any) {
+        console.error("Error updating branding:", err);
+        return { success: false, error: err.message };
+    }
+}
+
+/**
+ * Upload organization-level asset (logo, signature, etc.) to S3
+ */
+export async function uploadOrganizationAsset(formData: FormData) {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { error: "Authentication required" };
+
+        const assetType = formData.get('assetType') as 'logo' | 'signature';
+        const file = formData.get('file') as File;
+
+        if (!file || !((file as any) instanceof File)) {
+            return { error: 'Invalid file upload: No file received' };
+        }
+
+        // Get user's org
+        const { data: member } = await supabase
+            .from('organization_members')
+            .select('org_id, role')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        if (!member || !['admin', 'owner'].includes(member.role)) {
+            return { error: "Access denied: Admin permissions required" };
+        }
+
+        const folderMap: Record<string, string> = {
+            logo: 'organization-logos',
+            signature: 'organization-signatures',
+        };
+
+        const folder = folderMap[assetType] || 'organization-misc';
+
+        // Upload to S3
+        const { url, key } = await uploadToS3({
+            file,
+            fileName: file.name,
+            folder,
+            orgId: member.org_id,
+        });
+
+        // Record in database
+        const { error: dbError } = await supabase
+            .from('simulation_assets')
+            .insert({
+                org_id: member.org_id, // Link to organization
+                simulation_id: null,
+                task_id: null,
+                asset_type: assetType, // 'logo' or 'signature'
+                file_name: file.name,
+                file_url: url,
+                file_size: file.size,
+                mime_type: file.type || 'application/octet-stream',
+                uploaded_by: user.id
+            });
+
+        if (dbError) {
+            console.warn("Recorded asset in S3 but failed to save to DB:", dbError);
+        }
+
+        // Update organization record immediately
+        const orgUpdateField = assetType === 'logo' ? 'logo_url' : 'certificate_signature_url';
+        const { error: orgError } = await supabase
+            .from('organizations')
+            .update({ [orgUpdateField]: url })
+            .eq('id', member.org_id);
+
+        if (orgError) {
+            console.error(`Failed to update organization ${assetType}:`, orgError);
+        }
+
+        return { data: { url } };
+
+    } catch (err: any) {
+        console.error("Organization Asset Upload Error:", err);
+        return { error: `Upload failed: ${err.message || 'Unknown processing error'}` };
     }
 }
 

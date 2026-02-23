@@ -41,7 +41,7 @@ export default function DashboardSidebar({ orgName = "Priminent", className, onL
 
     const orgItems = [
         { label: "Departments", href: "#", icon: "corporate_fare" },
-        { label: "Settings", href: "/enterprise/settings", icon: "settings" },
+        { label: "Settings", href: "/enterprise/settings/organization", icon: "settings" },
     ]
 
     return (

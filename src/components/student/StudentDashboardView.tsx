@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Plus } from "lucide-react"
 import { StudentSidebar } from "./StudentSidebar"
 import { StatsCards } from "./StatsCards"
@@ -11,6 +12,28 @@ interface StudentDashboardViewProps {
 }
 
 export default function StudentDashboardView({ profile }: StudentDashboardViewProps) {
+    const [orgBranding, setOrgBranding] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchOrgBranding = async () => {
+            try {
+                const { getOrganizationBranding } = await import("@/actions/enterprise");
+                const result = await getOrganizationBranding();
+                if (result && result.success && result.data) {
+                    setOrgBranding(result.data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch org branding", err);
+            }
+        };
+        fetchOrgBranding();
+    }, []);
+
+    // Brand color style
+    const brandColorStyle = orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {};
+    const brandColorText = orgBranding?.brand_color ? { color: orgBranding.brand_color } : {};
+    const brandBorderColor = orgBranding?.brand_color ? { borderColor: orgBranding.brand_color } : {};
+
     return (
         <div className="relative flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark font-display">
             <StudentSidebar user={profile} />
@@ -35,21 +58,28 @@ export default function StudentDashboardView({ profile }: StudentDashboardViewPr
                                     type="text"
                                 />
                             </div>
-                            <button className="flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-dark">
+                            <button
+                                className="flex h-12 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold text-white shadow-lg transition-all hover:opacity-90"
+                                style={brandColorStyle}
+                            >
                                 <Plus className="size-5" />
                                 <span>Join with Code</span>
                             </button>
                         </div>
                     </div>
 
-                    <StatsCards />
-                    <CurrentSimulations />
-                    <RecommendedSimulations />
-
-                    <footer className="pb-10 pt-4 text-center text-sm text-text-secondary dark:text-gray-500">
-                        © 2026 Priminent Vantage. Empowering future careers through simulation.
-                    </footer>
+                    {/* Main Content Area */}
+                    <div className="flex flex-col gap-8">
+                        <StatsCards />
+                        <CurrentSimulations orgBranding={orgBranding} />
+                        <RecommendedSimulations orgBranding={orgBranding} />
+                    </div>
                 </div>
+
+                {/* Premium Footer */}
+                <footer className="mt-auto border-t border-border-color bg-white px-8 py-12 dark:bg-[#1e1429] dark:border-white/10" style={brandColorStyle}>
+                    {orgBranding?.footer_text || "© 2026 Priminent Vantage. Empowering future careers through simulation."}
+                </footer>
             </main>
         </div>
     )

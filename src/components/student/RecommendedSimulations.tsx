@@ -2,7 +2,13 @@
 
 import { ArrowRight } from "lucide-react"
 
-export function RecommendedSimulations() {
+interface RecommendedSimulationsProps {
+    orgBranding?: any;
+}
+
+export function RecommendedSimulations({ orgBranding }: RecommendedSimulationsProps) {
+    const brandColorText = orgBranding?.brand_color ? { color: orgBranding.brand_color } : {};
+
     return (
         <section className="flex flex-col gap-6">
             <div className="flex items-center justify-between border-t border-border-color pt-8 dark:border-white/10">
@@ -10,7 +16,10 @@ export function RecommendedSimulations() {
                     <h2 className="text-xl font-bold text-text-main dark:text-white">Recommended for You</h2>
                     <p className="text-sm text-text-secondary dark:text-gray-400">Based on your skills and interests</p>
                 </div>
-                <button className="flex items-center gap-2 text-sm font-bold text-primary hover:text-primary-dark">
+                <button
+                    className="flex items-center gap-2 text-sm font-bold text-primary hover:text-primary-dark"
+                    style={brandColorText}
+                >
                     Explore Library
                     <ArrowRight className="size-4" />
                 </button>
@@ -22,7 +31,7 @@ export function RecommendedSimulations() {
                         <div className="absolute inset-0 bg-blue-500/20" />
                     </div>
                     <div className="p-3">
-                        <span className="text-[9px] font-bold text-primary uppercase">Data Science</span>
+                        <span className="text-[9px] font-bold text-primary uppercase" style={brandColorText}>Data Science</span>
                         <h4 className="mt-1 text-sm font-bold text-text-main dark:text-white line-clamp-1">Python for Finance</h4>
                         <div className="mt-2 flex items-center justify-between">
                             <span className="text-[10px] text-text-secondary dark:text-gray-400">5 Modules</span>
@@ -37,7 +46,7 @@ export function RecommendedSimulations() {
                         <div className="absolute inset-0 bg-purple-500/20" />
                     </div>
                     <div className="p-3">
-                        <span className="text-[9px] font-bold text-primary uppercase">Software Eng</span>
+                        <span className="text-[9px] font-bold text-primary uppercase" style={brandColorText}>Software Eng</span>
                         <h4 className="mt-1 text-sm font-bold text-text-main dark:text-white line-clamp-1">Fullstack Web Sim</h4>
                         <div className="mt-2 flex items-center justify-between">
                             <span className="text-[10px] text-text-secondary dark:text-gray-400">8 Modules</span>
@@ -52,7 +61,7 @@ export function RecommendedSimulations() {
                         <div className="absolute inset-0 bg-pink-500/20" />
                     </div>
                     <div className="p-3">
-                        <span className="text-[9px] font-bold text-primary uppercase">UI/UX Design</span>
+                        <span className="text-[9px] font-bold text-primary uppercase" style={brandColorText}>UI/UX Design</span>
                         <h4 className="mt-1 text-sm font-bold text-text-main dark:text-white line-clamp-1">Product Design Sprint</h4>
                         <div className="mt-2 flex items-center justify-between">
                             <span className="text-[10px] text-text-secondary dark:text-gray-400">3 Modules</span>
@@ -67,7 +76,7 @@ export function RecommendedSimulations() {
                         <div className="absolute inset-0 bg-emerald-500/20" />
                     </div>
                     <div className="p-3">
-                        <span className="text-[9px] font-bold text-primary uppercase">Business</span>
+                        <span className="text-[9px] font-bold text-primary uppercase" style={brandColorText}>Business</span>
                         <h4 className="mt-1 text-sm font-bold text-text-main dark:text-white line-clamp-1">Venture Capital Analyst</h4>
                         <div className="mt-2 flex items-center justify-between">
                             <span className="text-[10px] text-text-secondary dark:text-gray-400">6 Modules</span>
@@ -79,3 +88,4 @@ export function RecommendedSimulations() {
         </section>
     )
 }
+

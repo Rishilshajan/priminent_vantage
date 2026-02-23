@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { getEnterpriseUser } from "@/actions/enterprise"
 import PrivacyView from "@/components/enterprise/settings/privacy/PrivacyView"
 
 export const metadata: Metadata = {
@@ -6,6 +7,10 @@ export const metadata: Metadata = {
     description: 'Configure global data handling, retention policies, and regulatory compliance standards.',
 }
 
-export default function EnterprisePrivacyPage() {
-    return <PrivacyView />
+export default async function EnterprisePrivacyPage() {
+    const userResult = await getEnterpriseUser();
+    const userProfile = userResult?.userProfile || null;
+    const orgName = userResult?.orgName || "Enterprise";
+
+    return <PrivacyView userProfile={userProfile} orgName={orgName} />
 }

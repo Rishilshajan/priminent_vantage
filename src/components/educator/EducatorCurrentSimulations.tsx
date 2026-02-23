@@ -3,7 +3,14 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
-export function EducatorCurrentSimulations() {
+interface EducatorCurrentSimulationsProps {
+    orgBranding?: any;
+}
+
+export function EducatorCurrentSimulations({ orgBranding }: EducatorCurrentSimulationsProps) {
+    const brandColorStyle = orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {};
+    const brandColorText = orgBranding?.brand_color ? { color: orgBranding.brand_color } : {};
+
     const simulations = [
         {
             id: 1,
@@ -34,6 +41,7 @@ export function EducatorCurrentSimulations() {
                 <Link
                     href="/educators/simulations"
                     className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                    style={brandColorText}
                 >
                     View all
                     <ArrowRight className="size-4" />
@@ -65,18 +73,21 @@ export function EducatorCurrentSimulations() {
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="font-medium text-primary">{sim.progress}% Progress</span>
+                                    <span className="font-medium text-primary" style={brandColorText}>{sim.progress}% Progress</span>
                                     <span className="text-text-secondary dark:text-gray-400">{sim.daysLeft} days left</span>
                                 </div>
                                 <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-white/10">
                                     <div
                                         className="h-full rounded-full bg-gradient-to-r from-primary to-purple-500 transition-all"
-                                        style={{ width: `${sim.progress}%` }}
+                                        style={{ width: `${sim.progress}%`, ...(orgBranding?.brand_color ? { background: orgBranding.brand_color } : {}) }}
                                     />
                                 </div>
                             </div>
 
-                            <button className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-primary-dark">
+                            <button
+                                className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-primary-dark"
+                                style={brandColorStyle}
+                            >
                                 Continue
                             </button>
                         </div>
@@ -86,3 +97,4 @@ export function EducatorCurrentSimulations() {
         </div>
     )
 }
+

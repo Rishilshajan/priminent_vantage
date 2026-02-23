@@ -21,16 +21,24 @@ import { cn } from "@/lib/utils";
 interface CertificationSetupProps {
     simulationId: string;
     organizationName: string;
-    saveTrigger?: number; // Added for consistency
-    onSaveSuccess?: () => void; // Added for consistency
+    saveTrigger?: number;
+    onSaveSuccess?: () => void;
     onBack: () => void;
     onNext?: () => void;
+    orgBranding?: any;
 }
 
-export default function CertificationSetup({ simulationId, organizationName, saveTrigger, onSaveSuccess, onBack, onNext }: CertificationSetupProps) {
+export default function CertificationSetup({
+    simulationId,
+    organizationName,
+    saveTrigger,
+    onSaveSuccess,
+    onBack,
+    onNext,
+    orgBranding
+}: CertificationSetupProps) {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [uploading, setUploading] = useState(false);
     const [simulation, setSimulation] = useState<Simulation | null>(null);
     const [directorName, setDirectorName] = useState("");
     const [directorTitle, setDirectorTitle] = useState("");
@@ -42,6 +50,16 @@ export default function CertificationSetup({ simulationId, organizationName, sav
     useEffect(() => {
         loadSimulation();
     }, [simulationId]);
+
+    // Enforce Org Defaults
+    useEffect(() => {
+        if (orgBranding) {
+            if (orgBranding.certificate_director_name) setDirectorName(orgBranding.certificate_director_name);
+            if (orgBranding.certificate_director_title) setDirectorTitle(orgBranding.certificate_director_title);
+            if (orgBranding.certificate_signature_url) setSignatureUrl(orgBranding.certificate_signature_url);
+        }
+    }, [orgBranding]);
+
 
     useEffect(() => {
         if (saveTrigger && saveTrigger > lastSaveTrigger.current) {
@@ -57,6 +75,8 @@ export default function CertificationSetup({ simulationId, organizationName, sav
             const result = await getSimulation(simulationId);
             if (result.data) {
                 setSimulation(result.data);
+
+                // Initialize with values, but orgBranding prop will override if present
                 setDirectorName(result.data.certificate_director_name || "");
                 setDirectorTitle(result.data.certificate_director_title || "");
                 setSignatureUrl(result.data.certificate_signature_url || null);
@@ -73,6 +93,7 @@ export default function CertificationSetup({ simulationId, organizationName, sav
 
         setSaving(true);
         // We persist data even if director name is empty, as users might clear it
+        // If Org is managed, we save the Org values (which are in state)
         const result = await updateSimulation(simulationId, {
             certificate_director_name: directorName,
             certificate_director_title: directorTitle,
@@ -96,46 +117,6 @@ export default function CertificationSetup({ simulationId, organizationName, sav
         const success = await handleSave();
         if (success) {
             onNext?.();
-        }
-    };
-
-    const handleSignatureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        // Basic validation
-        if (!file.type.startsWith("image/")) {
-            alert("Please upload a valid image file.");
-            return;
-        }
-
-        if (file.size > 2 * 1024 * 1024) { // 2MB limit
-            alert("File size must be less than 2MB.");
-            return;
-        }
-
-        setUploading(true);
-
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("simulationId", simulationId);
-            formData.append("assetType", "signature");
-
-            const result = await uploadAsset(formData);
-
-            if (result.error) {
-                alert(result.error);
-            } else if (result.data?.url) {
-                setSignatureUrl(result.data.url);
-                // We rely on the main handleSave to persist this change
-                // This makes the UI feedback instant
-            }
-        } catch (error) {
-            console.error("Upload failed:", error);
-            alert("Failed to upload signature.");
-        } finally {
-            setUploading(false);
         }
     };
 
@@ -170,82 +151,44 @@ export default function CertificationSetup({ simulationId, organizationName, sav
                     </p>
                 </div>
 
-                {/* Top Configuration Grid */}
+                {/* Signatory Details Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Left: Director Details */}
+                    {/* Left: Signatory Details */}
                     <div className="space-y-6">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                                Signatory Name
-                            </label>
-                            <input
-                                type="text"
-                                value={directorName}
-                                onChange={(e) => setDirectorName(e.target.value)}
-                                placeholder="e.g. James Thompson"
-                                className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3 font-medium"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                                Job Title / Position
-                            </label>
-                            <input
-                                type="text"
-                                value={directorTitle}
-                                onChange={(e) => setDirectorTitle(e.target.value)}
-                                placeholder="e.g. Hiring Manager"
-                                className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3 font-medium"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                                Signature Upload
-                            </label>
-                            <div className="flex items-center gap-4">
-                                <div className="relative group w-full">
-                                    <div className={cn(
-                                        "h-24 w-full border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all overflow-hidden",
-                                        uploading ? "opacity-50 cursor-not-allowed" : ""
-                                    )}>
-                                        {signatureUrl ? (
-                                            <div className="relative w-full h-full p-2">
-                                                <img
-                                                    src={signatureUrl}
-                                                    alt="Signature"
-                                                    className="w-full h-full object-contain"
-                                                />
-                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                                    <span className="text-xs text-white bg-black/50 px-2 py-1 rounded">Update</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-1 text-slate-400">
-                                                <Upload size={20} />
-                                                <span className="text-xs font-medium">Upload Signature</span>
-                                            </div>
-                                        )}
-                                        <input
-                                            type="file"
-                                            className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                                            onChange={handleSignatureUpload}
-                                            accept="image/png, image/jpeg"
-                                            disabled={uploading}
-                                        />
-                                    </div>
-                                    {uploading && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-slate-900/50">
-                                            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                        </div>
-                                    )}
+                        {orgBranding?.certificate_director_name ? (
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-4">
+                                <div className="bg-primary/10 p-3 rounded-full">
+                                    <Verified className="size-6 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">Universal Management Active</p>
+                                    <p className="text-xs text-slate-500 mt-1">Signatory details are strictly enforced by organization policies.</p>
+                                </div>
+                                <div className="w-full pt-4 border-t border-slate-200 dark:border-slate-700 space-y-2">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Authorized Signatory</p>
+                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{directorName}</p>
+                                    <p className="text-[10px] font-medium text-slate-500">{directorTitle}</p>
                                 </div>
                             </div>
-                            <p className="text-[10px] text-slate-400 mt-2">
-                                Recommended: a transparent PNG image (approx. 300x100px).
-                            </p>
-                        </div>
+                        ) : (
+                            <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-xl border border-amber-100 dark:border-amber-900/30 flex flex-col items-center justify-center text-center space-y-4">
+                                <div className="bg-amber-100 dark:bg-amber-900/40 p-3 rounded-full">
+                                    <Award className="size-6 text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-bold text-amber-900 dark:text-amber-100">Setup Required</p>
+                                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                                        Signatory details must be configured in <b>Organization Branding</b> settings.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => window.open('/enterprise/settings?tab=branding', '_blank')}
+                                    className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider border border-amber-200 dark:border-amber-800 px-4 py-2 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                                >
+                                    Go to Settings
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right: Verification Features List */}
@@ -269,6 +212,7 @@ export default function CertificationSetup({ simulationId, organizationName, sav
                         </div>
                     </div>
                 </div>
+
 
                 {/* Strategic Note */}
                 <div className="flex gap-3 items-start p-4 bg-primary/5 rounded-xl border border-primary/10 w-full">

@@ -2,12 +2,23 @@
 
 import Link from "next/link"
 
-export function CurrentSimulations() {
+interface CurrentSimulationsProps {
+    orgBranding?: any;
+}
+
+export function CurrentSimulations({ orgBranding }: CurrentSimulationsProps) {
+    const brandColorStyle = orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {};
+    const brandColorText = orgBranding?.brand_color ? { color: orgBranding.brand_color } : {};
+
     return (
         <section className="flex flex-col gap-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-text-main dark:text-white">Current Simulations</h2>
-                <Link href="#" className="text-sm font-medium text-primary hover:underline dark:text-primary-light">
+                <Link
+                    href="#"
+                    className="text-sm font-medium text-primary hover:underline dark:text-primary-light"
+                    style={brandColorText}
+                >
                     View all
                 </Link>
             </div>
@@ -32,9 +43,14 @@ export function CurrentSimulations() {
                                 <span className="text-text-secondary dark:text-gray-400">8 days left</span>
                             </div>
                             <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-white/10">
-                                <div className="h-full rounded-full bg-primary" style={{ width: "65%" }}></div>
+                                <div className="h-full rounded-full bg-primary" style={{ width: "65%", ...brandColorStyle }}></div>
                             </div>
-                            <button className="mt-2 w-full rounded-lg bg-primary py-2 text-sm font-bold text-white transition-colors hover:bg-primary-dark">Continue</button>
+                            <button
+                                className="mt-2 w-full rounded-lg bg-primary py-2 text-sm font-bold text-white transition-colors hover:bg-primary-dark"
+                                style={brandColorStyle}
+                            >
+                                Continue
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -61,7 +77,12 @@ export function CurrentSimulations() {
                             <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-white/10">
                                 <div className="h-full rounded-full bg-yellow-500" style={{ width: "12%" }}></div>
                             </div>
-                            <button className="mt-2 w-full rounded-lg bg-primary py-2 text-sm font-bold text-white transition-colors hover:bg-primary-dark">Resume</button>
+                            <button
+                                className="mt-2 w-full rounded-lg bg-primary py-2 text-sm font-bold text-white transition-colors hover:bg-primary-dark"
+                                style={brandColorStyle}
+                            >
+                                Resume
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -69,3 +90,4 @@ export function CurrentSimulations() {
         </section>
     )
 }
+

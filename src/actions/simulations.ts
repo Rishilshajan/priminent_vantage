@@ -49,10 +49,10 @@ export async function createSimulation(data: {
             return { error: "Authentication required" };
         }
 
-        // Get user's organization
+        // Get user's organization and branding
         const { data: membership, error: membershipError } = await supabase
             .from('organization_members')
-            .select('org_id, role')
+            .select('org_id, role, organizations(logo_url, brand_color)')
             .eq('user_id', user.id)
             .single();
 
@@ -65,6 +65,8 @@ export async function createSimulation(data: {
             return { error: "You don't have permission to create simulations" };
         }
 
+        const org = membership.organizations as any; // Type cast for joined data
+
         // Create simulation
         const { data: simulation, error: createError } = await supabase
             .from('simulations')
@@ -72,6 +74,8 @@ export async function createSimulation(data: {
                 org_id: membership.org_id,
                 created_by: user.id,
                 ...validated,
+                company_logo_url: org?.logo_url || null,
+                brand_color: org?.brand_color || '#7F13EC',
                 status: 'draft',
                 learning_outcomes: data.learning_outcomes || [],
                 prerequisites: data.prerequisites || null,

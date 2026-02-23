@@ -15,7 +15,7 @@ export default function SettingsNav() {
     ]
 
     return (
-        <div className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1f1629] sticky top-0 z-20 px-8">
+        <div className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1f1629] sticky top-16 z-20 px-8">
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                 {navItems.map((item) => {
                     const isActive = pathname === item.href

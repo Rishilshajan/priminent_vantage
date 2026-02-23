@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { getEnterpriseUser } from "@/actions/enterprise"
 import TeamAccessView from "@/components/enterprise/settings/team/TeamAccessView"
 
 export const metadata: Metadata = {
@@ -6,6 +7,10 @@ export const metadata: Metadata = {
     description: 'Manage organization members, assign roles, and configure access permissions.',
 }
 
-export default function EnterpriseTeamAccessPage() {
-    return <TeamAccessView />
+export default async function EnterpriseTeamAccessPage() {
+    const userResult = await getEnterpriseUser();
+    const userProfile = userResult?.userProfile || null;
+    const orgName = userResult?.orgName || "Enterprise";
+
+    return <TeamAccessView userProfile={userProfile} orgName={orgName} />
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import DashboardSidebar from "@/components/enterprise/dashboard/DashboardSidebar"
+import DashboardHeader from "@/components/enterprise/dashboard/DashboardHeader"
 import SettingsNav from "@/components/enterprise/settings/SettingsNav"
 import DataRetentionPolicy from "./DataRetentionPolicy"
 import GDPRCompliance from "./GDPRCompliance"
@@ -11,11 +12,17 @@ import { Button } from "@/components/ui/button"
 import { ChevronRight } from "lucide-react"
 import Link from "next/link"
 
-export default function PrivacyView() {
+interface PrivacyViewProps {
+    userProfile?: any;
+    orgName?: string;
+}
+
+export default function PrivacyView({ userProfile, orgName }: PrivacyViewProps) {
     return (
         <div className="flex h-screen overflow-hidden bg-[#F8F9FC] dark:bg-[#191022]">
-            <DashboardSidebar />
+            <DashboardSidebar orgName={orgName} userProfile={userProfile} />
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                <DashboardHeader orgName={orgName || "Enterprise"} userProfile={userProfile} />
                 <SettingsNav />
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
