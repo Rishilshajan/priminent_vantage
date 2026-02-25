@@ -7,15 +7,44 @@ export interface UpdateBasicIdentityParams {
     country?: string;
     state?: string;
     city?: string;
-    userType: string;
+    userType: "University Student" | "Working Professional" | "Career Switcher" | "Returning Professional" | "Freelancer";
+    dateOfBirth?: string;
+    gender?: string;
+}
+
+export interface Certification {
+    name: string;
+    issuing_body?: string;
+    year?: number;
 }
 
 export interface UpdateAcademicBackgroundParams {
-    university: string;
-    degreeLevel: string;
+    // Core Background (Everyone)
+    highestEducationLevel: "High School" | "Diploma" | "Bachelor's" | "Master's" | "MBA" | "PhD" | "Other";
     fieldOfStudy: string;
-    graduationYear: number;
-    gpa?: string;
+    graduationYear?: number;
+    certifications?: Certification[];
+
+    // Student Specific
+    institution?: string;
+    degreeType?: string;
+    cgpa?: {
+        value: number;
+        scale: 4 | 5 | 10;
+    };
+    academicStatus?: "Currently Studying" | "Graduated" | "On Break";
+    relevantCoursework?: string[];
+
+    // Career Switcher Specific
+    previousIndustry?: string;
+    previousRole?: string;
+    previousExperienceYears?: number;
+    targetIndustry?: string;
+    switchReason?: string;
+
+    // Returning Professional Specific
+    careerGapYears?: number;
+    lastRole?: string;
 }
 
 export class OnboardingService {
@@ -27,7 +56,7 @@ export class OnboardingService {
 
         // Use getSession first as it's more resilient to intermittent auth server verification failures
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        let user = session?.user;
+        let user: any = session?.user;
         let authError = sessionError;
 
         if (!user) {
@@ -55,7 +84,9 @@ export class OnboardingService {
                 country: params.country,
                 state: params.state,
                 city: params.city,
-                user_type: params.userType
+                user_type: params.userType,
+                date_of_birth: params.dateOfBirth,
+                gender: params.gender
             })
             .eq('id', user.id);
 
@@ -68,7 +99,7 @@ export class OnboardingService {
     }
 
     /**
-     * Updates the academic background.
+     * Updates the academic background and general profile background fields.
      */
     static async updateAcademicBackground(params: UpdateAcademicBackgroundParams) {
         const supabase = await createClient();
@@ -78,46 +109,80 @@ export class OnboardingService {
             throw new Error('Unauthorized');
         }
 
-        // Check if an education record already exists for the user
+        // 1. Update Core Profile fields
+        const profileUpdate: any = {
+            highest_education_level: params.highestEducationLevel,
+            academic_status: params.academicStatus
+        };
+
+        if (params.certifications) profileUpdate.certifications = params.certifications;
+        if (params.previousIndustry) profileUpdate.previous_industry = params.previousIndustry;
+        if (params.previousRole) profileUpdate.previous_role = params.previousRole;
+        if (params.previousExperienceYears) profileUpdate.previous_experience_years = params.previousExperienceYears;
+        if (params.switchReason) profileUpdate.switch_reason = params.switchReason;
+        if (params.careerGapYears) profileUpdate.career_gap_years = params.careerGapYears;
+        if (params.lastRole) profileUpdate.last_role = params.lastRole;
+
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update(profileUpdate)
+            .eq('id', user.id);
+
+        if (profileError) {
+            console.error('Error updating profile background:', profileError);
+            throw new Error('Failed to update profile background');
+        }
+
+        // 2. Update Education record
         const { data: existingEducation } = await supabase
             .from('candidate_education')
             .select('id')
             .eq('user_id', user.id)
             .single();
 
-        let error;
+        const eduData: any = {
+            institution: params.institution,
+            degree_type: params.degreeType || params.highestEducationLevel,
+            field_of_study: params.fieldOfStudy,
+            graduation_year: params.graduationYear,
+            academic_status: params.academicStatus,
+            relevant_coursework: params.relevantCoursework
+        };
 
+        if (params.cgpa) {
+            eduData.cgpa_value = params.cgpa.value;
+            eduData.cgpa_scale = params.cgpa.scale;
+            // Also keep text cgpa for legacy if needed, or just let users migration handle it
+            eduData.cgpa = `${params.cgpa.value}/${params.cgpa.scale}`;
+        }
+
+        let error;
         if (existingEducation) {
-            // Update existing
             const { error: updateError } = await supabase
                 .from('candidate_education')
-                .update({
-                    institution: params.university,
-                    degree_type: params.degreeLevel,
-                    field_of_study: params.fieldOfStudy,
-                    graduation_year: params.graduationYear,
-                    cgpa: params.gpa
-                })
+                .update(eduData)
                 .eq('id', existingEducation.id);
             error = updateError;
         } else {
-            // Insert new
             const { error: insertError } = await supabase
                 .from('candidate_education')
-                .insert({
-                    user_id: user.id,
-                    institution: params.university,
-                    degree_type: params.degreeLevel,
-                    field_of_study: params.fieldOfStudy,
-                    graduation_year: params.graduationYear,
-                    cgpa: params.gpa
-                });
+                .insert({ user_id: user.id, ...eduData });
             error = insertError;
         }
 
         if (error) {
             console.error('Error updating candidate_education:', error);
             throw new Error('Failed to update academic background');
+        }
+
+        // 3. Update target industry in preferences if applicable
+        if (params.targetIndustry) {
+            await supabase
+                .from('candidate_preferences')
+                .upsert({
+                    user_id: user.id,
+                    preferred_industries: [params.targetIndustry]
+                }, { onConflict: 'user_id' });
         }
 
         return { success: true, data: params };

@@ -33,15 +33,15 @@ export default function PersonaSelection({ data, onChange }: PersonaSelectionPro
         },
         {
             id: 'Returning Professional',
-            title: 'Returning to Workforce',
+            title: 'Returning Professional',
             description: 'Coming back from a career break, sabbatical, or parental leave.',
             icon: 'restart_alt',
         },
         {
-            id: 'Freelancer / Entrepreneur',
-            title: 'Freelancer / Entrepreneur',
+            id: 'Freelancer',
+            title: 'Freelancer',
             description: 'Independent professional or business owner exploring new ventures or clients.',
-            icon: 'lightbulb',
+            icon: 'person_pinnacle',
         },
     ];
 
@@ -93,6 +93,39 @@ export default function PersonaSelection({ data, onChange }: PersonaSelectionPro
                             <span className="material-symbols-outlined text-[14px]">verified</span>
                             Verified
                         </div>
+                    </div>
+                </div>
+
+                {/* New Personal Details Fields */}
+                <div className="space-y-3">
+                    <label className="text-[11px] font-black uppercase tracking-widest text-[#a344ff]">Date of Birth</label>
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">calendar_month</span>
+                        <input
+                            type="date"
+                            className="w-full rounded-2xl border border-slate-200/60 bg-white py-4 pl-14 pr-5 text-[15px] font-medium text-slate-900 shadow-sm outline-none transition-all focus:border-[#a344ff] focus:ring-4 focus:ring-[#7f13ec]/10 dark:border-slate-800/60 dark:bg-[#1e1429] dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
+                            value={data.dateOfBirth}
+                            onChange={(e) => handleChange('dateOfBirth', e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <label className="text-[11px] font-black uppercase tracking-widest text-[#a344ff]">Gender</label>
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">person</span>
+                        <select
+                            className="w-full appearance-none rounded-2xl border border-slate-200/60 bg-white py-4 pl-14 pr-5 text-[15px] font-medium text-slate-900 shadow-sm outline-none transition-all focus:border-[#a344ff] focus:ring-4 focus:ring-[#7f13ec]/10 dark:border-slate-800/60 dark:bg-[#1e1429] dark:text-white"
+                            value={data.gender}
+                            onChange={(e) => handleChange('gender', e.target.value)}
+                        >
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Non-binary">Non-binary</option>
+                            <option value="Prefer not to say">Prefer not to say</option>
+                        </select>
+                        <span className="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">expand_more</span>
                     </div>
                 </div>
 
