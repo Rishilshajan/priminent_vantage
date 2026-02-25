@@ -7,44 +7,61 @@ export interface UpdateBasicIdentityParams {
     country?: string;
     state?: string;
     city?: string;
-    userType: "University Student" | "Working Professional" | "Career Switcher" | "Returning Professional" | "Freelancer";
+    userType?: string;
     dateOfBirth?: string;
     gender?: string;
 }
 
-export interface Certification {
-    name: string;
-    issuing_body?: string;
-    year?: number;
+export interface AcademicBackgroundCGPA {
+    value: string;
+    scale: number;
 }
 
 export interface UpdateAcademicBackgroundParams {
-    // Core Background (Everyone)
-    highestEducationLevel: "High School" | "Diploma" | "Bachelor's" | "Master's" | "MBA" | "PhD" | "Other";
-    fieldOfStudy: string;
-    graduationYear?: number;
-    certifications?: Certification[];
-
-    // Student Specific
+    highestEducationLevel: string;
+    academicStatus: string;
     institution?: string;
     degreeType?: string;
-    cgpa?: {
-        value: number;
-        scale: 4 | 5 | 10;
-    };
-    academicStatus?: "Currently Studying" | "Graduated" | "On Break";
+    fieldOfStudy?: string;
+    graduationYear?: number;
+    cgpa?: AcademicBackgroundCGPA;
+    certifications?: any[];
     relevantCoursework?: string[];
-
-    // Career Switcher Specific
+    // Persona specific additional
     previousIndustry?: string;
     previousRole?: string;
     previousExperienceYears?: number;
     targetIndustry?: string;
     switchReason?: string;
-
-    // Returning Professional Specific
     careerGapYears?: number;
     lastRole?: string;
+}
+
+export interface Experience {
+    id?: string;
+    company: string;
+    role: string;
+    industry?: string;
+    startDate: string;
+    endDate?: string;
+    currentlyWorking?: boolean;
+    description?: string;
+}
+
+export interface UpdateProfessionalExperienceParams {
+    totalYearsExperience?: number;
+    experiences: Experience[];
+}
+
+export interface UpdateSkillsAndGoalsParams {
+    skills: string[];
+    softSkills: string[];
+    careerInterests: string[];
+    preferredLocations: string[];
+    salaryExpectation?: string;
+    availability: string;
+    shortTermGoals?: string;
+    longTermGoals?: string;
 }
 
 export class OnboardingService {
@@ -152,7 +169,7 @@ export class OnboardingService {
         if (params.cgpa) {
             eduData.cgpa_value = params.cgpa.value;
             eduData.cgpa_scale = params.cgpa.scale;
-            // Also keep text cgpa for legacy if needed, or just let users migration handle it
+            // Also keep text cgpa for legacy if needed
             eduData.cgpa = `${params.cgpa.value}/${params.cgpa.scale}`;
         }
 
@@ -186,5 +203,114 @@ export class OnboardingService {
         }
 
         return { success: true, data: params };
+    }
+
+    /**
+     * Updates the professional experience.
+     */
+    static async updateProfessionalExperience(params: UpdateProfessionalExperienceParams) {
+        const supabase = await createClient();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+            throw new Error('Unauthorized');
+        }
+
+        // 1. Update total_years_experience in profiles
+        if (params.totalYearsExperience !== undefined && !isNaN(params.totalYearsExperience)) {
+            const { error: profileError } = await supabase
+                .from('profiles')
+                .update({ total_years_experience: params.totalYearsExperience })
+                .eq('id', user.id);
+
+            if (profileError) {
+                console.error('Error updating total years experience:', profileError);
+                // We continue even if this fails, as it might just be the column missing for now
+            }
+        }
+
+        // 2. Sync experiences list
+        // Remove all current experiences to sync
+        const { error: deleteError } = await supabase
+            .from('candidate_experience')
+            .delete()
+            .eq('user_id', user.id);
+
+        if (deleteError) {
+            console.error('Error deleting old experiences:', deleteError);
+            // If the table doesn't exist, this will fail. Let's provide a clearer error for the user.
+            if (deleteError.code === '42P01') {
+                throw new Error('Database table "candidate_experience" missing. Please run the migration.');
+            }
+            throw new Error('Failed to sync professional experience');
+        }
+
+        if (params.experiences && params.experiences.length > 0) {
+            const experienceData = params.experiences.map((exp: Experience) => ({
+                user_id: user.id,
+                company: exp.company || 'Unknown Company',
+                role: exp.role || 'Professional',
+                industry: exp.industry || null,
+                start_date: exp.startDate || new Date().toISOString().split('T')[0], // Fallback to now if missing
+                end_date: exp.currentlyWorking ? null : (exp.endDate || null),
+                currently_working: exp.currentlyWorking || false,
+                description: exp.description || ''
+            }));
+
+            const { error: insertError } = await supabase
+                .from('candidate_experience')
+                .insert(experienceData);
+
+            if (insertError) {
+                console.error('Error inserting new experiences:', insertError);
+                throw new Error('Failed to save professional experiences');
+            }
+        }
+
+        return { success: true };
+    /**
+     * Updates skills and career goals.
+     */
+    static async updateSkillsAndGoals(params: UpdateSkillsAndGoalsParams) {
+        const supabase = await createClient();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+            throw new Error('Unauthorized');
+        }
+
+        // 1. Update Profile fields
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+                skills: params.skills,
+                soft_skills: params.softSkills,
+                availability: params.availability,
+                salary_expectation: params.salaryExpectation,
+                short_term_goals: params.shortTermGoals,
+                long_term_goals: params.longTermGoals
+            })
+            .eq('id', user.id);
+
+        if (profileError) {
+            console.error('Error updating skills and goals in profile:', profileError);
+            throw new Error('Failed to update skills and goals profile');
+        }
+
+        // 2. Update Preferences
+        const { error: prefError } = await supabase
+            .from('candidate_preferences')
+            .upsert({
+                user_id: user.id,
+                career_interests: params.careerInterests,
+                preferred_locations: params.preferredLocations
+            }, { onConflict: 'user_id' });
+
+        if (prefError) {
+            console.error('Error updating career preferences:', prefError);
+            throw new Error('Failed to update career preferences');
+        }
+
+        return { success: true };
     }
 }

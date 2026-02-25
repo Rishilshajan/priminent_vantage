@@ -5,7 +5,8 @@ import OnboardingLayout from '@/components/student/onboarding/OnboardingLayout';
 import ProgressStepper from '@/components/student/onboarding/ProgressStepper';
 import PersonaSelection from '@/components/student/onboarding/PersonaSelection';
 import AcademicBackground from '@/components/student/onboarding/AcademicBackground';
-import { updateBasicIdentity, updateAcademicBackground } from '@/actions/student/onboarding.actions';
+import ProfessionalExperience from '@/components/student/onboarding/ProfessionalExperience';
+import { updateBasicIdentity, updateAcademicBackground, updateProfessionalExperience } from '@/actions/student/onboarding.actions';
 import { createClient } from '@/lib/supabase/client';
 
 export interface BasicIdentityData {
@@ -36,6 +37,10 @@ export default function StudentOnboardingPage() {
         gender: ''
     });
     const [academicData, setAcademicData] = useState<any>(null);
+    const [experienceData, setExperienceData] = useState<any>({
+        totalYearsExperience: '',
+        experiences: []
+    });
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -67,7 +72,7 @@ export default function StudentOnboardingPage() {
                         gender: profile.gender || ''
                     });
 
-                    // Set initial academic data from profile fields (for professionals/switchers)
+                    // Set initial academic data from profile fields
                     setAcademicData((prev: any) => ({
                         ...prev,
                         highestEducationLevel: profile.highest_education_level || '',
@@ -79,6 +84,12 @@ export default function StudentOnboardingPage() {
                         switchReason: profile.switch_reason || '',
                         careerGapYears: profile.career_gap_years || '',
                         lastRole: profile.last_role || ''
+                    }));
+
+                    // Set experience data
+                    setExperienceData((prev: any) => ({
+                        ...prev,
+                        totalYearsExperience: profile.total_years_experience || ''
                     }));
                 } else if (user.email) {
                     setIdentityData(prev => ({ ...prev, email: user.email as string }));
@@ -101,6 +112,29 @@ export default function StudentOnboardingPage() {
                         cgpa: education.cgpa_value ? { value: education.cgpa_value, scale: education.cgpa_scale || 4 } : null,
                         academicStatus: education.academic_status || prev?.academicStatus || '',
                         relevantCoursework: education.relevant_coursework || []
+                    }));
+                }
+
+                // Fetch Professional Experience history
+                const { data: experiences } = await supabase
+                    .from('candidate_experience')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('start_date', { ascending: false });
+
+                if (experiences && experiences.length > 0) {
+                    setExperienceData((prev: any) => ({
+                        ...prev,
+                        experiences: experiences.map(exp => ({
+                            id: exp.id,
+                            company: exp.company,
+                            role: exp.role,
+                            industry: exp.industry,
+                            startDate: exp.start_date,
+                            endDate: exp.end_date || '',
+                            currentlyWorking: exp.currently_working,
+                            description: exp.description
+                        }))
                     }));
                 }
             }
@@ -135,10 +169,20 @@ export default function StudentOnboardingPage() {
             // Save Academic/Background info
             const result = await updateAcademicBackground(academicData);
             if (result.success) {
-                console.log('Successfully saved academic data');
-                // Move to Step 3 (not implemented yet)
+                setCurrentStep(3);
             } else {
                 console.error('Failed to save academic data:', result.error);
+            }
+        } else if (currentStep === 3) {
+            // Save Professional Experience
+            const result = await updateProfessionalExperience({
+                totalYearsExperience: Number(experienceData.totalYearsExperience),
+                experiences: experienceData.experiences
+            });
+            if (result.success) {
+                setCurrentStep(4);
+            } else {
+                console.error('Failed to save experience data:', result.error);
             }
         }
 
@@ -183,12 +227,23 @@ export default function StudentOnboardingPage() {
                                 }}
                             />
                         )}
+
+                        {currentStep === 3 && (
+                            <ProfessionalExperience
+                                initialData={experienceData}
+                                onBack={handleBack}
+                                onChange={(data) => setExperienceData(data)}
+                                onNext={(data) => {
+                                    setExperienceData(data);
+                                    handleNextStep();
+                                }}
+                            />
+                        )}
                     </>
                 )}
             </div>
 
-            {/* Footer Navigation Buttons (Only for Step 1 or generic if Step 2 doesn't have internal buttons) */}
-            {/* Step 2 AcademicBackground currently doesn't have its own buttons, so we keep these */}
+            {/* Footer Navigation Buttons */}
             <div className="mt-12 flex justify-between pt-10 border-t border-slate-200/60 dark:border-slate-800/60">
                 <button
                     onClick={handleBack}
@@ -199,10 +254,6 @@ export default function StudentOnboardingPage() {
                 </button>
                 <button
                     onClick={() => {
-                        // If in Step 2, we need to make sure academicData is updated from the component.
-                        // Currently, AcademicBackground in my implementation has its own local state.
-                        // I should probably make it a controlled component or use a ref.
-                        // For now, I'll update AcademicBackground to call onChange.
                         handleNextStep();
                     }}
                     disabled={isLoading || isSubmitting || !identityData.userType}
