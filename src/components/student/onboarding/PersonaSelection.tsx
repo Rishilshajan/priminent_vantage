@@ -89,9 +89,9 @@ export default function PersonaSelection({ data, onChange }: PersonaSelectionPro
                             value={data.email}
                             disabled
                         />
-                        <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-emerald-500 shadow-sm dark:bg-emerald-500/10 dark:text-emerald-400">
+                        <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-xl bg-emerald-50 px-2 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-emerald-500 shadow-sm dark:bg-emerald-500/10 dark:text-emerald-400">
                             <span className="material-symbols-outlined text-[14px]">verified</span>
-                            Verified
+                            <span className="hidden sm:inline">Verified</span>
                         </div>
                     </div>
                 </div>
@@ -165,7 +165,7 @@ export default function PersonaSelection({ data, onChange }: PersonaSelectionPro
                 </div>
 
                 <div className="space-y-3 md:col-span-2">
-                    <label className="text-[11px] font-black uppercase tracking-widest text-[#a344ff]">City / District</label>
+                    <label className="text-[11px] font-black uppercase tracking-widest text-[#a344ff]">City</label>
                     <CitySelect
                         countryCode={data.country}
                         stateCode={data.state}

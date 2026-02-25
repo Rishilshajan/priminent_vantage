@@ -140,7 +140,7 @@ export default function AcademicBackground({ persona, initialData, onBack, onNex
                     </div>
                 ) : (
                     formData.certifications.map((cert: Certification, index: number) => (
-                        <div key={index} className="group relative rounded-[32px] border border-slate-200/60 bg-white p-8 shadow-sm transition-all hover:border-[#7f13ec]/20 hover:shadow-xl hover:shadow-[#7f13ec]/5 dark:border-slate-800/60 dark:bg-[#1e1429]">
+                        <div key={index} className="group relative rounded-[32px] border border-slate-200/60 bg-white p-6 sm:p-8 shadow-sm transition-all hover:border-[#7f13ec]/20 hover:shadow-xl hover:shadow-[#7f13ec]/5 dark:border-slate-800/60 dark:bg-[#1e1429]">
                             <div className="mb-6 flex items-center justify-between">
                                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-black text-slate-500 dark:bg-slate-800">0{index + 1}</span>
                                 <button

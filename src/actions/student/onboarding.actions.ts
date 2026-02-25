@@ -1,6 +1,6 @@
 'use server';
 
-import { OnboardingService, UpdateBasicIdentityParams, UpdateAcademicBackgroundParams, UpdateProfessionalExperienceParams, UpdateSkillsAndGoalsParams } from '@/lib/student/onboarding.service';
+import { OnboardingService, UpdateBasicIdentityParams, UpdateAcademicBackgroundParams, UpdateProfessionalExperienceParams, UpdateSkillsAndGoalsParams, UpdatePresenceAndVisibilityParams } from '@/lib/student/onboarding.service';
 import { revalidatePath } from 'next/cache';
 
 export async function updateBasicIdentity(params: UpdateBasicIdentityParams) {
@@ -44,5 +44,17 @@ export async function updateSkillsAndGoals(params: UpdateSkillsAndGoalsParams) {
     } catch (error) {
         console.error('Error updating skills and goals:', error);
         return { success: false, error: 'Failed to update skills and goals' };
+    }
+}
+
+export async function updatePresenceAndVisibility(params: UpdatePresenceAndVisibilityParams) {
+    try {
+        const result = await OnboardingService.updatePresenceAndVisibility(params);
+        revalidatePath('/student/onboarding');
+        revalidatePath('/student/dashboard');
+        return { success: true, result };
+    } catch (error) {
+        console.error('Error finalizing onboarding:', error);
+        return { success: false, error: 'Failed to finalize profile' };
     }
 }

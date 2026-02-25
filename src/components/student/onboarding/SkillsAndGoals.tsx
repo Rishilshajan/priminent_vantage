@@ -7,7 +7,10 @@ interface SkillsAndGoalsProps {
     initialData?: {
         skills: string[];
         softSkills: string[];
-        careerInterests: string[];
+        targetRoles: string[];
+        preferredIndustries: string[];
+        workTypes: string[];
+        workEnvironments: string[];
         preferredLocations: string[];
         salaryExpectation?: string;
         availability: string;
@@ -23,7 +26,10 @@ export default function SkillsAndGoals({ initialData, onBack, onNext, onChange }
     const [formData, setFormData] = useState({
         skills: initialData?.skills || [],
         softSkills: initialData?.softSkills || [],
-        careerInterests: initialData?.careerInterests || [],
+        targetRoles: initialData?.targetRoles || [],
+        preferredIndustries: initialData?.preferredIndustries || [],
+        workTypes: initialData?.workTypes || [],
+        workEnvironments: initialData?.workEnvironments || [],
         preferredLocations: initialData?.preferredLocations || [],
         salaryExpectation: initialData?.salaryExpectation || '',
         availability: initialData?.availability || 'Immediate',
@@ -33,7 +39,8 @@ export default function SkillsAndGoals({ initialData, onBack, onNext, onChange }
 
     const [skillInput, setSkillInput] = useState('');
     const [softSkillInput, setSoftSkillInput] = useState('');
-    const [interestInput, setInterestInput] = useState('');
+    const [roleInput, setRoleInput] = useState('');
+    const [industryInput, setIndustryInput] = useState('');
     const [locationInput, setLocationInput] = useState('');
 
     const handleChange = (field: string, value: any) => {
@@ -42,19 +49,19 @@ export default function SkillsAndGoals({ initialData, onBack, onNext, onChange }
         if (onChange) onChange(newData);
     };
 
-    const handleAddTag = (field: 'skills' | 'softSkills' | 'careerInterests' | 'preferredLocations', value: string, inputSetter: (v: string) => void) => {
+    const handleAddTag = (field: 'skills' | 'softSkills' | 'targetRoles' | 'preferredIndustries' | 'preferredLocations' | 'workTypes' | 'workEnvironments', value: string, inputSetter?: (v: string) => void) => {
         if (!value.trim()) return;
         if (!formData[field].includes(value.trim())) {
             handleChange(field, [...formData[field], value.trim()]);
         }
-        inputSetter('');
+        if (inputSetter) inputSetter('');
     };
 
-    const handleRemoveTag = (field: 'skills' | 'softSkills' | 'careerInterests' | 'preferredLocations', tag: string) => {
+    const handleRemoveTag = (field: 'skills' | 'softSkills' | 'targetRoles' | 'preferredIndustries' | 'preferredLocations' | 'workTypes' | 'workEnvironments', tag: string) => {
         handleChange(field, formData[field].filter(t => t !== tag));
     };
 
-    const TagCloud = ({ field, tags }: { field: 'skills' | 'softSkills' | 'careerInterests' | 'preferredLocations', tags: string[] }) => (
+    const TagCloud = ({ field, tags }: { field: 'skills' | 'softSkills' | 'targetRoles' | 'preferredIndustries' | 'preferredLocations' | 'workTypes' | 'workEnvironments', tags: string[] }) => (
         <div className="mt-4 flex flex-wrap gap-2">
             {tags.map((tag) => (
                 <span key={tag} className="flex items-center gap-2 rounded-full bg-[#7f13ec]/10 px-4 py-2 text-[13px] font-bold text-[#7f13ec] transition-all hover:bg-[#7f13ec]/20">
@@ -132,7 +139,7 @@ export default function SkillsAndGoals({ initialData, onBack, onNext, onChange }
             </div>
 
             {/* Career Interests & Preferences */}
-            <div className="rounded-[40px] border border-slate-200/60 bg-white p-10 dark:border-slate-800/60 dark:bg-[#1e1429]">
+            <div className="rounded-[40px] border border-slate-200/60 bg-white p-6 sm:p-10 dark:border-slate-800/60 dark:bg-[#1e1429]">
                 <div className="mb-10 flex items-center gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7f13ec]/10 text-[#7f13ec]">
                         <Target size={24} />
@@ -141,20 +148,86 @@ export default function SkillsAndGoals({ initialData, onBack, onNext, onChange }
                 </div>
 
                 <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3">
-                    {/* Career Interests */}
+                    {/* Target Roles */}
                     <div className="space-y-4">
-                        <label className="text-[11px] font-black uppercase tracking-widest text-[#a344ff]">Target Roles/Industries</label>
+                        <label className="text-[11px] font-black uppercase tracking-widest text-[#a344ff]">Target Roles</label>
                         <div className="relative">
                             <input
                                 type="text"
                                 className="w-full rounded-2xl border border-slate-200/60 bg-white px-5 py-4 text-[15px] font-bold outline-none ring-[#7f13ec]/10 transition-all focus:border-[#7f13ec] focus:ring-4 dark:border-slate-800/60 dark:bg-[#1a1325] dark:text-white"
-                                placeholder="Add interest..."
-                                value={interestInput}
-                                onChange={(e) => setInterestInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddTag('careerInterests', interestInput, setInterestInput)}
+                                placeholder="e.g. Frontend Developer"
+                                value={roleInput}
+                                onChange={(e) => setRoleInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddTag('targetRoles', roleInput, setRoleInput)}
                             />
                         </div>
-                        <TagCloud field="careerInterests" tags={formData.careerInterests} />
+                        <TagCloud field="targetRoles" tags={formData.targetRoles} />
+                    </div>
+
+                    {/* Preferred Industries */}
+                    <div className="space-y-4">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-[#a344ff]">Preferred Industries</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                className="w-full rounded-2xl border border-slate-200/60 bg-white px-5 py-4 text-[15px] font-bold outline-none ring-[#7f13ec]/10 transition-all focus:border-[#7f13ec] focus:ring-4 dark:border-slate-800/60 dark:bg-[#1a1325] dark:text-white"
+                                placeholder="e.g. Fintech, AI"
+                                value={industryInput}
+                                onChange={(e) => setIndustryInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddTag('preferredIndustries', industryInput, setIndustryInput)}
+                            />
+                        </div>
+                        <TagCloud field="preferredIndustries" tags={formData.preferredIndustries} />
+                    </div>
+
+                    {/* Work Type */}
+                    <div className="space-y-4">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-[#a344ff]">Work Type</label>
+                        <div className="flex flex-wrap gap-2">
+                            {['Full-time', 'Part-time', 'Internship', 'Contract', 'Freelance'].map(type => (
+                                <button
+                                    key={type}
+                                    onClick={() => {
+                                        if (formData.workTypes.includes(type)) {
+                                            handleRemoveTag('workTypes', type);
+                                        } else {
+                                            handleAddTag('workTypes', type);
+                                        }
+                                    }}
+                                    className={`rounded-xl px-4 py-2 text-[12px] font-bold transition-all ${formData.workTypes.includes(type)
+                                        ? 'bg-[#7f13ec] text-white shadow-lg shadow-[#7f13ec]/20'
+                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800'
+                                        }`}
+                                >
+                                    {type}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Work Environment */}
+                    <div className="space-y-4">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-[#a344ff]">Work Environment</label>
+                        <div className="flex flex-wrap gap-2">
+                            {['On-site', 'Remote', 'Hybrid'].map(env => (
+                                <button
+                                    key={env}
+                                    onClick={() => {
+                                        if (formData.workEnvironments.includes(env)) {
+                                            handleRemoveTag('workEnvironments', env);
+                                        } else {
+                                            handleAddTag('workEnvironments', env);
+                                        }
+                                    }}
+                                    className={`rounded-xl px-4 py-2 text-[12px] font-bold transition-all ${formData.workEnvironments.includes(env)
+                                        ? 'bg-[#a344ff] text-white shadow-lg shadow-[#a344ff]/20'
+                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800'
+                                        }`}
+                                >
+                                    {env}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Preferred Locations */}
@@ -217,7 +290,7 @@ export default function SkillsAndGoals({ initialData, onBack, onNext, onChange }
                             <label className="text-[11px] font-black uppercase tracking-widest text-[#a344ff]">Short-term Career Goals</label>
                         </div>
                         <textarea
-                            className="w-full min-h-[120px] rounded-3xl border border-slate-200/60 bg-white p-6 text-[15px] font-bold text-slate-900 outline-none ring-[#7f13ec]/10 transition-all focus:border-[#7f13ec] focus:ring-4 dark:border-slate-800/60 dark:bg-[#1a1325] dark:text-white"
+                            className="w-full min-h-[120px] rounded-3xl border border-slate-200/60 bg-white p-5 sm:p-6 text-[15px] font-bold text-slate-900 outline-none ring-[#7f13ec]/10 transition-all focus:border-[#7f13ec] focus:ring-4 dark:border-slate-800/60 dark:bg-[#1a1325] dark:text-white"
                             placeholder="What do you want to achieve in the next 1-2 years?"
                             value={formData.shortTermGoals}
                             onChange={(e) => handleChange('shortTermGoals', e.target.value)}
@@ -229,7 +302,7 @@ export default function SkillsAndGoals({ initialData, onBack, onNext, onChange }
                             <label className="text-[11px] font-black uppercase tracking-widest text-[#a344ff]">Long-term Career Goals</label>
                         </div>
                         <textarea
-                            className="w-full min-h-[120px] rounded-3xl border border-slate-200/60 bg-white p-6 text-[15px] font-bold text-slate-900 outline-none ring-[#7f13ec]/10 transition-all focus:border-[#7f13ec] focus:ring-4 dark:border-slate-800/60 dark:bg-[#1a1325] dark:text-white"
+                            className="w-full min-h-[120px] rounded-3xl border border-slate-200/60 bg-white p-5 sm:p-6 text-[15px] font-bold text-slate-900 outline-none ring-[#7f13ec]/10 transition-all focus:border-[#7f13ec] focus:ring-4 dark:border-slate-800/60 dark:bg-[#1a1325] dark:text-white"
                             placeholder="Where do you see yourself in 5+ years?"
                             value={formData.longTermGoals}
                             onChange={(e) => handleChange('longTermGoals', e.target.value)}

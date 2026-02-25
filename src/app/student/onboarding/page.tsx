@@ -7,8 +7,10 @@ import PersonaSelection from '@/components/student/onboarding/PersonaSelection';
 import AcademicBackground from '@/components/student/onboarding/AcademicBackground';
 import ProfessionalExperience from '@/components/student/onboarding/ProfessionalExperience';
 import SkillsAndGoals from '@/components/student/onboarding/SkillsAndGoals';
-import { updateBasicIdentity, updateAcademicBackground, updateProfessionalExperience, updateSkillsAndGoals } from '@/actions/student/onboarding.actions';
+import PresenceAndVisibility from '@/components/student/onboarding/PresenceAndVisibility';
+import { updateBasicIdentity, updateAcademicBackground, updateProfessionalExperience, updateSkillsAndGoals, updatePresenceAndVisibility } from '@/actions/student/onboarding.actions';
 import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export interface BasicIdentityData {
     firstName: string;
@@ -24,6 +26,7 @@ export interface BasicIdentityData {
 }
 
 export default function StudentOnboardingPage() {
+    const router = useRouter();
     const [currentStep, setCurrentStep] = useState(1);
     const [identityData, setIdentityData] = useState<BasicIdentityData>({
         firstName: '',
@@ -45,12 +48,23 @@ export default function StudentOnboardingPage() {
     const [skillsData, setSkillsData] = useState<any>({
         skills: [],
         softSkills: [],
-        careerInterests: [],
+        targetRoles: [],
+        preferredIndustries: [],
+        workTypes: [],
+        workEnvironments: [],
         preferredLocations: [],
         salaryExpectation: '',
         availability: 'Immediate',
         shortTermGoals: '',
         longTermGoals: ''
+    });
+    const [presenceData, setPresenceData] = useState<any>({
+        linkedinUrl: '',
+        githubUrl: '',
+        portfolioUrl: '',
+        twitterUrl: '',
+        isPublic: true,
+        isOpenToOpportunities: true
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,6 +82,11 @@ export default function StudentOnboardingPage() {
                     .select('*')
                     .eq('id', user.id)
                     .single();
+
+                if (profile && profile.onboarding_completed) {
+                    router.push('/student/dashboard');
+                    return;
+                }
 
                 if (profile) {
                     setIdentityData({
@@ -113,6 +132,16 @@ export default function StudentOnboardingPage() {
                         shortTermGoals: profile.short_term_goals || '',
                         longTermGoals: profile.long_term_goals || ''
                     }));
+
+                    // Set presence data
+                    setPresenceData({
+                        linkedinUrl: profile.linkedin_url || '',
+                        githubUrl: profile.github_url || '',
+                        portfolioUrl: profile.portfolio_url || '',
+                        twitterUrl: profile.twitter_url || '',
+                        isPublic: profile.is_public ?? true,
+                        isOpenToOpportunities: profile.is_open_to_opportunities ?? true
+                    });
                 } else if (user.email) {
                     setIdentityData(prev => ({ ...prev, email: user.email as string }));
                 }
@@ -163,14 +192,17 @@ export default function StudentOnboardingPage() {
                 // Fetch Preferences for Step 4
                 const { data: preferences } = await supabase
                     .from('candidate_preferences')
-                    .select('career_interests, preferred_locations')
+                    .select('target_roles, preferred_industries, work_type, work_environment, preferred_locations')
                     .eq('user_id', user.id)
                     .single();
 
                 if (preferences) {
                     setSkillsData((prev: any) => ({
                         ...prev,
-                        careerInterests: preferences.career_interests || [],
+                        targetRoles: preferences.target_roles || [],
+                        preferredIndustries: preferences.preferred_industries || [],
+                        workTypes: preferences.work_type || [],
+                        workEnvironments: preferences.work_environment || [],
                         preferredLocations: preferences.preferred_locations || []
                     }));
                 }
@@ -180,7 +212,7 @@ export default function StudentOnboardingPage() {
         fetchData();
     }, []);
 
-    const handleNextStep = async () => {
+    const handleNextStep = async (stepData?: any) => {
         setIsSubmitting(true);
 
         if (currentStep === 1) {
@@ -204,7 +236,8 @@ export default function StudentOnboardingPage() {
             }
         } else if (currentStep === 2) {
             // Save Academic/Background info
-            const result = await updateAcademicBackground(academicData);
+            const dataToSave = stepData || academicData;
+            const result = await updateAcademicBackground(dataToSave);
             if (result.success) {
                 setCurrentStep(3);
             } else {
@@ -212,9 +245,10 @@ export default function StudentOnboardingPage() {
             }
         } else if (currentStep === 3) {
             // Save Professional Experience
+            const dataToSave = stepData || experienceData;
             const result = await updateProfessionalExperience({
-                totalYearsExperience: Number(experienceData.totalYearsExperience),
-                experiences: experienceData.experiences
+                totalYearsExperience: Number(dataToSave.totalYearsExperience),
+                experiences: dataToSave.experiences
             });
             if (result.success) {
                 setCurrentStep(4);
@@ -223,11 +257,21 @@ export default function StudentOnboardingPage() {
             }
         } else if (currentStep === 4) {
             // Save Skills and Goals
-            const result = await updateSkillsAndGoals(skillsData);
+            const dataToSave = stepData || skillsData;
+            const result = await updateSkillsAndGoals(dataToSave);
             if (result.success) {
                 setCurrentStep(5);
             } else {
                 console.error('Failed to save skills data:', result.error);
+            }
+        } else if (currentStep === 5) {
+            // Save Presence and Finalize
+            const dataToSave = stepData || presenceData;
+            const result = await updatePresenceAndVisibility(dataToSave);
+            if (result.success) {
+                router.push('/student/dashboard');
+            } else {
+                console.error('Failed to finalize profile:', result.error);
             }
         }
 
@@ -240,7 +284,7 @@ export default function StudentOnboardingPage() {
         }
     };
 
-    const progressPercentage = (currentStep - 1) * 20;
+    const progressPercentage = Math.min(100, (currentStep - 1) * 20);
 
     return (
         <OnboardingLayout
@@ -268,7 +312,7 @@ export default function StudentOnboardingPage() {
                                 onChange={(data) => setAcademicData(data)}
                                 onNext={(data) => {
                                     setAcademicData(data);
-                                    handleNextStep();
+                                    handleNextStep(data);
                                 }}
                             />
                         )}
@@ -280,7 +324,7 @@ export default function StudentOnboardingPage() {
                                 onChange={(data) => setExperienceData(data)}
                                 onNext={(data) => {
                                     setExperienceData(data);
-                                    handleNextStep();
+                                    handleNextStep(data);
                                 }}
                             />
                         )}
@@ -292,8 +336,21 @@ export default function StudentOnboardingPage() {
                                 onChange={(data) => setSkillsData(data)}
                                 onNext={(data) => {
                                     setSkillsData(data);
-                                    handleNextStep();
+                                    handleNextStep(data);
                                 }}
+                            />
+                        )}
+
+                        {currentStep === 5 && (
+                            <PresenceAndVisibility
+                                initialData={presenceData}
+                                onBack={handleBack}
+                                onChange={(data) => setPresenceData(data)}
+                                onNext={(data) => {
+                                    setPresenceData(data);
+                                    handleNextStep(data);
+                                }}
+                                isSubmitting={isSubmitting}
                             />
                         )}
                     </>
@@ -309,16 +366,18 @@ export default function StudentOnboardingPage() {
                 >
                     Back
                 </button>
-                <button
-                    onClick={() => {
-                        handleNextStep();
-                    }}
-                    disabled={isLoading || isSubmitting || !identityData.userType}
-                    className="flex h-12 items-center gap-2 rounded-2xl bg-gradient-to-r from-[#7f13ec] to-[#a344ff] px-10 text-[12px] font-black uppercase tracking-widest text-white shadow-xl shadow-[#7f13ec]/30 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-[#7f13ec]/40 active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
-                >
-                    {isSubmitting ? 'Saving...' : 'Next Step'}
-                    {!isSubmitting && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
-                </button>
+                {currentStep < 5 && (
+                    <button
+                        onClick={() => {
+                            handleNextStep();
+                        }}
+                        disabled={isLoading || isSubmitting || !identityData.userType}
+                        className="flex h-12 items-center gap-2 rounded-2xl bg-gradient-to-r from-[#7f13ec] to-[#a344ff] px-10 text-[12px] font-black uppercase tracking-widest text-white shadow-xl shadow-[#7f13ec]/30 transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-[#7f13ec]/40 active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                        {isSubmitting ? 'Saving...' : 'Next Step'}
+                        {!isSubmitting && <span className="material-symbols-outlined text-[18px]">arrow_forward</span>}
+                    </button>
+                )}
             </div>
         </OnboardingLayout>
     );

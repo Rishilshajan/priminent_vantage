@@ -95,7 +95,7 @@ export default function ProfessionalExperience({ initialData, onBack, onNext, on
 
                 <div className="space-y-8">
                     {formData.experiences.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-[40px] border-2 border-dashed border-slate-200/60 p-16 text-center dark:border-slate-800/60">
+                        <div className="flex flex-col items-center justify-center rounded-[40px] border-2 border-dashed border-slate-200/60 p-8 sm:p-16 text-center dark:border-slate-800/60">
                             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800/50">
                                 <Briefcase className="text-slate-300 dark:text-slate-600" size={40} />
                             </div>
@@ -104,7 +104,7 @@ export default function ProfessionalExperience({ initialData, onBack, onNext, on
                         </div>
                     ) : (
                         formData.experiences.map((exp, index) => (
-                            <div key={index} className="group relative animate-in fade-in slide-in-from-top-4 duration-500 rounded-[32px] border border-slate-200/60 bg-white p-8 shadow-sm transition-all hover:border-[#7f13ec]/20 hover:shadow-2xl hover:shadow-[#7f13ec]/5 dark:border-slate-800/60 dark:bg-[#1e1429]">
+                            <div key={index} className="group relative animate-in fade-in slide-in-from-top-4 duration-500 rounded-[32px] border border-slate-200/60 bg-white p-6 sm:p-8 shadow-sm transition-all hover:border-[#7f13ec]/20 hover:shadow-2xl hover:shadow-[#7f13ec]/5 dark:border-slate-800/60 dark:bg-[#1e1429]">
                                 <div className="mb-8 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7f13ec]/10 text-[11px] font-black text-[#7f13ec]">0{index + 1}</span>

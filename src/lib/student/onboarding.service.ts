@@ -56,12 +56,24 @@ export interface UpdateProfessionalExperienceParams {
 export interface UpdateSkillsAndGoalsParams {
     skills: string[];
     softSkills: string[];
-    careerInterests: string[];
+    targetRoles: string[];
+    preferredIndustries: string[];
+    workTypes: string[];
+    workEnvironments: string[];
     preferredLocations: string[];
     salaryExpectation?: string;
     availability: string;
     shortTermGoals?: string;
     longTermGoals?: string;
+}
+
+export interface UpdatePresenceAndVisibilityParams {
+    linkedinUrl?: string;
+    githubUrl?: string;
+    portfolioUrl?: string;
+    twitterUrl?: string;
+    isPublic: boolean;
+    isOpenToOpportunities: boolean;
 }
 
 export class OnboardingService {
@@ -304,13 +316,48 @@ export class OnboardingService {
             .from('candidate_preferences')
             .upsert({
                 user_id: user.id,
-                career_interests: params.careerInterests,
+                target_roles: params.targetRoles,
+                preferred_industries: params.preferredIndustries,
+                work_type: params.workTypes,
+                work_environment: params.workEnvironments,
                 preferred_locations: params.preferredLocations
             }, { onConflict: 'user_id' });
 
         if (prefError) {
             console.error('Error updating career preferences:', prefError);
             throw new Error('Failed to update career preferences');
+        }
+
+        return { success: true };
+    }
+
+    /**
+     * Updates presence and visibility, and marks onboarding as completed.
+     */
+    static async updatePresenceAndVisibility(params: UpdatePresenceAndVisibilityParams) {
+        const supabase = await createClient();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+            throw new Error('Unauthorized');
+        }
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                linkedin_url: params.linkedinUrl,
+                github_url: params.githubUrl,
+                portfolio_url: params.portfolioUrl,
+                twitter_url: params.twitterUrl,
+                is_public: params.isPublic,
+                is_open_to_opportunities: params.isOpenToOpportunities,
+                onboarding_completed: true
+            })
+            .eq('id', user.id);
+
+        if (error) {
+            console.error('Error finalizing onboarding:', error);
+            throw new Error('Failed to finalize onboarding');
         }
 
         return { success: true };
