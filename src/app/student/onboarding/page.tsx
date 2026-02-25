@@ -6,7 +6,8 @@ import ProgressStepper from '@/components/student/onboarding/ProgressStepper';
 import PersonaSelection from '@/components/student/onboarding/PersonaSelection';
 import AcademicBackground from '@/components/student/onboarding/AcademicBackground';
 import ProfessionalExperience from '@/components/student/onboarding/ProfessionalExperience';
-import { updateBasicIdentity, updateAcademicBackground, updateProfessionalExperience } from '@/actions/student/onboarding.actions';
+import SkillsAndGoals from '@/components/student/onboarding/SkillsAndGoals';
+import { updateBasicIdentity, updateAcademicBackground, updateProfessionalExperience, updateSkillsAndGoals } from '@/actions/student/onboarding.actions';
 import { createClient } from '@/lib/supabase/client';
 
 export interface BasicIdentityData {
@@ -40,6 +41,16 @@ export default function StudentOnboardingPage() {
     const [experienceData, setExperienceData] = useState<any>({
         totalYearsExperience: '',
         experiences: []
+    });
+    const [skillsData, setSkillsData] = useState<any>({
+        skills: [],
+        softSkills: [],
+        careerInterests: [],
+        preferredLocations: [],
+        salaryExpectation: '',
+        availability: 'Immediate',
+        shortTermGoals: '',
+        longTermGoals: ''
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,6 +102,17 @@ export default function StudentOnboardingPage() {
                         ...prev,
                         totalYearsExperience: profile.total_years_experience || ''
                     }));
+
+                    // Set skills data
+                    setSkillsData((prev: any) => ({
+                        ...prev,
+                        skills: profile.skills || [],
+                        softSkills: profile.soft_skills || [],
+                        availability: profile.availability || 'Immediate',
+                        salaryExpectation: profile.salary_expectation || '',
+                        shortTermGoals: profile.short_term_goals || '',
+                        longTermGoals: profile.long_term_goals || ''
+                    }));
                 } else if (user.email) {
                     setIdentityData(prev => ({ ...prev, email: user.email as string }));
                 }
@@ -135,6 +157,21 @@ export default function StudentOnboardingPage() {
                             currentlyWorking: exp.currently_working,
                             description: exp.description
                         }))
+                    }));
+                }
+
+                // Fetch Preferences for Step 4
+                const { data: preferences } = await supabase
+                    .from('candidate_preferences')
+                    .select('career_interests, preferred_locations')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (preferences) {
+                    setSkillsData((prev: any) => ({
+                        ...prev,
+                        careerInterests: preferences.career_interests || [],
+                        preferredLocations: preferences.preferred_locations || []
                     }));
                 }
             }
@@ -183,6 +220,14 @@ export default function StudentOnboardingPage() {
                 setCurrentStep(4);
             } else {
                 console.error('Failed to save experience data:', result.error);
+            }
+        } else if (currentStep === 4) {
+            // Save Skills and Goals
+            const result = await updateSkillsAndGoals(skillsData);
+            if (result.success) {
+                setCurrentStep(5);
+            } else {
+                console.error('Failed to save skills data:', result.error);
             }
         }
 
@@ -235,6 +280,18 @@ export default function StudentOnboardingPage() {
                                 onChange={(data) => setExperienceData(data)}
                                 onNext={(data) => {
                                     setExperienceData(data);
+                                    handleNextStep();
+                                }}
+                            />
+                        )}
+
+                        {currentStep === 4 && (
+                            <SkillsAndGoals
+                                initialData={skillsData}
+                                onBack={handleBack}
+                                onChange={(data) => setSkillsData(data)}
+                                onNext={(data) => {
+                                    setSkillsData(data);
                                     handleNextStep();
                                 }}
                             />

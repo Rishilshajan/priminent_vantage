@@ -1,6 +1,6 @@
 'use server';
 
-import { OnboardingService, UpdateBasicIdentityParams, UpdateAcademicBackgroundParams, UpdateProfessionalExperienceParams } from '@/lib/student/onboarding.service';
+import { OnboardingService, UpdateBasicIdentityParams, UpdateAcademicBackgroundParams, UpdateProfessionalExperienceParams, UpdateSkillsAndGoalsParams } from '@/lib/student/onboarding.service';
 import { revalidatePath } from 'next/cache';
 
 export async function updateBasicIdentity(params: UpdateBasicIdentityParams) {
@@ -33,5 +33,16 @@ export async function updateProfessionalExperience(params: UpdateProfessionalExp
     } catch (error) {
         console.error('Error updating professional experience:', error);
         return { success: false, error: 'Failed to update professional experience' };
+    }
+}
+
+export async function updateSkillsAndGoals(params: UpdateSkillsAndGoalsParams) {
+    try {
+        const result = await OnboardingService.updateSkillsAndGoals(params);
+        revalidatePath('/student/onboarding');
+        return { success: true, result };
+    } catch (error) {
+        console.error('Error updating skills and goals:', error);
+        return { success: false, error: 'Failed to update skills and goals' };
     }
 }

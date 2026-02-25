@@ -268,6 +268,8 @@ export class OnboardingService {
         }
 
         return { success: true };
+    }
+
     /**
      * Updates skills and career goals.
      */
