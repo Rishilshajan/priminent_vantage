@@ -53,3 +53,16 @@ export async function getSimulationLibrary(industry?: string) {
         return { success: false as const, error: error.message || "Failed to fetch library simulations" };
     }
 }
+
+export async function getMySimulationsAction() {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false as const, error: "Unauthorized" };
+
+        const data = await simulationService.getMySimulations(user.id);
+        return { success: true as const, data };
+    } catch (error: any) {
+        return { success: false as const, error: error.message || "Failed to fetch your simulations" };
+    }
+}

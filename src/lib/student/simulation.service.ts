@@ -203,5 +203,86 @@ export const simulationService = {
             console.error("Error fetching library data:", error);
             throw error;
         }
+    },
+
+    async getMySimulations(userId: string) {
+        const supabase = await createClient();
+
+        try {
+            // 1. Fetch user profile
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('first_name, last_name, email')
+                .eq('id', userId)
+                .single();
+
+            // 2. Fetch all enrollments
+            const { data: enrollments, error } = await supabase
+                .from('simulation_enrollments')
+                .select(`
+                    id,
+                    status,
+                    progress_percentage,
+                    enrolled_at,
+                    simulations (
+                        id,
+                        title,
+                        short_description,
+                        banner_url,
+                        company_logo_url,
+                        org_id,
+                        industry,
+                        target_role,
+                        difficulty_level,
+                        duration,
+                        simulation_skills (
+                            skill_name
+                        ),
+                        created_at
+                    )
+                `)
+                .eq('student_id', userId)
+                .order('enrolled_at', { ascending: false });
+
+            if (error) throw error;
+
+            // 3. Fetch Organization names for unique org_ids
+            const uniqueOrgIds = Array.from(new Set(enrollments?.map(e => {
+                const sim: any = e.simulations;
+                return Array.isArray(sim) ? sim[0]?.org_id : sim?.org_id;
+            }))).filter(Boolean);
+
+            let orgMap: Record<string, string> = {};
+            if (uniqueOrgIds.length > 0) {
+                const { data: orgs } = await supabase
+                    .from('public_organization_metadata')
+                    .select('id, name')
+                    .in('id', uniqueOrgIds);
+
+                orgs?.forEach(org => {
+                    orgMap[org.id] = org.name;
+                });
+            }
+
+            // 4. Map final data
+            const finalEnrollments = enrollments?.map(e => {
+                const sim = (Array.isArray(e.simulations) ? e.simulations[0] : e.simulations) as any;
+                if (sim && orgMap[sim.org_id]) {
+                    sim.organization_name = orgMap[sim.org_id];
+                }
+                return {
+                    ...e,
+                    simulations: sim
+                };
+            }) || [];
+
+            return {
+                profile,
+                enrollments: finalEnrollments
+            };
+        } catch (error) {
+            console.error("Error fetching my simulations:", error);
+            throw error;
+        }
     }
 };

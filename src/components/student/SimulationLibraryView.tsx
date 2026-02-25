@@ -9,6 +9,8 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { StudentSidebar } from "./StudentSidebar"
 import { NotificationDropdown } from "./NotificationDropdown"
+import { SimulationCard } from "./SimulationCard"
+import { EmptyState } from "./EmptyState"
 
 interface SimulationLibraryViewProps {
     initialSims: any[];
@@ -143,111 +145,53 @@ export function SimulationLibraryView({ initialSims, userProfile, orgBranding }:
                         ))}
                     </div>
 
-                    {/* Simulation Grid */}
+                    {/* Simulation Grid / Empty State */}
                     {filteredSims.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {filteredSims.map((sim) => (
-                                <div
+                                <SimulationCard
                                     key={sim.id}
-                                    className="group flex flex-col overflow-hidden rounded-[32px] border border-slate-100 bg-white shadow-xl shadow-slate-200/50 transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/10 dark:border-white/5 dark:bg-[#1e1429] dark:shadow-none"
-                                >
-                                    {/* Card Image Wrapper */}
-                                    <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
-                                        {sim.banner_url ? (
-                                            <Image
-                                                src={sim.banner_url}
-                                                alt={sim.title}
-                                                fill
-                                                className="object-cover transition-transform duration-700 group-hover:scale-110"
-                                            />
+                                    simulation={sim}
+                                    brandColor={orgBranding?.brand_color}
+                                    actionButton={
+                                        sim.isEnrolled ? (
+                                            <button
+                                                onClick={() => router.push(`/student/simulations`)}
+                                                className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-slate-100 text-[12px] font-black uppercase tracking-[0.2em] text-slate-600 transition-all hover:bg-slate-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+                                            >
+                                                <Rocket size={18} />
+                                                View in My Sims
+                                            </button>
                                         ) : (
-                                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-indigo-500/20">
-                                                <Zap className="size-12 text-primary opacity-20" />
-                                            </div>
-                                        )}
-
-                                        {/* Badge */}
-                                        <div className="absolute left-6 top-6">
-                                            <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-1.5 backdrop-blur-md dark:bg-black/50">
-                                                <div className="size-2 rounded-full bg-primary animate-pulse" style={brandColorStyle} />
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white">
-                                                    {sim.industry || "General"}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Card Content */}
-                                    <div className="flex flex-1 flex-col p-8 lg:p-10">
-                                        <div className="flex-1 space-y-4">
-                                            <h3 className="line-clamp-2 text-xl font-black leading-tight text-slate-900 dark:text-white lg:text-2xl min-h-[3.5rem]">
-                                                {sim.title}
-                                            </h3>
-
-                                            {/* Company Info Box */}
-                                            <div className="rounded-[24px] bg-slate-50 p-6 dark:bg-white/5 transition-colors group-hover:bg-primary/[0.03]">
-                                                <div className="flex flex-col gap-1">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Partnering Organization</p>
-                                                    <p className="text-base font-bold text-slate-900 dark:text-white">{sim.organization_name}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-1">
-                                                        <Calendar size={12} /> Published {formatDate(sim.created_at)}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Card Footer Actions */}
-                                        <div className="mt-8 flex flex-col gap-4 border-t border-slate-100 dark:border-white/5 pt-8">
-                                            <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-slate-400">
-                                                <span className="flex items-center gap-2"><Trophy size={14} className="text-amber-500" /> +250 XP</span>
-                                                <span className="flex items-center gap-2"><Clock size={14} /> {sim.duration || "Self-paced"}</span>
-                                            </div>
-
-                                            {sim.isEnrolled ? (
-                                                <button
-                                                    onClick={() => router.push(`/student/simulations/${sim.id}`)}
-                                                    className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-slate-100 text-[12px] font-black uppercase tracking-[0.2em] text-slate-600 transition-all hover:bg-slate-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
-                                                >
-                                                    <Rocket size={18} />
-                                                    Resume Simulation
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleEnroll(sim.id)}
-                                                    disabled={enrollingId === sim.id}
-                                                    className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-primary text-[12px] font-black uppercase tracking-[0.2em] text-white shadow-[0_8px_20px_-4px_rgba(127,19,236,0.3)] transition-all hover:scale-[1.02] hover:shadow-[0_12px_24px_-4px_rgba(127,19,236,0.4)] active:scale-95 disabled:opacity-50"
-                                                    style={brandColorStyle}
-                                                >
-                                                    {enrollingId === sim.id ? (
-                                                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                                                    ) : (
-                                                        <>
-                                                            <Zap size={18} className="fill-current" />
-                                                            Enroll Now
-                                                        </>
-                                                    )}
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                                            <button
+                                                onClick={() => handleEnroll(sim.id)}
+                                                disabled={enrollingId === sim.id}
+                                                className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-primary text-[12px] font-black uppercase tracking-[0.2em] text-white shadow-[0_8px_20px_-4px_rgba(127,19,236,0.3)] transition-all hover:scale-[1.02] hover:shadow-[0_12px_24px_-4px_rgba(127,19,236,0.4)] active:scale-95 disabled:opacity-50"
+                                                style={brandColorStyle}
+                                            >
+                                                {enrollingId === sim.id ? (
+                                                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                                                ) : (
+                                                    <>
+                                                        <Zap size={18} className="fill-current" />
+                                                        Enroll Now
+                                                    </>
+                                                )}
+                                            </button>
+                                        )
+                                    }
+                                />
                             ))}
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-20 bg-slate-50 dark:bg-white/5 rounded-[40px] border border-dashed border-slate-200 dark:border-white/10">
-                            <div className="size-20 rounded-full bg-white dark:bg-white/10 flex items-center justify-center mb-6 shadow-sm">
-                                <Filter className="size-10 text-slate-300" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">No matching simulations</h3>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium">Try adjusting your filters or search terms.</p>
-                            <button
-                                onClick={() => { setSelectedCategory("All Industries"); setSearchQuery(""); }}
-                                className="mt-6 text-primary font-bold hover:underline"
-                                style={brandColorText}
-                            >
-                                Reset all filters
-                            </button>
-                        </div>
+                        <EmptyState
+                            icon={Filter}
+                            title="No matching simulations"
+                            description="Try adjusting your filters or search terms to find what you're looking for."
+                            ctaLabel="Reset all filters"
+                            brandColor={orgBranding?.brand_color}
+                            className="min-h-[400px]"
+                        />
                     )}
                 </div>
 
