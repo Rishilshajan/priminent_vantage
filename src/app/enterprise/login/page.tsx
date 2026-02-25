@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AuthHeader } from "@/components/auth/AuthHeader";
 import { AuthFooter } from "@/components/auth/AuthFooter";
-import { validateAccessCode } from "@/actions/enterprise";
+import { validateAccessCode } from "@/actions/enterprise/enterprise-onboarding.actions";
 
 export function EnterpriseLoginContent() {
     const searchParams = useSearchParams();

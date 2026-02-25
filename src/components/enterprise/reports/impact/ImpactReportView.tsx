@@ -5,7 +5,7 @@
  * Provides specialized analytics visualizations including KPIs, Funnels, and Heatmaps.
  */
 
-import { ImpactReportData } from "@/actions/reports/report.actions"
+import type { ImpactReportData } from "@/lib/reports/report.service"
 import DashboardSidebar from "@/components/enterprise/dashboard/DashboardSidebar"
 import DashboardHeader from "@/components/enterprise/dashboard/DashboardHeader"
 import ImpactReportKPIs from "@/components/enterprise/reports/impact/ImpactReportKPIs"

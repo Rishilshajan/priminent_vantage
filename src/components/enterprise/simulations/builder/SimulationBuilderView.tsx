@@ -17,7 +17,7 @@ import VisibilityForm from "./steps/VisibilityForm";
 import AnalyticsPreview from "./steps/AnalyticsPreview";
 import ReviewPublish from "./steps/ReviewPublish";
 import { getSimulation } from "@/actions/simulations";
-import { getBrandingByOrgId } from "@/actions/enterprise";
+import { getBrandingByOrgId } from "@/actions/enterprise/enterprise-management.actions";
 import { Simulation } from "@/lib/simulations";
 
 interface SimulationBuilderViewProps {

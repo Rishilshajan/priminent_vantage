@@ -19,7 +19,7 @@ interface BrandingViewProps {
 }
 
 import { useState, useEffect } from "react"
-import { updateOrganizationBranding } from "@/actions/enterprise"
+import { updateOrganizationBranding } from "@/actions/enterprise/enterprise-management.actions"
 
 export default function BrandingView({ userProfile, orgName, initialBranding }: BrandingViewProps) {
     const [logoUrl, setLogoUrl] = useState<string | null>(null);

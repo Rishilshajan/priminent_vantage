@@ -7,9 +7,9 @@ import { revalidatePath } from "next/cache";
 export async function getEducatorStats() {
     try {
         const stats = await educatorService.getStats();
-        return { success: true, stats };
+        return { success: true as const, stats };
     } catch (error) {
-        return { success: false, error: "Failed to fetch statistics" };
+        return { success: false as const, error: "Failed to fetch statistics" };
     }
 }
 
@@ -17,9 +17,9 @@ export async function getEducatorStats() {
 export async function getEducatorsList(page: number = 1, pageSize: number = 8, search?: string) {
     try {
         const result = await educatorService.getList(page, pageSize, search);
-        return { success: true, ...result };
+        return { success: true as const, ...result };
     } catch (error) {
-        return { success: false, error: "Failed to fetch educators" };
+        return { success: false as const, error: "Failed to fetch educators" };
     }
 }
 
@@ -28,8 +28,8 @@ export async function deleteEducator(applicationId: string, userId: string) {
     try {
         await educatorService.deleteEducator(applicationId, userId);
         revalidatePath('/admin/educators');
-        return { success: true };
+        return { success: true as const };
     } catch (error) {
-        return { success: false, error: "Failed to delete educator" };
+        return { success: false as const, error: "Failed to delete educator" };
     }
 }

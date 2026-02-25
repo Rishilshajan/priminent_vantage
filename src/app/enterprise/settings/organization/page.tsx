@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { getEnterpriseUser, getOrganizationBranding } from "@/actions/enterprise"
+import { getEnterpriseUser, getOrganizationBranding } from "@/actions/enterprise/enterprise-management.actions"
 import BrandingView from "@/components/enterprise/settings/organization/BrandingView"
 
 export const metadata: Metadata = {

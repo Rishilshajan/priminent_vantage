@@ -1,5 +1,5 @@
 import { searchSimulations } from "@/actions/simulations"
-import { getEnterpriseUser } from "@/actions/enterprise"
+import { getEnterpriseUser } from "@/actions/enterprise/enterprise-management.actions"
 import { getCandidateActivity } from "@/actions/candidate/candidate.actions" // Reusing this for now as it supports search
 import DashboardSidebar from "@/components/enterprise/dashboard/DashboardSidebar"
 import DashboardHeader from "@/components/enterprise/dashboard/DashboardHeader"

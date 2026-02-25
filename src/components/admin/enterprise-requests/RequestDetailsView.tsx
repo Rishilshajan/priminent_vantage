@@ -10,7 +10,7 @@ import { BusinessIntentCard } from "./BusinessIntentCard"
 import { ActionReasonDialog } from "./ActionReasonDialog"
 import { AdminVerificationSidebar } from "./AdminVerificationSidebar"
 import { formatDate } from "@/lib/utils"
-import { saveEnterpriseReview, handleEnterpriseAction } from "@/actions/enterprise"
+import { saveEnterpriseReview, handleEnterpriseAction } from "@/actions/enterprise/enterprise-request.actions"
 
 interface RequestDetailsViewProps {
     profile: any

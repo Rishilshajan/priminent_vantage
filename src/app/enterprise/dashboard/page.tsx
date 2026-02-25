@@ -1,4 +1,4 @@
-import { getDashboardMetrics } from "@/actions/enterprise"
+import { getDashboardMetrics } from "@/actions/enterprise/enterprise-management.actions"
 import DashboardSidebar from "@/components/enterprise/dashboard/DashboardSidebar"
 import DashboardHeader from "@/components/enterprise/dashboard/DashboardHeader"
 import StatsCards from "@/components/enterprise/dashboard/StatsCards"

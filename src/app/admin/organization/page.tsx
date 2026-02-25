@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import OrgDashboardView from '@/components/admin/organization/org-dashboard-view'
-import { getEnterpriseRequests, getEnterpriseStats } from '@/actions/enterprise'
+import { getEnterpriseStats } from '@/actions/enterprise/enterprise-management.actions'
+import { getEnterpriseRequests } from '@/actions/enterprise/enterprise-request.actions'
 
 export default async function OrganizationPage() {
     const supabase = await createClient()

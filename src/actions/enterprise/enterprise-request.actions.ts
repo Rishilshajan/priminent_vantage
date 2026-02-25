@@ -50,9 +50,9 @@ export async function submitEnterpriseRequest(prevState: any, formData: FormData
             organization: { org_name: validatedFields.data.companyName },
             message: 'Enterprise request submitted successfully'
         });
-        return { success: true };
+        return { success: true as const };
     } catch (err: any) {
-        return { error: "Failed to submit request." };
+        return { success: false as const, error: "Failed to submit request." };
     }
 }
 
@@ -60,9 +60,9 @@ export async function submitEnterpriseRequest(prevState: any, formData: FormData
 export async function saveEnterpriseReview(requestId: string, reviewData: any) {
     try {
         await enterpriseRequestService.saveReview(requestId, reviewData);
-        return { success: true };
+        return { success: true as const };
     } catch (err: any) {
-        return { error: err.message || "Failed to save review progress" };
+        return { success: false as const, error: err.message || "Failed to save review progress" };
     }
 }
 
@@ -96,9 +96,9 @@ export async function handleEnterpriseAction(
             reason
         );
 
-        return { success: true };
+        return { success: true as const };
     } catch (err: any) {
-        return { error: err.message };
+        return { success: false as const, error: err.message };
     }
 }
 
@@ -108,7 +108,7 @@ export async function getEnterpriseRequests() {
         const data = await enterpriseRequestService.getRequests();
         return { data };
     } catch (err: any) {
-        return { error: err.message };
+        return { success: false as const, error: err.message };
     }
 }
 
@@ -116,9 +116,9 @@ export async function getEnterpriseRequests() {
 export async function updateEnterpriseRequest(requestId: string, updateData: any) {
     try {
         const data = await enterpriseRequestService.updateRequest(requestId, updateData);
-        return { success: true, data };
+        return { success: true as const, data };
     } catch (err: any) {
-        return { error: err.message };
+        return { success: false as const, error: err.message };
     }
 }
 
@@ -126,8 +126,8 @@ export async function updateEnterpriseRequest(requestId: string, updateData: any
 export async function getAccessCodesData() {
     try {
         const data = await enterpriseRequestService.getAccessCodesData();
-        return { success: true, data };
+        return { success: true as const, data };
     } catch (err: any) {
-        return { error: "Failed to load access codes." };
+        return { success: false as const, error: "Failed to load access codes." };
     }
 }

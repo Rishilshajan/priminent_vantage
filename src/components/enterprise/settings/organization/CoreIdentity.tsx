@@ -7,7 +7,7 @@ interface CoreIdentityProps {
     onLogoChange: (url: string) => void;
 }
 
-import { uploadOrganizationAsset } from "@/actions/enterprise";
+import { uploadOrganizationAsset } from "@/actions/enterprise/enterprise-management.actions";
 import { useState, useRef } from "react";
 import Image from "next/image";
 

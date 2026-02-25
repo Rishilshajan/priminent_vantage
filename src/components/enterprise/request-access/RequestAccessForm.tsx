@@ -7,7 +7,7 @@ import { VerificationNotice } from "./VerificationNotice";
 import { CompanyDetails } from "./CompanyDetails";
 import { AdminDetails } from "./AdminDetails";
 import { IntendedUse } from "./IntendedUse";
-import { submitEnterpriseRequest } from "@/actions/enterprise";
+import { submitEnterpriseRequest } from "@/actions/enterprise/enterprise-request.actions";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { Award, Upload } from "lucide-react"
-import { uploadOrganizationAsset } from "@/actions/enterprise";
+import { uploadOrganizationAsset } from "@/actions/enterprise/enterprise-management.actions";
 import { useState, useRef } from "react";
 import Image from "next/image";
 

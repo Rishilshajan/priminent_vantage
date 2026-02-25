@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { getSimulationsMetrics } from "@/actions/enterprise"
+import { getSimulationsMetrics } from "@/actions/enterprise/enterprise-management.actions"
 import SimulationsView from "@/components/enterprise/simulations/SimulationsView"
 import { Button } from "@/components/ui/button"
 

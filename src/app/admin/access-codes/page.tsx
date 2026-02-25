@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AccessCodeDashboardView from '@/components/admin/access-codes/access-dashboard-view'
-import { getAccessCodesData } from '@/actions/enterprise'
+import { getAccessCodesData } from '@/actions/enterprise/enterprise-request.actions'
 
 export default async function AccessCodePage() {
     const supabase = await createClient()

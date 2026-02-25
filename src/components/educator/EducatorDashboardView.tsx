@@ -17,7 +17,7 @@ export default function EducatorDashboardView({ profile }: EducatorDashboardView
     useEffect(() => {
         const fetchOrgBranding = async () => {
             try {
-                const { getOrganizationBranding } = await import("@/actions/enterprise");
+                const { getOrganizationBranding } = await import("@/actions/enterprise/enterprise-management.actions");
                 const result = await getOrganizationBranding();
                 if (result && result.success && result.data) {
                     setOrgBranding(result.data);

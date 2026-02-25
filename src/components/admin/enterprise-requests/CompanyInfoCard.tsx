@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Building2, ExternalLink, Edit2, Save, X } from "lucide-react"
-import { updateEnterpriseRequest } from "@/actions/enterprise"
+import { updateEnterpriseRequest } from "@/actions/enterprise/enterprise-request.actions"
 
 interface CompanyInfoCardProps {
     requestId: string

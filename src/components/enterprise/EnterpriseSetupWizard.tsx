@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input"
 import { Progress } from "../ui/progress"
 // Checkbox import restored
 import { Checkbox } from "@/components/ui/checkbox"
-import { completeEnterpriseSetup } from "@/actions/enterprise"
+import { completeEnterpriseSetup } from "@/actions/enterprise/enterprise-onboarding.actions"
 import MFASetup from "./MFASetup"
 
 type Step = "account" | "organization" | "mfa" | "completion"

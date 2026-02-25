@@ -8,7 +8,7 @@ export async function getEnterpriseStats() {
     try {
         return await enterpriseManagementService.getStats();
     } catch (err: any) {
-        return { error: err.message || "Failed to fetch statistics" };
+        return { success: false as const, error: err.message || "Failed to fetch statistics" };
     }
 }
 
@@ -17,11 +17,11 @@ export async function getDashboardMetrics(period: string = 'all') {
     const supabase = await createClient();
     try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: "Unauthorized" };
+        if (!user) return { success: false as const, error: "Unauthorized" };
         const result = await enterpriseManagementService.getDashboardMetrics(user.id, period);
-        return { success: true, data: result };
+        return { success: true as const, data: result };
     } catch (err: any) {
-        return { error: err.message || "Failed to load dashboard metrics." };
+        return { success: false as const, error: err.message || "Failed to load dashboard metrics." };
     }
 }
 
@@ -30,11 +30,11 @@ export async function getSimulationsMetrics() {
     const supabase = await createClient();
     try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: "Authentication required" };
+        if (!user) return { success: false as const, error: "Authentication required" };
         const result = await enterpriseManagementService.getSimulationsMetrics(user.id);
         return { data: result };
     } catch (err: any) {
-        return { error: err.message || "Failed to load simulations metrics." };
+        return { success: false as const, error: err.message || "Failed to load simulations metrics." };
     }
 }
 
@@ -54,9 +54,9 @@ export async function getEnterpriseUser() {
 export async function getBrandingByOrgId(orgId: string) {
     try {
         const data = await enterpriseManagementService.getBranding(orgId);
-        return { success: true, data };
+        return { success: true as const, data };
     } catch (err: any) {
-        return { success: false, error: err.message };
+        return { success: false as const, error: err.message };
     }
 }
 
@@ -69,9 +69,9 @@ export async function getOrganizationBranding() {
         const { data: member } = await supabase.from('organization_members').select('org_id').eq('user_id', user.id).maybeSingle();
         if (!member) return null;
         const data = await enterpriseManagementService.getBranding(member.org_id);
-        return { success: true, data };
+        return { success: true as const, data };
     } catch (err: any) {
-        return { success: false, error: err.message };
+        return { success: false as const, error: err.message };
     }
 }
 
@@ -82,9 +82,9 @@ export async function updateOrganizationBranding(data: any) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { success: false, error: "Unauthorized" };
         await enterpriseManagementService.updateBranding(user.id, data);
-        return { success: true };
+        return { success: true as const };
     } catch (err: any) {
-        return { success: false, error: err.message };
+        return { success: false as const, error: err.message };
     }
 }
 
@@ -93,7 +93,7 @@ export async function uploadOrganizationAsset(formData: FormData) {
     const supabase = await createClient();
     try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: "Authentication required" };
+        if (!user) return { success: false as const, error: "Authentication required" };
 
         const assetType = formData.get('assetType') as 'logo' | 'signature';
         const file = formData.get('file') as File;
@@ -101,6 +101,6 @@ export async function uploadOrganizationAsset(formData: FormData) {
         const url = await enterpriseManagementService.uploadAsset(user.id, assetType, file);
         return { data: { url } };
     } catch (err: any) {
-        return { error: err.message || 'Upload failed' };
+        return { success: false as const, error: err.message || 'Upload failed' };
     }
 }
