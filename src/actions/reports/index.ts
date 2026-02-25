@@ -1,1 +1,1 @@
-export * from './report.actions'
+// Deprecated barrel file - see report.actions.ts directly

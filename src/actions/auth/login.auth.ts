@@ -99,7 +99,19 @@ export async function login(formData: FormData) {
         }
 
         else if (profile?.role === 'student') {
-            redirect('/student/dashboard')
+            // Check if student has completed basic structural profiling.
+            // Using user_type as a baseline.
+            const { data: studentProfile } = await supabase
+                .from('profiles')
+                .select('user_type')
+                .eq('id', user.id)
+                .single()
+
+            if (!studentProfile || !studentProfile.user_type) {
+                redirect('/student/onboarding')
+            } else {
+                redirect('/student/dashboard')
+            }
         }
     }
 
