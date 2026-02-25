@@ -83,11 +83,6 @@ export default function StudentOnboardingPage() {
                     .eq('id', user.id)
                     .single();
 
-                if (profile && profile.onboarding_completed) {
-                    router.push('/student/dashboard');
-                    return;
-                }
-
                 if (profile) {
                     setIdentityData({
                         firstName: profile.first_name || '',

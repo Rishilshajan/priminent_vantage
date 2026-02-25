@@ -44,31 +44,48 @@ export async function updateSession(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (user && request.nextUrl.pathname === '/') {
-        // Fetch user profile to determine role-based redirect
+    if (user) {
+        // Fetch user profile to determine role-based redirect and onboarding status
         const { data: profile } = await supabase
             .from('profiles')
-            .select('role')
+            .select('role, onboarding_completed')
             .eq('id', user.id)
             .single()
 
         const url = request.nextUrl.clone()
+        const pathname = request.nextUrl.pathname
 
-        // Redirect based on user role
-        if (profile?.role === 'admin' || profile?.role === 'super_admin') {
-            url.pathname = '/admin/dashboard'
-        } else if (profile?.role === 'enterprise') {
-            url.pathname = '/enterprise/dashboard'
-        } else if (profile?.role === 'student') {
-            url.pathname = '/student/dashboard'
-        } else if (profile?.role === 'educator') {
-            url.pathname = '/educators/dashboard'
-        } else {
-            // Default fallback for unknown roles
-            url.pathname = '/student/dashboard'
+        // 1. Role-based Redirect from Root
+        if (pathname === '/') {
+            if (profile?.role === 'admin' || profile?.role === 'super_admin') {
+                url.pathname = '/admin/dashboard'
+            } else if (profile?.role === 'enterprise') {
+                url.pathname = '/enterprise/dashboard'
+            } else if (profile?.role === 'student') {
+                url.pathname = profile.onboarding_completed ? '/student/dashboard' : '/student/onboarding'
+            } else if (profile?.role === 'educator') {
+                url.pathname = '/educators/dashboard'
+            } else {
+                url.pathname = '/student/dashboard'
+            }
+            return NextResponse.redirect(url)
         }
 
-        return NextResponse.redirect(url)
+        // 2. Student Onboarding Enforcer
+        if (profile?.role === 'student') {
+            const isOnboardingPath = pathname.startsWith('/student/onboarding')
+            const isDashboardPath = pathname.startsWith('/student/dashboard')
+
+            if (!profile.onboarding_completed && isDashboardPath) {
+                url.pathname = '/student/onboarding'
+                return NextResponse.redirect(url)
+            }
+
+            if (profile.onboarding_completed && isOnboardingPath) {
+                url.pathname = '/student/dashboard'
+                return NextResponse.redirect(url)
+            }
+        }
     }
 
     // Role-based protection could go here if we wanted to enforce /enterprise routes only for enterprise users
