@@ -59,8 +59,9 @@ export function CertificateCard({ certificate, brandColor }: CertificateCardProp
 
             {/* Content */}
             <div className="mb-6 flex-1 lg:mb-8">
-                <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary lg:text-[11px]" style={brandColorText}>
-                    <span>{orgName}</span>
+                <div className="mb-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-1">Awarded to</p>
+                    <p className="text-xl font-black text-slate-900 dark:text-white leading-tight">{certificate.student_name}</p>
                 </div>
                 <h3 className="mb-4 text-xl font-black leading-tight text-slate-900 group-hover:text-primary dark:text-white transition-colors lg:text-2xl">
                     {simTitle}
