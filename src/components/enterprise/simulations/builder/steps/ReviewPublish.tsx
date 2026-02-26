@@ -151,7 +151,7 @@ export default function ReviewPublish({ simulationId, onBack, onEdit, canPublish
                 <SectionCard title="Task Flow" step="tasks">
                     <div className="space-y-3">
                         {simulation.simulation_tasks && simulation.simulation_tasks.length > 0 ? (
-                            simulation.simulation_tasks.sort((a, b) => a.order_index - b.order_index).map((task, index) => (
+                            simulation.simulation_tasks.sort((a, b) => (a.order_index || 0) - (b.order_index || 0)).map((task, index) => (
                                 <div key={task.id} className="flex items-start p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800 relative">
                                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center border border-slate-200 dark:border-slate-600 text-xs font-bold text-slate-500 mr-3 mt-0.5">
                                         {index + 1}

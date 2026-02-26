@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, CheckCircle2, AlertCircle, ShieldCheck, Mail, Building2 } from 'lucide-react';
 import { AuthHeader } from '@/components/auth/AuthHeader';
 import { AuthFooter } from '@/components/auth/AuthFooter';
-import { authService } from '@/lib/auth/auth.service';
+import { createClient } from '@/lib/supabase/client';
 
 interface AcceptInvitationViewProps {
     token: string | null;
@@ -59,8 +59,9 @@ export function AcceptInvitationView({ token }: AcceptInvitationViewProps) {
         setError(null);
 
         try {
+            const supabase = createClient();
             // 1. Sign up user via Supabase Auth
-            const signUpResult = await authService.signUp({
+            const signUpResult = await supabase.auth.signUp({
                 email: invitation.email,
                 password: password,
                 options: {
