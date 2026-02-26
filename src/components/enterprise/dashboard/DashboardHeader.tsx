@@ -36,25 +36,27 @@ export default function DashboardHeader({ orgName, userProfile }: DashboardHeade
     return (
         <header className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 backdrop-blur-md px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 gap-4">
 
-            {/* Mobile Search Overlay */}
+            {/* Mobile Search Dropdown */}
             {isSearchOpen && (
-                <div className="absolute inset-0 bg-white dark:bg-slate-900 z-50 flex items-center px-4 gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <form onSubmit={handleSearch} className="flex-1 relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-                        <Input
-                            ref={searchInputRef}
-                            className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-full h-10 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                            placeholder="Search..."
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                        />
-                    </form>
-                    <button
-                        onClick={() => setIsSearchOpen(false)}
-                        className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
-                    >
-                        <X className="size-5" />
-                    </button>
+                <div className="md:hidden absolute top-[calc(100%+0.5rem)] left-4 right-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none p-2 flex items-center gap-2">
+                        <form onSubmit={handleSearch} className="flex-1 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                            <Input
+                                ref={searchInputRef}
+                                className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl h-10 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                                placeholder="Search..."
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                            />
+                        </form>
+                        <button
+                            onClick={() => setIsSearchOpen(false)}
+                            className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                        >
+                            <X className="size-5" />
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -106,7 +108,7 @@ export default function DashboardHeader({ orgName, userProfile }: DashboardHeade
 
                 <div className="flex items-center gap-3 group cursor-pointer">
                     <div className="text-right hidden sm:block">
-                        <p className="text-sm font-black leading-none mb-1 text-slate-900 dark:text-white uppercase tracking-tight">{orgName}</p>
+                        <p className="text-sm font-black leading-none mb-1 text-slate-900 dark:text-white uppercase   ">{orgName}</p>
                         <p className="text-[10px] text-primary font-black uppercase tracking-widest leading-none">
                             {userProfile?.role === 'admin' || userProfile?.role === 'super_admin' ? 'Enterprise Admin' : userProfile?.role || 'Member'}
                         </p>

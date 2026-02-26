@@ -37,7 +37,7 @@ export function CurrentSimulations({ enrollments, orgBranding }: CurrentSimulati
     return (
         <section className="flex flex-col gap-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Current Simulations</h2>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white   ">Current Simulations</h2>
                 <Link
                     href="/student/simulations"
                     className="text-sm font-black uppercase tracking-widest text-primary hover:underline dark:text-primary-light"
@@ -85,7 +85,7 @@ export function CurrentSimulations({ enrollments, orgBranding }: CurrentSimulati
                             {/* Content */}
                             <div className="p-6 flex-1 flex flex-col justify-between">
                                 <div>
-                                    <h3 className="font-black text-lg text-slate-900 dark:text-white tracking-tight leading-tight group-hover:text-primary transition-colors duration-300 mb-6 line-clamp-2 min-h-[3rem]">
+                                    <h3 className="font-black text-lg text-slate-900 dark:text-white    leading-tight group-hover:text-primary transition-colors duration-300 mb-6 line-clamp-2 min-h-[3rem]">
                                         {sim.title}
                                     </h3>
 
@@ -93,12 +93,12 @@ export function CurrentSimulations({ enrollments, orgBranding }: CurrentSimulati
                                     <div className="mb-6">
                                         <div className="bg-slate-50 dark:bg-white/5 p-5 rounded-[20px] border border-slate-100 dark:border-white/5">
                                             <span className="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Partnering Organization</span>
-                                            <span className="truncate block text-xl font-black text-slate-900 dark:text-white tracking-tighter mb-1">
+                                            <span className="truncate block text-xl font-black text-slate-900 dark:text-white   er mb-1">
                                                 {orgName}
                                             </span>
                                             <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
                                                 <Clock size={12} />
-                                                <span className="text-[10px] font-bold uppercase tracking-tight">
+                                                <span className="text-[10px] font-bold uppercase   ">
                                                     Published {formatDate(sim.created_at)}
                                                 </span>
                                             </div>

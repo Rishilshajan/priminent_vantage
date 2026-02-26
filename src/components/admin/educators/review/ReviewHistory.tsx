@@ -95,11 +95,11 @@ export function ReviewHistory({ events }: ReviewHistoryProps) {
                                             {event.status}
                                         </p>
                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase   ">
                                                 {mounted ? event.date : ""}
                                             </p>
                                             {event.actor && event.actor !== "System" && (
-                                                <p className="text-[10px] text-primary/70 font-bold uppercase tracking-tight">
+                                                <p className="text-[10px] text-primary/70 font-bold uppercase   ">
                                                     • {event.actor}
                                                 </p>
                                             )}

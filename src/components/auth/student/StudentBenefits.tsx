@@ -4,7 +4,7 @@ export function StudentBenefits() {
     return (
         <div className="space-y-10 order-2 lg:order-1">
             <div className="space-y-6">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold    text-foreground leading-[1.1]">
                     3x your chances of <br />
                     <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-600">
                         landing a job
@@ -52,7 +52,7 @@ export function StudentBenefits() {
                 </p>
                 <div className="flex flex-wrap gap-8 items-center opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
                     <span className="text-xl font-bold font-serif text-foreground/60">JPMorgan</span>
-                    <span className="text-xl font-bold font-sans text-foreground/60 tracking-tighter">Deloitte.</span>
+                    <span className="text-xl font-bold font-sans text-foreground/60   er">Deloitte.</span>
                     <span className="text-lg font-bold font-mono text-foreground/60 lowercase">accenture</span>
                     <span className="text-xl font-bold text-foreground/60 italic">Citi</span>
                 </div>

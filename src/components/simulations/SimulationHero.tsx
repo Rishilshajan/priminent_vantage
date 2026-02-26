@@ -69,7 +69,7 @@ export function SimulationHero({ simulation, orgBranding, isEnrolled }: Simulati
                             </span>
                         </div>
 
-                        <h1 className="font-display text-5xl lg:text-7xl font-black mb-8 leading-[1.1] tracking-tight">
+                        <h1 className="font-display text-5xl lg:text-7xl font-black mb-8 leading-[1.1]   ">
                             {simulation.title}
                         </h1>
 
@@ -96,7 +96,7 @@ export function SimulationHero({ simulation, orgBranding, isEnrolled }: Simulati
                     <div className="lg:justify-self-end w-full max-w-md">
                         <div className="bg-white dark:bg-[#1e1429] rounded-[32px] shadow-2xl p-8 lg:p-10 border border-slate-100 dark:border-white/5">
                             <div className="flex items-center justify-between mb-8">
-                                <h3 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Get Career Ready</h3>
+                                <h3 className="text-2xl font-black    text-slate-900 dark:text-white">Get Career Ready</h3>
                                 <div className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
                                     Hiring Now
                                 </div>

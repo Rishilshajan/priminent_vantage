@@ -164,7 +164,7 @@ export default function EnterpriseSetupWizard() {
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h2 className="text-sm font-black text-primary uppercase tracking-[0.2em]">Onboarding</h2>
-                        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                        <h1 className="text-2xl font-black text-slate-900 dark:text-white   ">
                             {currentStep === "account" && (sessionStorage.getItem("enterprise_setup_isUserExists") === "true" ? "Sign In to Organization" : "Create Admin Account")}
                             {currentStep === "organization" && "Organization Profile"}
                             {currentStep === "mfa" && "Secure Account"}
@@ -346,7 +346,7 @@ export default function EnterpriseSetupWizard() {
                             <CheckCircle2 className="size-10 text-green-600 dark:text-green-400" />
                         </div>
                         <div className="space-y-2">
-                            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Welcome Aboard!</h2>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white   ">Welcome Aboard!</h2>
                             <p className="text-slate-500 font-medium px-12">
                                 Your organization dashboard for <strong>{metadata.companyName}</strong> is now ready. You can start inviting team members and managing your assets.
                             </p>

@@ -31,7 +31,7 @@ export function AdminVerificationSidebar({
                             Admin Verification
                         </h3>
                     </div>
-                    <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded tracking-tighter">
+                    <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded   er">
                         MANUAL
                     </span>
                 </div>

@@ -93,7 +93,7 @@ export function HeroSection() {
                             <Rocket className="w-4 h-4 mr-2" />
                             Kickstart your career journey
                         </div>
-                        <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-foreground mb-6 leading-[1.1]">
+                        <h1 className="text-5xl lg:text-7xl font-extrabold    text-foreground mb-6 leading-[1.1]">
                             Your Future. <br />
                             <span className="bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
                                 Simulated Today.

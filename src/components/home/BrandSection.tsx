@@ -1,14 +1,14 @@
 export function BrandSection() {
     const brands = [
         { name: "JP Morgan", font: "font-serif" },
-        { name: "Goldman Sachs", font: "tracking-tighter" },
+        { name: "Goldman Sachs", font: "  er" },
         { name: "Red Bull", font: "italic" },
         { name: "BCG", font: "font-mono" },
         { name: "Walmart", font: "font-sans" },
         { name: "Citi", font: "tracking-wide" },
         { name: "Vanguard", font: "font-semibold" },
         { name: "Accenture", font: "font-light" },
-        { name: "Pfizer", font: "tracking-tight" },
+        { name: "Pfizer", font: "  " },
     ];
 
     const marqueeBrands = [...brands, ...brands];

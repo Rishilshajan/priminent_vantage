@@ -23,7 +23,7 @@ export default function RecentReportsTable({ simulations }: RecentReportsTablePr
             {/* Section Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between border-b border-slate-200 dark:border-white/5 pb-8 gap-4">
                 <div>
-                    <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">Organizational Group Reports</h3>
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white    leading-tight">Organizational Group Reports</h3>
                     <p className="text-sm text-slate-500 font-bold mt-2 uppercase tracking-widest opacity-60">Consolidated analytics for student groups and simulation performance</p>
                 </div>
             </div>
@@ -52,7 +52,7 @@ export default function RecentReportsTable({ simulations }: RecentReportsTablePr
                                                     <FileText className="size-7" />
                                                 </div>
                                                 <div>
-                                                    <span className="block text-base font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors leading-tight mb-2 tracking-tight">
+                                                    <span className="block text-base font-black text-slate-900 dark:text-white group-hover:text-primary transition-colors leading-tight mb-2   ">
                                                         {sim.title}
                                                     </span>
                                                     <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest leading-none">
@@ -63,7 +63,7 @@ export default function RecentReportsTable({ simulations }: RecentReportsTablePr
                                         </td>
                                         <td className="px-10 py-8">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 tracking-tight">
+                                                <span className="text-sm font-bold text-slate-700 dark:text-slate-300   ">
                                                     {mounted ? new Date(sim.created_at).toLocaleDateString() : ""}
                                                 </span>
                                                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase mt-1 tracking-wider">
@@ -100,7 +100,7 @@ export default function RecentReportsTable({ simulations }: RecentReportsTablePr
                     <div className="size-20 rounded-3xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-300 dark:text-slate-600 mb-8 border border-slate-100 dark:border-white/5">
                         <span className="material-symbols-outlined text-5xl">description</span>
                     </div>
-                    <h4 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">No Reports Generated</h4>
+                    <h4 className="text-2xl font-black text-slate-900 dark:text-white    uppercase">No Reports Generated</h4>
                     <p className="text-slate-500 font-bold mt-2 max-w-md leading-relaxed">There are currently no active group reports. Generate your first group report by selecting a simulation above.</p>
                 </div>
             )}

@@ -317,7 +317,7 @@ export function StudentSettingsView({ data, organizationBranding }: StudentSetti
                                             </div>
                                         ) : (
                                             <>
-                                                <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white lg:text-3xl">
+                                                <h1 className="text-2xl font-black    text-slate-900 dark:text-white lg:text-3xl">
                                                     {fullName}
                                                 </h1>
                                                 <button onClick={() => startEditing('name', fullName)} className="text-slate-300 hover:text-primary transition-colors">
@@ -622,7 +622,7 @@ export function StudentSettingsView({ data, organizationBranding }: StudentSetti
                                             <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-white" style={brandColorStyle}>
                                                 <PieChart size={20} />
                                             </div>
-                                            <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Profile Summary</h2>
+                                            <h2 className="text-2xl font-black    text-slate-900 dark:text-white">Profile Summary</h2>
                                         </div>
 
                                         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2">
@@ -664,7 +664,7 @@ export function StudentSettingsView({ data, organizationBranding }: StudentSetti
                                         <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-white" style={brandColorStyle}>
                                             <Layers size={20} />
                                         </div>
-                                        <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Quick Stats</h2>
+                                        <h2 className="text-2xl font-black    text-slate-900 dark:text-white">Quick Stats</h2>
                                     </div>
 
                                     <div className="flex flex-col gap-8">
@@ -687,7 +687,7 @@ export function StudentSettingsView({ data, organizationBranding }: StudentSetti
 
                         {activeTab === 'skills' && (
                             <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white px-2">Professional Skills</h2>
+                                <h2 className="text-2xl font-black    text-slate-900 dark:text-white px-2">Professional Skills</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {skills.length > 0 ? (
                                         skills.map((skill, idx) => (
@@ -704,7 +704,7 @@ export function StudentSettingsView({ data, organizationBranding }: StudentSetti
 
                         {activeTab === 'experience' && (
                             <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white px-2">Professional Journey</h2>
+                                <h2 className="text-2xl font-black    text-slate-900 dark:text-white px-2">Professional Journey</h2>
                                 <div className="flex flex-col gap-4">
                                     {experience.length > 0 ? (
                                         experience.map((exp) => (
@@ -721,7 +721,7 @@ export function StudentSettingsView({ data, organizationBranding }: StudentSetti
 
                         {activeTab === 'education' && (
                             <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white px-2">Academic Background</h2>
+                                <h2 className="text-2xl font-black    text-slate-900 dark:text-white px-2">Academic Background</h2>
                                 <div className="flex flex-col gap-4">
                                     {education.length > 0 ? (
                                         education.map((edu) => (

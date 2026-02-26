@@ -71,7 +71,7 @@ export function PendingApprovals({ applications }: PendingApprovalsProps) {
                                 <tr key={`${app.type}-${app.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                                     <td className="px-6 py-5">
                                         <div className={cn(
-                                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight",
+                                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase   ",
                                             app.type === 'educator'
                                                 ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
                                                 : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800"

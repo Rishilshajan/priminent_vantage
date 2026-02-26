@@ -23,7 +23,7 @@ export default function ImpactReportDemographics({ institutions, regions }: Impa
         <div className="flex flex-col gap-8 h-full">
             {/* Top Institutions */}
             <div className="bg-white dark:bg-slate-900 p-5 sm:p-8 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-                <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight mb-6 sm:mb-8">Top Contributing Institutions</h3>
+                <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white    mb-6 sm:mb-8">Top Contributing Institutions</h3>
                 <div className="space-y-4 sm:space-y-6">
                     {institutions.map((inst, index) => (
                         <div key={index} className="flex items-center justify-between group">
@@ -34,7 +34,7 @@ export default function ImpactReportDemographics({ institutions, regions }: Impa
                                     {inst.name}
                                 </span>
                             </div>
-                            <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white tracking-tight">
+                            <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white   ">
                                 {inst.count.toLocaleString()} <span className="text-slate-400 font-bold ml-1">({inst.percentage}%)</span>
                             </span>
                         </div>
@@ -46,7 +46,7 @@ export default function ImpactReportDemographics({ institutions, regions }: Impa
             <div className="bg-white dark:bg-slate-900 p-5 sm:p-8 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm relative overflow-hidden group">
                 <div className="relative z-10 flex flex-col h-full">
                     <div className="mb-4 sm:mb-2">
-                        <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">Regional Distribution</h3>
+                        <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white   ">Regional Distribution</h3>
                         <p className="text-[10px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-widest mt-1">Global reach of the simulation enrollment</p>
                     </div>
 

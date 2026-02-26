@@ -131,10 +131,10 @@ export default function TaskMapSidebar({ simulationId }: TaskMapSidebarProps) {
                 </div>
 
                 <div className="flex justify-between mt-2">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase   er">
                         Current Progress
                     </span>
-                    <span className="text-[9px] font-bold text-primary uppercase tracking-tighter">
+                    <span className="text-[9px] font-bold text-primary uppercase   er">
                         {progress}% Complete
                     </span>
                 </div>

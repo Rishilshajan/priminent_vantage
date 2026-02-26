@@ -132,7 +132,7 @@ export function AdminInfoCard({
                             <div className="flex items-center gap-2">
                                 <p className="text-sm font-semibold text-slate-900 dark:text-white">{formData.admin_email}</p>
                                 {isVerifiedDomain && (
-                                    <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-tight border border-green-200 dark:border-green-800">
+                                    <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[9px] px-1.5 py-0.5 rounded font-black uppercase    border border-green-200 dark:border-green-800">
                                         Verified Domain
                                     </span>
                                 )}

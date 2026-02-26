@@ -17,14 +17,14 @@ export function EducatorReviewHeader({ application, onAction, isSaving }: Educat
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 py-8">
             <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    <h1 className="text-3xl font-bold    text-slate-900 dark:text-white">
                         {application.institution_name}
                     </h1>
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${application.status === 'APPROVED'
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-                            : application.status === 'REJECTED'
-                                ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800'
-                                : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                        : application.status === 'REJECTED'
+                            ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800'
                         }`}>
                         {application.status.replace(/_/g, ' ')}
                     </span>
@@ -37,7 +37,7 @@ export function EducatorReviewHeader({ application, onAction, isSaving }: Educat
                     </div>
                     <div className="flex items-center gap-2 text-slate-500">
                         <Fingerprint className="size-4" />
-                        <span className="text-sm font-medium uppercase tracking-tight">REQ-ID: {application.id.split('-')[0].toUpperCase()}</span>
+                        <span className="text-sm font-medium uppercase   ">REQ-ID: {application.id.split('-')[0].toUpperCase()}</span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-500">
                         <Globe className="size-4" />

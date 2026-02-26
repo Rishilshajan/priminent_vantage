@@ -42,7 +42,7 @@ export default function SimulationsStats({ stats }: SimulationsStatsProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {statCards.map((card) => (
-                <div key={card.label} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-none group">
+                <div key={card.label} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all dark:hover:shadow-none group">
                     <div className="flex items-center justify-between mb-4">
                         <div className={`p-2.5 ${card.bgColor} ${card.textColor} rounded-2xl group-hover:scale-110 transition-transform`}>
                             <span className="material-symbols-outlined text-2xl font-bold">{card.icon}</span>
@@ -50,7 +50,7 @@ export default function SimulationsStats({ stats }: SimulationsStatsProps) {
                     </div>
                     <div>
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{card.label}</p>
-                        <h3 className="text-2xl font-black mt-1 text-slate-900 dark:text-white tracking-tight">{card.value}</h3>
+                        <h3 className="text-2xl font-black mt-1 text-slate-900 dark:text-white   ">{card.value}</h3>
                     </div>
                 </div>
             ))}

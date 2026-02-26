@@ -126,7 +126,7 @@ export function EducationalBackgroundCard({ application }: EducationalBackground
                                     <Globe className="size-3 shrink-0" />
                                 </a>
                                 {isDomainVerified && (
-                                    <div className="flex items-center gap-1 px-1.5 py-0.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-md text-[9px] font-bold uppercase tracking-tighter border border-green-100 dark:border-green-800/50 shrink-0">
+                                    <div className="flex items-center gap-1 px-1.5 py-0.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-md text-[9px] font-bold uppercase   er border border-green-100 dark:border-green-800/50 shrink-0">
                                         <BadgeCheck className="size-2.5" />
                                         Domain Verified
                                     </div>
@@ -179,7 +179,7 @@ export function EducationalBackgroundCard({ application }: EducationalBackground
                                     <div className="flex items-center gap-1.5">
                                         <BadgeCheck className={cn("size-4 shrink-0", isDomainVerified ? "text-green-500" : "text-green-500/30")} />
                                         {isDomainVerified && (
-                                            <span className="text-[9px] font-bold text-green-600 dark:text-green-400 uppercase tracking-tighter whitespace-nowrap bg-green-50 dark:bg-green-900/10 px-1.5 py-0.5 rounded border border-green-100 dark:border-green-800/30">Matches Domain</span>
+                                            <span className="text-[9px] font-bold text-green-600 dark:text-green-400 uppercase   er whitespace-nowrap bg-green-50 dark:bg-green-900/10 px-1.5 py-0.5 rounded border border-green-100 dark:border-green-800/30">Matches Domain</span>
                                         )}
                                     </div>
                                 </>

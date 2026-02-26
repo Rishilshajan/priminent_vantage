@@ -117,7 +117,7 @@ export function ProfessionalVerificationCard({ application }: ProfessionalVerifi
                                     <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">
                                         {application.verification_document_url.split('/').pop()?.substring(0, 20)}...
                                     </p>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">PDF Document</p>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase   ">PDF Document</p>
                                 </div>
                                 <ExternalLink className="size-4 text-slate-300 group-hover/doc:text-primary ml-auto" />
                             </a>

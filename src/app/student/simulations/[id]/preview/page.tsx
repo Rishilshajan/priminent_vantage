@@ -104,7 +104,7 @@ export default async function SimulationPreviewPage({ params }: { params: Promis
                             <div id="about-company" className="scroll-mt-32 space-y-12">
                                 <div className="flex items-center gap-3">
                                     <div className="h-0.5 w-8 bg-primary rounded-full" style={orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {}} />
-                                    <h2 className="font-display text-3xl font-black tracking-tight text-slate-900 dark:text-white">About the Company</h2>
+                                    <h2 className="font-display text-3xl font-black    text-slate-900 dark:text-white">About the Company</h2>
                                 </div>
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div className="bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[32px] p-8 shadow-sm">
@@ -159,7 +159,7 @@ export default async function SimulationPreviewPage({ params }: { params: Promis
                             <div className="size-8 bg-primary/10 rounded flex items-center justify-center" style={orgBranding?.brand_color ? { backgroundColor: `${orgBranding.brand_color}1a` } : {}}>
                                 <Layers className="size-5 text-primary" style={orgBranding?.brand_color ? { color: orgBranding.brand_color } : {}} />
                             </div>
-                            <span className="font-display font-black text-lg tracking-tight text-slate-900 dark:text-white uppercase">
+                            <span className="font-display font-black text-lg    text-slate-900 dark:text-white uppercase">
                                 Prominent Vantage
                             </span>
                         </div>

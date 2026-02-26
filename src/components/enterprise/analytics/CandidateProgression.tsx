@@ -11,7 +11,7 @@ export default function CandidateProgression() {
             </div>
             <div className="space-y-2">
                 <div className="flex items-center gap-4">
-                    <div className="w-24 text-right"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Started</span></div>
+                    <div className="w-24 text-right"><span className="text-[10px] font-bold text-slate-400 uppercase   er">Started</span></div>
                     <div className="flex-1 h-8 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded flex items-center px-4 relative overflow-hidden group">
                         <div className="absolute inset-y-0 left-0 bg-primary opacity-5 w-full"></div>
                         <span className="relative z-10 text-[11px] font-semibold text-slate-600 dark:text-slate-300">12,450 candidates</span>
@@ -19,7 +19,7 @@ export default function CandidateProgression() {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="w-24 text-right"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Phase 1</span></div>
+                    <div className="w-24 text-right"><span className="text-[10px] font-bold text-slate-400 uppercase   er">Phase 1</span></div>
                     <div className="flex-1 h-8 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded flex items-center px-4 relative overflow-hidden group">
                         <div className="absolute inset-y-0 left-0 bg-primary opacity-10 w-[84%]"></div>
                         <span className="relative z-10 text-[11px] font-semibold text-slate-600 dark:text-slate-300">10,458 candidates</span>
@@ -27,7 +27,7 @@ export default function CandidateProgression() {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="w-24 text-right"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Assessment</span></div>
+                    <div className="w-24 text-right"><span className="text-[10px] font-bold text-slate-400 uppercase   er">Assessment</span></div>
                     <div className="flex-1 h-8 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded flex items-center px-4 relative overflow-hidden group">
                         <div className="absolute inset-y-0 left-0 bg-primary opacity-20 w-[71%]"></div>
                         <span className="relative z-10 text-[11px] font-semibold text-slate-600 dark:text-slate-300">8,839 candidates</span>
@@ -35,7 +35,7 @@ export default function CandidateProgression() {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="w-24 text-right"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Certified</span></div>
+                    <div className="w-24 text-right"><span className="text-[10px] font-bold text-slate-400 uppercase   er">Certified</span></div>
                     <div className="flex-1 h-8 bg-primary/90 rounded shadow-sm flex items-center px-4 relative overflow-hidden group">
                         <div className="absolute inset-y-0 left-0 bg-white/10 w-[68%]"></div>
                         <span className="relative z-10 text-[11px] font-semibold text-white">8,491 candidates</span>

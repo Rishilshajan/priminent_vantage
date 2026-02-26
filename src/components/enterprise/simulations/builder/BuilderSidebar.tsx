@@ -39,7 +39,7 @@ export default function BuilderSidebar({ currentStep, onStepChange, completedSte
                     <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
                         <span className="material-symbols-outlined text-sm">auto_graph</span>
                     </div>
-                    <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white uppercase">
+                    <span className="font-extrabold text-lg    text-slate-900 dark:text-white uppercase">
                         Priminent Vantage
                     </span>
                 </div>

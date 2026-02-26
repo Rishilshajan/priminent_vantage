@@ -260,7 +260,7 @@ export default function CertificationSetup({
                                                 <div className="bg-[#4e2a84] p-1 md:p-1.5 rounded md:rounded-lg">
                                                     <Activity className="size-3 md:size-5 text-white" />
                                                 </div>
-                                                <span className="font-bold text-[8px] md:text-base tracking-tight text-[#4e2a84] uppercase">
+                                                <span className="font-bold text-[8px] md:text-base    text-[#4e2a84] uppercase">
                                                     Priminent Vantage
                                                 </span>
                                             </div>
@@ -286,7 +286,7 @@ export default function CertificationSetup({
                                             </div>
 
                                             <div className="space-y-1 md:space-y-2">
-                                                <h3 className="text-2xl md:text-5xl lg:text-6xl font-certificate-title text-[#4e2a84] tracking-tight">
+                                                <h3 className="text-2xl md:text-5xl lg:text-6xl font-certificate-title text-[#4e2a84]   ">
                                                     John Doe
                                                 </h3>
                                                 <div className="max-w-2xl mx-auto">

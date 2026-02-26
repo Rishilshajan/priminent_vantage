@@ -107,7 +107,7 @@ export default function NotificationsView({ userProfile, orgName }: Notification
                         {/* Page Header */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                             <div>
-                                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Notification Preferences</h1>
+                                <h1 className="text-3xl font-black text-slate-900 dark:text-white   ">Notification Preferences</h1>
                                 <p className="text-slate-500 mt-1 max-w-lg">Configure automated communication channels, security alerts, and stakeholder engagement reports.</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-3">

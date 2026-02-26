@@ -4,7 +4,7 @@ export function EducatorBenefits() {
     return (
         <div className="space-y-10 order-2 lg:order-1">
             <div className="space-y-6">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold    text-foreground leading-[1.1]">
                     Empower your students with{" "}
                     <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-indigo-600">
                         real-world experience
@@ -68,7 +68,7 @@ export function EducatorBenefits() {
                 <div className="flex flex-wrap gap-8 items-center opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
                     <span className="text-xl font-bold font-serif text-foreground/60">STANFORD</span>
                     <span className="text-xl font-bold font-mono text-foreground/60">MIT</span>
-                    <span className="text-xl font-bold tracking-tighter text-foreground/60">HARVARD</span>
+                    <span className="text-xl font-bold   er text-foreground/60">HARVARD</span>
                     <span className="text-xl font-bold italic text-foreground/60">Berkeley</span>
                     <span className="text-xl font-bold tracking-widest text-foreground/60">OXFORD</span>
                 </div>

@@ -15,7 +15,7 @@ export default function ImpactReportHeatmap({ skills }: ImpactReportHeatmapProps
     return (
         <div className="bg-white dark:bg-slate-900 p-4 sm:p-8 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm h-full flex flex-col">
             <div className="mb-6 sm:mb-8">
-                <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">Skill Validation Heatmap</h3>
+                <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white   ">Skill Validation Heatmap</h3>
                 <p className="text-xs sm:text-sm text-slate-500 font-bold mt-1">Competency alignment across technical and behavioral pillars</p>
             </div>
 

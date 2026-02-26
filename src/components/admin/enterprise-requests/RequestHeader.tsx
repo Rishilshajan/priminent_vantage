@@ -28,7 +28,7 @@ export function RequestHeader({
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-8 mt-2 animate-fade-in-down">
             <div>
                 <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white   ">
                         {companyName}
                     </h2>
                     <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-200 dark:border-amber-800">

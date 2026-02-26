@@ -62,7 +62,7 @@ export default function TeamAccessView({ userProfile, orgName }: TeamAccessViewP
                         {/* Page Header */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                             <div>
-                                <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Team & Role Access</h1>
+                                <h1 className="text-4xl font-black text-slate-900 dark:text-white    leading-none">Team & Role Access</h1>
                                 <p className="text-slate-500 mt-3 max-w-lg font-medium">Manage your organization's professionals, control access levels, and invite new specialists to your workflow.</p>
                             </div>
                             <Button
@@ -82,7 +82,7 @@ export default function TeamAccessView({ userProfile, orgName }: TeamAccessViewP
                                         <div className={`size-14 rounded-2xl ${stat.bg} dark:bg-slate-800 flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform`}>
                                             <stat.icon className="size-7" />
                                         </div>
-                                        <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{stat.value}</span>
+                                        <span className="text-4xl font-black text-slate-900 dark:text-white   er">{stat.value}</span>
                                     </div>
                                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</p>
                                 </div>

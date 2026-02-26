@@ -14,7 +14,7 @@ interface TopDepartmentsProps {
 export default function TopDepartments({ departments }: TopDepartmentsProps) {
     return (
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6">
-            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight mb-5">Top Departments</h3>
+            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase    mb-5">Top Departments</h3>
             <div className="space-y-5">
                 {departments.map((dept) => (
                     <div key={dept.code} className="flex items-center gap-4 group cursor-default">

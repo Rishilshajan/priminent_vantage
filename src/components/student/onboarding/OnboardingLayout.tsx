@@ -42,7 +42,7 @@ export default function OnboardingLayout({ children, sidebar, stepper }: Onboard
                     <div className="text-[#7f13ec]">
                         <span className="material-symbols-outlined text-4xl">star</span>
                     </div>
-                    <h2 className="text-xl font-bold tracking-tight">Priminent Vantage</h2>
+                    <h2 className="text-xl font-bold   ">Priminent Vantage</h2>
                 </div>
 
                 <div className="flex items-center gap-4">

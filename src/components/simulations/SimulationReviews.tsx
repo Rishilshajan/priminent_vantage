@@ -43,7 +43,7 @@ export function SimulationReviews({ reviews = [], orgBranding }: SimulationRevie
         <section id="reviews" className="scroll-mt-32">
             <div className="flex items-center gap-3 mb-10">
                 <div className="h-0.5 w-8 bg-primary rounded-full" style={orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {}} />
-                <h2 className="font-display text-3xl font-black tracking-tight text-slate-900 dark:text-white">Student Reviews</h2>
+                <h2 className="font-display text-3xl font-black    text-slate-900 dark:text-white">Student Reviews</h2>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">

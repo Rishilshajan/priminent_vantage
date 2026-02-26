@@ -36,7 +36,7 @@ export function SimulationDetails({ simulation, orgBranding }: SimulationDetails
             <section>
                 <div className="flex items-center gap-3 mb-8">
                     <div className="h-0.5 w-8 bg-primary rounded-full" style={orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {}} />
-                    <h2 className="font-display text-3xl font-black tracking-tight text-slate-900 dark:text-white">Why this Simulation?</h2>
+                    <h2 className="font-display text-3xl font-black    text-slate-900 dark:text-white">Why this Simulation?</h2>
                 </div>
 
                 <div className="prose prose-slate dark:prose-invert max-w-none mb-10">
@@ -49,17 +49,17 @@ export function SimulationDetails({ simulation, orgBranding }: SimulationDetails
                     <div className="bg-white dark:bg-white/5 p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm">
                         <Rocket className="size-8 text-primary mb-4" style={brandColorText} />
                         <p className="font-black text-slate-900 dark:text-white mb-1">Real-world Tasks</p>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-tight">Based on internal projects</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase   ">Based on internal projects</p>
                     </div>
                     <div className="bg-white dark:bg-white/5 p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm">
                         <Eye className="size-8 text-primary mb-4" style={brandColorText} />
                         <p className="font-black text-slate-900 dark:text-white mb-1">CV Visibility</p>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-tight">Directly seen by recruiters</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase   ">Directly seen by recruiters</p>
                     </div>
                     <div className="bg-white dark:bg-white/5 p-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm">
                         <MessageSquare className="size-8 text-primary mb-4" style={brandColorText} />
                         <p className="font-black text-slate-900 dark:text-white mb-1">Expert Feedback</p>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-tight">Model answers provided</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase   ">Model answers provided</p>
                     </div>
                 </div>
             </section>
@@ -68,7 +68,7 @@ export function SimulationDetails({ simulation, orgBranding }: SimulationDetails
             <section>
                 <div className="flex items-center gap-3 mb-10">
                     <div className="h-0.5 w-8 bg-primary rounded-full" style={orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {}} />
-                    <h2 className="font-display text-3xl font-black tracking-tight text-slate-900 dark:text-white">What You Will Learn</h2>
+                    <h2 className="font-display text-3xl font-black    text-slate-900 dark:text-white">What You Will Learn</h2>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-x-12 gap-y-6">
@@ -89,7 +89,7 @@ export function SimulationDetails({ simulation, orgBranding }: SimulationDetails
             <section>
                 <div className="flex items-center gap-3 mb-10">
                     <div className="h-0.5 w-8 bg-primary rounded-full" style={orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {}} />
-                    <h2 className="font-display text-3xl font-black tracking-tight text-slate-900 dark:text-white">Skills You Will Master</h2>
+                    <h2 className="font-display text-3xl font-black    text-slate-900 dark:text-white">Skills You Will Master</h2>
                 </div>
 
                 <div className="flex flex-wrap gap-4">

@@ -15,7 +15,7 @@ export function AuthHero({ title, subtitle, features }: AuthHeroProps) {
             <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl opacity-60"></div>
 
             <div className="space-y-6">
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
+                <h1 className="text-4xl md:text-5xl font-bold    text-foreground leading-tight">
                     {title}
                 </h1>
                 <p className="text-lg text-muted-foreground max-w-md leading-relaxed">
@@ -47,7 +47,7 @@ export function AuthHero({ title, subtitle, features }: AuthHeroProps) {
                 </p>
                 <div className="flex flex-wrap gap-8 items-center opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
                     <span className="text-xl font-bold font-serif text-foreground/60">JPMorgan</span>
-                    <span className="text-xl font-bold font-sans text-foreground/60 tracking-tighter">Deloitte.</span>
+                    <span className="text-xl font-bold font-sans text-foreground/60   er">Deloitte.</span>
                     <span className="text-lg font-bold font-mono text-foreground/60 lowercase">accenture</span>
                     <span className="text-xl font-bold text-foreground/60 italic">Citi</span>
                 </div>

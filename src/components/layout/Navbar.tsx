@@ -32,7 +32,7 @@ export function Navbar() {
                         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-xl">
                             P
                         </div>
-                        <span className="font-bold text-xl tracking-tight text-primary">
+                        <span className="font-bold text-xl    text-primary">
                             Priminent Vantage
                         </span>
                     </Link>
@@ -120,7 +120,7 @@ export function Navbar() {
                                     <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-xl">
                                         P
                                     </div>
-                                    <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">
+                                    <span className="font-bold text-xl    text-slate-900 dark:text-white">
                                         Vantage
                                     </span>
                                 </Link>

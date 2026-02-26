@@ -77,7 +77,7 @@ export default function SkillsAndGoals({ initialData, onBack, onNext, onChange }
     return (
         <section className="space-y-16">
             <div className="space-y-3">
-                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white md:text-4xl">Skills & Career Goals</h1>
+                <h1 className="text-3xl font-black    text-slate-900 dark:text-white md:text-4xl">Skills & Career Goals</h1>
                 <p className="text-base font-medium text-slate-500">Define your unique strengths and where you want your career to go next.</p>
             </div>
 
@@ -144,7 +144,7 @@ export default function SkillsAndGoals({ initialData, onBack, onNext, onChange }
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7f13ec]/10 text-[#7f13ec]">
                         <Target size={24} />
                     </div>
-                    <h3 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Career Aspirations</h3>
+                    <h3 className="text-2xl font-black    text-slate-900 dark:text-white">Career Aspirations</h3>
                 </div>
 
                 <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3">

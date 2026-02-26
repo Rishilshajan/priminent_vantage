@@ -44,7 +44,7 @@ export default function CandidatesHeader({ onMenuClick }: CandidatesHeaderProps)
                             <Menu className="size-6" />
                         </button>
                         <div>
-                            <h2 className="text-2xl md:text-3xl font-black text-[#140d1b] dark:text-white tracking-tight leading-none md:leading-normal">Candidates</h2>
+                            <h2 className="text-2xl md:text-3xl font-black text-[#140d1b] dark:text-white    leading-none md:leading-normal">Candidates</h2>
                             <p className="text-slate-500 text-[11px] md:text-sm mt-1">Manage and track candidate performance across simulations.</p>
                         </div>
                     </div>

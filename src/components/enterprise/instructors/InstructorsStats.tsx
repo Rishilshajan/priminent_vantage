@@ -37,7 +37,7 @@ const InstructorsStats = ({ stats }: InstructorsStatsProps) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {statsConfig.map((stat, idx) => (
-                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-none transition-all group">
+                <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-3xl shadow-sm dark:hover:shadow-none transition-all group">
                     <div className="flex items-center justify-between mb-4">
                         <div className={`p-2.5 ${stat.bgColor} ${stat.textColor} rounded-2xl group-hover:scale-110 transition-transform`}>
                             <span className="material-symbols-outlined text-2xl font-bold">{stat.icon}</span>
@@ -46,7 +46,7 @@ const InstructorsStats = ({ stats }: InstructorsStatsProps) => {
                     <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
                         <div className="flex items-baseline gap-1 mt-1">
-                            <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{stat.value}</span>
+                            <span className="text-2xl font-black text-slate-900 dark:text-white   ">{stat.value}</span>
                         </div>
                     </div>
                 </div>

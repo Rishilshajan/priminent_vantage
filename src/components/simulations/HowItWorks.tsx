@@ -34,7 +34,7 @@ export function HowItWorks({ orgBranding, tasks }: HowItWorksProps) {
         <section className="py-20 lg:py-32 border-t border-slate-100 dark:border-white/5">
             <div className="flex items-center gap-3 mb-16">
                 <div className="h-0.5 w-8 bg-primary rounded-full" style={orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {}} />
-                <h2 className="font-display text-4xl font-black tracking-tight text-slate-900 dark:text-white">What You&apos;ll Do</h2>
+                <h2 className="font-display text-4xl font-black    text-slate-900 dark:text-white">What You&apos;ll Do</h2>
             </div>
 
             <div className="relative space-y-20">
@@ -50,7 +50,7 @@ export function HowItWorks({ orgBranding, tasks }: HowItWorksProps) {
                             {index + 1}
                         </div>
                         <div className="pt-2">
-                            <h4 className="text-2xl font-black mb-4 text-slate-900 dark:text-white tracking-tight">{step.title}</h4>
+                            <h4 className="text-2xl font-black mb-4 text-slate-900 dark:text-white   ">{step.title}</h4>
                             <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed max-w-2xl font-medium">
                                 {step.description}
                             </p>

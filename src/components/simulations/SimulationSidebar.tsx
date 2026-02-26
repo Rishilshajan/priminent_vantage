@@ -19,7 +19,7 @@ export function SimulationSidebar({ orgName = "Global Tech", orgBranding, aboutC
             {/* Related Jobs (Static fallback for now) */}
             <div className="bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[32px] shadow-sm p-8">
                 <div className="flex items-center justify-between mb-8">
-                    <h3 className="font-display font-black text-xl tracking-tight text-slate-900 dark:text-white">Related Roles</h3>
+                    <h3 className="font-display font-black text-xl    text-slate-900 dark:text-white">Related Roles</h3>
                     <span className="text-[10px] text-primary font-black px-3 py-1 bg-primary/10 rounded-full uppercase tracking-widest" style={orgBranding?.brand_color ? { color: orgBranding.brand_color, backgroundColor: `${orgBranding.brand_color}1a` } : {}}>
                         Active
                     </span>
@@ -35,7 +35,7 @@ export function SimulationSidebar({ orgName = "Global Tech", orgBranding, aboutC
                             className="block p-5 rounded-[24px] bg-slate-50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 transition-all border border-transparent hover:border-slate-200 dark:hover:border-white/10 group shadow-sm hover:shadow-md"
                         >
                             <p className="font-black text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors">{job.title}</p>
-                            <div className="flex items-center gap-4 text-[11px] font-bold text-slate-500 uppercase tracking-tight">
+                            <div className="flex items-center gap-4 text-[11px] font-bold text-slate-500 uppercase   ">
                                 <span className="flex items-center gap-1.5"><MapPin className="size-3.5" /> {job.location}</span>
                             </div>
                         </div>

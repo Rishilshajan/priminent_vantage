@@ -52,7 +52,7 @@ export default function AnalyticsView({ userProfile, organization }: AnalyticsVi
                                     <ChevronRight className="size-3" />
                                     <span className="text-primary">Executive Overview</span>
                                 </nav>
-                                <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white tracking-tight">Enterprise Analytics Dashboard</h2>
+                                <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white   ">Enterprise Analytics Dashboard</h2>
                             </div>
                             <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
                                 <div className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 bg-white dark:bg-[#1f1629] border border-slate-200 dark:border-slate-800 rounded text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors">

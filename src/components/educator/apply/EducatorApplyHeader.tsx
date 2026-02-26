@@ -12,9 +12,9 @@ export function EducatorApplyHeader() {
                     <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
                         <GraduationCap className="size-6" />
                     </div>
-                    <span className="font-bold text-xl tracking-tight text-primary">Priminent Vantage</span>
+                    <span className="font-bold text-xl    text-primary">Priminent Vantage</span>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-slate-900 dark:text-white tracking-tight">
+                <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-slate-900 dark:text-white   ">
                     Educator Access Application
                 </h1>
                 <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">

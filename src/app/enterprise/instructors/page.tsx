@@ -152,8 +152,8 @@ export default function InstructorsPage() {
                     {/* Page Heading */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div>
-                            <h1 className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Instructors</h1>
-                            <p className="text-[10px] md:text-xs font-black text-slate-400 mt-3 uppercase tracking-[0.2em]">Management & Performance Overview</p>
+                            <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">Instructors</h1>
+                            <p className="text-[11px] md:text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">Manage your instructors and their performance</p>
                         </div>
                         <button
                             onClick={() => setIsModalOpen(true)}

@@ -107,7 +107,7 @@ export function EducatorApplicationForm({ profile }: EducatorApplicationFormProp
                 <div className="size-24 bg-green-100 dark:bg-green-500/20 rounded-full flex items-center justify-center mb-8 shadow-inner shadow-green-500/10">
                     <CheckCircle2 className="size-12 text-green-600 dark:text-green-400" />
                 </div>
-                <h2 className="text-4xl font-extrabold mb-4 text-slate-900 dark:text-white tracking-tight italic">
+                <h2 className="text-4xl font-extrabold mb-4 text-slate-900 dark:text-white    italic">
                     Application Received!
                 </h2>
                 <p className="text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-md leading-relaxed">

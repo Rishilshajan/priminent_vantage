@@ -59,7 +59,7 @@ export function SkillsCertificationsView({ data, orgBranding }: SkillsCertificat
                     <div className="flex flex-col gap-8">
                         <div className="flex items-center justify-between">
                             <div className="flex flex-col gap-2">
-                                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white lg:text-4xl">
+                                <h1 className="text-3xl font-black    text-slate-900 dark:text-white lg:text-4xl">
                                     Skills & Certifications
                                 </h1>
                                 <p className="max-w-2xl text-base font-medium text-slate-500 dark:text-slate-400 lg:text-lg">
@@ -166,7 +166,7 @@ export function SkillsCertificationsView({ data, orgBranding }: SkillsCertificat
                             <div className="absolute right-[-100px] top-[-100px] size-[400px] rounded-full bg-white/5 blur-3xl" />
                             <div className="relative flex flex-col items-center justify-between gap-10 lg:flex-row lg:gap-12">
                                 <div className="flex flex-col gap-4 text-center lg:text-left">
-                                    <h2 className="text-2xl font-black tracking-tight lg:text-3xl">Professional Standing</h2>
+                                    <h2 className="text-2xl font-black    lg:text-3xl">Professional Standing</h2>
                                     <p className="max-w-md text-base font-medium text-white/70 lg:text-lg">Your profile's visibility increases with every verified certification you earn.</p>
                                 </div>
                                 <div className="flex flex-wrap items-center justify-center gap-10 lg:gap-16">

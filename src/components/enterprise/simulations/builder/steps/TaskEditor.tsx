@@ -413,7 +413,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Welcome Video</label>
                                     <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 dark:bg-blue-500/10 rounded-lg border border-blue-100 dark:border-blue-500/20">
                                         <div className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
-                                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tight">AWS S3 Secure Storage</span>
+                                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase   ">AWS S3 Secure Storage</span>
                                     </div>
                                 </div>
                                 {formData.welcome_video_url ? (

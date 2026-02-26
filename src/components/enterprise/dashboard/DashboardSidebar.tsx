@@ -53,7 +53,7 @@ export default function DashboardSidebar({ orgName = "Priminent", className, onL
                     <span className="material-symbols-outlined text-xl font-bold">diamond</span>
                 </div>
                 <div className="flex flex-col">
-                    <span className="font-bold text-base tracking-tight leading-none">{orgName}</span>
+                    <span className="font-bold text-base    leading-none">{orgName}</span>
                     <span className="text-[10px] text-primary font-black uppercase tracking-wider mt-0.5">Vantage</span>
                 </div>
             </div>
@@ -94,7 +94,7 @@ export default function DashboardSidebar({ orgName = "Priminent", className, onL
             </nav>
 
             <div className="p-4 mt-auto border-t border-slate-100 dark:border-slate-800">
-                <div className="bg-slate-50/50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 mb-4 shadow-sm">
+                <div className="px-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800 py-5 mb-4">
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-3">
                             {userProfile?.avatar_url ? (
@@ -108,7 +108,7 @@ export default function DashboardSidebar({ orgName = "Priminent", className, onL
                                 </div>
                             )}
                             <div className="flex flex-col overflow-hidden">
-                                <p className="text-[13px] font-black text-slate-900 dark:text-white truncate tracking-tight">
+                                <p className="text-[13px] font-black text-slate-900 dark:text-white truncate   ">
                                     {userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : "User Profile"}
                                 </p>
                                 <p className="text-[10px] text-slate-400 font-bold truncate tracking-wide mt-0.5">
@@ -136,7 +136,7 @@ export default function DashboardSidebar({ orgName = "Priminent", className, onL
 
                 <button
                     onClick={handleLogout}
-                    className="w-full h-11 text-[10px] font-black uppercase tracking-[0.2em] bg-red-50/50 hover:bg-red-50 text-red-500 border border-red-100/50 dark:bg-red-500/5 dark:hover:bg-red-500/10 dark:text-red-400 dark:border-red-500/10 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className=" w-full h-11 text-[10px] font-black uppercase tracking-[0.2em] bg-red-50/50 hover:bg-red-50 text-red-500 border border-red-100/50 dark:bg-red-500/5 dark:hover:bg-red-500/10 dark:text-red-400 dark:border-red-500/10 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                     Sign Out
                 </button>

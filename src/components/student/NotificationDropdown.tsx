@@ -59,7 +59,7 @@ export function NotificationDropdown({ brandColor }: { brandColor?: string }) {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4 dark:border-white/5 dark:bg-[#1e1429]">
                 <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Notifications</h3>
+                    <h3 className="text-lg font-black    text-slate-900 dark:text-white">Notifications</h3>
                 </div>
                 {count > 0 ? (
                     <span className="rounded-full border border-red-100 bg-red-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-red-600 dark:bg-red-500/10 dark:border-red-500/20">
@@ -103,7 +103,7 @@ export function NotificationDropdown({ brandColor }: { brandColor?: string }) {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <div className="mb-1 flex items-start justify-between">
-                                        <p className="pr-2 truncate text-[14px] font-black tracking-tight text-slate-900 dark:text-white">
+                                        <p className="pr-2 truncate text-[14px] font-black    text-slate-900 dark:text-white">
                                             {notif.title}
                                         </p>
                                         <span className="whitespace-nowrap pt-0.5 text-[11px] font-bold text-slate-400">

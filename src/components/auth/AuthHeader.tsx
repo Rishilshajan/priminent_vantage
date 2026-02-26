@@ -53,7 +53,7 @@ export function AuthHeader() {
                             <div className="text-white size-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
                                 <GraduationCap className="size-5" />
                             </div>
-                            <span className="text-xl font-bold tracking-tight text-foreground">
+                            <span className="text-xl font-bold    text-foreground">
                                 Priminent Vantage
                             </span>
                         </Link>
@@ -123,7 +123,7 @@ export function AuthHeader() {
                                     <div className="text-white size-8 bg-primary rounded-lg flex items-center justify-center shadow-md shadow-primary/20">
                                         <GraduationCap className="size-4" />
                                     </div>
-                                    <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white">
+                                    <span className="font-bold text-lg    text-slate-900 dark:text-white">
                                         Vantage
                                     </span>
                                 </div>

@@ -106,7 +106,7 @@ export function AcceptInvitationView({ token }: AcceptInvitationViewProps) {
                         <CheckCircle2 className="size-10 text-white" />
                     </div>
                     <div className="space-y-3">
-                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Successfully Joined!</h1>
+                        <h1 className="text-3xl font-black text-slate-900 dark:text-white   ">Successfully Joined!</h1>
                         <p className="text-sm text-slate-500 font-medium leading-relaxed">
                             Welcome to <span className="text-slate-900 dark:text-white font-black">{invitation.organizations?.name}</span>.
                             Your account is now active and ready.
@@ -147,7 +147,7 @@ export function AcceptInvitationView({ token }: AcceptInvitationViewProps) {
                         <AlertCircle className="size-8" />
                     </div>
                     <div className="space-y-2">
-                        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Access Denied</h1>
+                        <h1 className="text-2xl font-black text-slate-900 dark:text-white   ">Access Denied</h1>
                         <p className="text-sm text-slate-500 font-medium leading-relaxed">{error}</p>
                     </div>
                     <Button
@@ -177,7 +177,7 @@ export function AcceptInvitationView({ token }: AcceptInvitationViewProps) {
                             <div className="size-12 bg-white/20 rounded-2xl flex items-center justify-center mb-8 backdrop-blur-md">
                                 <ShieldCheck className="size-6" />
                             </div>
-                            <h2 className="text-3xl font-black leading-tight tracking-tight mb-4">You've Been Invited!</h2>
+                            <h2 className="text-3xl font-black leading-tight    mb-4">You've Been Invited!</h2>
                             <p className="text-xs text-white/70 font-bold uppercase tracking-widest">Platform Onboarding</p>
                         </div>
 

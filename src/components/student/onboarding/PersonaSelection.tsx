@@ -52,7 +52,7 @@ export default function PersonaSelection({ data, onChange }: PersonaSelectionPro
     return (
         <section className="space-y-12">
             <div className="space-y-3">
-                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white md:text-4xl">Basic Identity</h1>
+                <h1 className="text-3xl font-black    text-slate-900 dark:text-white md:text-4xl">Basic Identity</h1>
                 <p className="text-base font-medium text-slate-500">Provide your core details to help us personalize your Prominent Vantage experience.</p>
             </div>
 
@@ -177,7 +177,7 @@ export default function PersonaSelection({ data, onChange }: PersonaSelectionPro
 
             <div className="space-y-8 border-t border-slate-200/60 pt-12 dark:border-slate-800/60">
                 <div className="space-y-3">
-                    <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white md:text-3xl">User Type</h2>
+                    <h2 className="text-2xl font-black    text-slate-900 dark:text-white md:text-3xl">User Type</h2>
                     <p className="text-base font-medium text-slate-500">Which best describes you? This determines your onboarding path and next steps.</p>
                 </div>
 
@@ -209,7 +209,7 @@ export default function PersonaSelection({ data, onChange }: PersonaSelectionPro
 
                                 <div className="relative z-10">
                                     <div className="mb-1 flex items-center gap-2">
-                                        <h4 className={`text-base tracking-tight transition-colors duration-300 ${isSelected ? 'font-black text-[#7f13ec]' : 'font-bold text-slate-900 dark:text-white'
+                                        <h4 className={`text-base    transition-colors duration-300 ${isSelected ? 'font-black text-[#7f13ec]' : 'font-bold text-slate-900 dark:text-white'
                                             }`}>{persona.title}</h4>
                                         {isSelected && <span className="material-symbols-outlined text-[16px] text-[#7f13ec]">check_circle</span>}
                                     </div>

@@ -188,7 +188,7 @@ export function ActionReasonDialog({
                                 </div>
 
                                 <div className="space-y-2 pt-2">
-                                    <span className="text-[10px] font-black uppercase tracking-tight text-slate-400">Quick Presets</span>
+                                    <span className="text-[10px] font-black uppercase    text-slate-400">Quick Presets</span>
                                     <div className="flex flex-col gap-1.5">
                                         {PRESETS[type].map((preset, i) => (
                                             <button

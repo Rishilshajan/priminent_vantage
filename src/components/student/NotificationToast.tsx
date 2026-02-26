@@ -42,7 +42,7 @@ export function NotificationToast({ notification, onDismiss, onClick, brandColor
                     </div>
 
                     <div className="min-w-0 flex-1">
-                        <p className="text-sm font-black tracking-tight text-slate-900 dark:text-white">
+                        <p className="text-sm font-black    text-slate-900 dark:text-white">
                             {notification.title}
                         </p>
                         <p className="mt-1 text-[13px] leading-snug text-slate-500 dark:text-slate-400">

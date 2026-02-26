@@ -45,7 +45,7 @@ export default function ReportsView({ userProfile, organization, simulations }: 
                         {/* Page Title Section */}
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div>
-                                <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">Simulation Performance Hub</h2>
+                                <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white    leading-tight">Simulation Performance Hub</h2>
                                 <p className="text-slate-500 dark:text-slate-400 max-w-2xl text-sm md:text-base mt-2">Deep-dive into organizational simulation results, student completion metrics, and cohort performance analytics.</p>
                             </div>
                             <div className="flex gap-4">

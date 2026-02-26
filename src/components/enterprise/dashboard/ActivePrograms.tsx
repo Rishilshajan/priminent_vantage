@@ -21,7 +21,7 @@ export default function ActivePrograms({ programs }: ActiveProgramsProps) {
     return (
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Active Programs</h3>
+                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase">Active Programs</h3>
                 <Button variant="link" asChild className="text-[10px] font-black text-primary hover:underline uppercase tracking-widest p-0 h-auto">
                     <a href="/enterprise/simulations">View All</a>
                 </Button>
@@ -38,7 +38,7 @@ export default function ActivePrograms({ programs }: ActiveProgramsProps) {
                             </span>
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active: {program.duration}</span>
                         </div>
-                        <h4 className="font-black text-sm mb-0.5 text-slate-900 dark:text-white group-hover:text-primary transition-colors tracking-tight">{program.name}</h4>
+                        <h4 className="font-black text-sm mb-0.5 text-slate-900 dark:text-white group-hover:text-primary transition-colors">{program.name}</h4>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Type: {program.department}</p>
 
                         <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest mb-2">

@@ -50,7 +50,7 @@ export default function ImpactReportView({ data }: ImpactReportViewProps) {
                                 <span className="text-slate-600 dark:text-slate-300">Impact Analysis</span>
                             </nav>
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4">
-                                <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                                <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white    leading-tight">
                                     {data.simulation.title}
                                 </h1>
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 uppercase tracking-widest shrink-0 w-fit">

@@ -32,12 +32,8 @@ export default function SimulationsView({ orgName, stats, simulations, userProfi
                     {/* Page Title */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                                Virtual Job Simulations
-                            </h1>
-                            <p className="text-sm text-slate-500 mt-1">
-                                Manage and track your organization&apos;s custom learning environments.
-                            </p>
+                            <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">Virtual Job Simulations</h1>
+                            <p className="text-[11px] md:text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">Manage and track your organization&apos;s custom learning environments.</p>
                         </div>
                         <Button
                             asChild

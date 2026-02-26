@@ -56,7 +56,7 @@ export default function ProfessionalExperience({ initialData, onBack, onNext, on
     return (
         <section className="space-y-16">
             <div className="space-y-3">
-                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white md:text-4xl">Professional Experience</h1>
+                <h1 className="text-3xl font-black    text-slate-900 dark:text-white md:text-4xl">Professional Experience</h1>
                 <p className="text-base font-medium text-slate-500">Highlight your career journey and key professional milestones.</p>
             </div>
 
@@ -83,7 +83,7 @@ export default function ProfessionalExperience({ initialData, onBack, onNext, on
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7f13ec]/10 text-[#7f13ec]">
                             <Briefcase size={20} />
                         </div>
-                        <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Work History</h3>
+                        <h3 className="text-xl font-black    text-slate-900 dark:text-white">Work History</h3>
                     </div>
                     <button
                         onClick={handleAddExperience}

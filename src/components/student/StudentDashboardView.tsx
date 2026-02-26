@@ -115,7 +115,7 @@ export default function StudentDashboardView({ profile: initialProfile }: Studen
                     <div className="flex flex-col gap-8">
                         <div className="flex items-center justify-between">
                             <div className="flex flex-col gap-2">
-                                <h1 className="text-3xl font-black leading-tight tracking-tight text-text-main dark:text-white lg:text-4xl">
+                                <h1 className="text-3xl font-black leading-tight    text-text-main dark:text-white lg:text-4xl">
                                     Ready for your next challenge, {profile?.first_name || 'Student'}?
                                 </h1>
                                 <p className="text-base font-medium text-text-secondary dark:text-gray-400">

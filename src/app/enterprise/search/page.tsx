@@ -34,7 +34,7 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 custom-scrollbar">
                     <div className="flex flex-col gap-2">
-                        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Search Results</h1>
+                        <h1 className="text-2xl font-black text-slate-900 dark:text-white   ">Search Results</h1>
                         <p className="text-sm text-slate-500">Showing results for "{query}"</p>
                     </div>
 

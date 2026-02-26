@@ -72,7 +72,7 @@ export default function AcademicBackground({ persona, initialData, onBack, onNex
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7f13ec]/10 text-[#7f13ec]">
                     <GraduationCap size={20} />
                 </div>
-                <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Core Education</h3>
+                <h3 className="text-xl font-black    text-slate-900 dark:text-white">Core Education</h3>
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -120,7 +120,7 @@ export default function AcademicBackground({ persona, initialData, onBack, onNex
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#a344ff]/10 text-[#a344ff]">
                         <Award size={20} />
                     </div>
-                    <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Certifications</h3>
+                    <h3 className="text-xl font-black    text-slate-900 dark:text-white">Certifications</h3>
                 </div>
                 <button
                     onClick={handleAddCertification}
@@ -196,7 +196,7 @@ export default function AcademicBackground({ persona, initialData, onBack, onNex
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 uppercase font-black text-[10px]">
                     ST
                 </div>
-                <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Student Details</h3>
+                <h3 className="text-xl font-black    text-slate-900 dark:text-white">Student Details</h3>
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-3">
@@ -267,7 +267,7 @@ export default function AcademicBackground({ persona, initialData, onBack, onNex
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
                     <RefreshCw size={20} />
                 </div>
-                <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Career Transition</h3>
+                <h3 className="text-xl font-black    text-slate-900 dark:text-white">Career Transition</h3>
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-3">
@@ -329,7 +329,7 @@ export default function AcademicBackground({ persona, initialData, onBack, onNex
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
                     <Undo2 size={20} />
                 </div>
-                <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Returning Professional</h3>
+                <h3 className="text-xl font-black    text-slate-900 dark:text-white">Returning Professional</h3>
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-3">
@@ -363,7 +363,7 @@ export default function AcademicBackground({ persona, initialData, onBack, onNex
     return (
         <section className="space-y-16">
             <div className="space-y-3">
-                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white md:text-4xl">Background & Education</h1>
+                <h1 className="text-3xl font-black    text-slate-900 dark:text-white md:text-4xl">Background & Education</h1>
                 <p className="text-base font-medium text-slate-500">Build your academic foundation and provide transition context.</p>
             </div>
 

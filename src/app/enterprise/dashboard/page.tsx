@@ -60,7 +60,7 @@ export default async function EnterpriseDashboard(props: {
                     {/* Welcome Section */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Enterprise Overview</h1>
+                            <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">Enterprise Overview</h1>
                             <p className="text-[11px] md:text-sm font-medium text-slate-500 mt-1 uppercase tracking-wider">Real-time performance metrics for {orgName}</p>
                         </div>
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">

@@ -17,7 +17,7 @@ export function FormSection({ icon: Icon, number, title, children }: FormSection
                 <div className="p-2.5 bg-primary/10 rounded-xl">
                     <Icon className="size-6 text-primary" />
                 </div>
-                <h2 className="text-xl font-bold dark:text-white tracking-tight">
+                <h2 className="text-xl font-bold dark:text-white   ">
                     <span className="text-primary/50 font-mono text-lg mr-1">{number}.</span> {title}
                 </h2>
             </div>

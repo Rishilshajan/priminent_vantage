@@ -16,7 +16,7 @@ interface TopInstructorsProps {
 export default function TopInstructors({ instructors }: TopInstructorsProps) {
     return (
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6">
-            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight mb-5">Top Instructors</h3>
+            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase mb-5">Top Instructors</h3>
             <div className="space-y-5">
                 {instructors.map((instructor) => (
                     <div key={instructor.id} className="flex items-center gap-4 group cursor-default">

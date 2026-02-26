@@ -19,7 +19,7 @@ export default function ConfirmationPage() {
                                     <CheckCircle className="size-10" />
                                 </div>
                                 <div className="flex flex-col gap-4">
-                                    <h1 className="text-foreground tracking-tight text-[32px] font-black leading-tight md:text-5xl max-w-[720px]">
+                                    <h1 className="text-foreground    text-[32px] font-black leading-tight md:text-5xl max-w-[720px]">
                                         Request Received
                                     </h1>
                                     <p className="text-muted-foreground text-base md:text-lg font-normal leading-relaxed max-w-[720px]">

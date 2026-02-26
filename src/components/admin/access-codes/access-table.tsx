@@ -191,7 +191,7 @@ export function AccessCodeTable({ codes = [] }: { codes: AccessCode[] }) {
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
                                                 <span className={cn("text-sm font-semibold transition-all", isRevoked ? "text-slate-400 opacity-60" : "text-slate-900 dark:text-white")}>{companyName}</span>
-                                                <span className="text-[10px] text-slate-500 uppercase tracking-tighter font-medium">{industry}</span>
+                                                <span className="text-[10px] text-slate-500 uppercase   er font-medium">{industry}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{formatDate(code.created_at)}</td>

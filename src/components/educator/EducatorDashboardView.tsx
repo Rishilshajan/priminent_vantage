@@ -43,7 +43,7 @@ export default function EducatorDashboardView({ profile }: EducatorDashboardView
                     {/* Header Section */}
                     <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
                         <div className="flex flex-col gap-2">
-                            <h1 className="text-3xl font-bold leading-tight tracking-tight text-text-main dark:text-white lg:text-4xl">
+                            <h1 className="text-3xl font-bold leading-tight    text-text-main dark:text-white lg:text-4xl">
                                 Welcome back, {profile?.first_name || 'Educator'}!
                             </h1>
                             <p className="text-base text-text-secondary dark:text-gray-400">

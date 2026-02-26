@@ -67,20 +67,20 @@ export default function ReportsSelectionGrid({ simulations }: ReportsSelectionGr
                         {/* Content */}
                         <div className="p-6 flex-1 flex flex-col justify-between">
                             <div>
-                                <h3 className="font-black text-lg text-slate-900 dark:text-white tracking-tight leading-tight group-hover:text-primary transition-colors duration-300 mb-6 line-clamp-2 min-h-[3rem]">
+                                <h3 className="font-black text-lg text-slate-900 dark:text-white    leading-tight group-hover:text-primary transition-colors duration-300 mb-6 line-clamp-2 min-h-[3rem]">
                                     {sim.title}
                                 </h3>
 
                                 <div className="grid grid-cols-2 gap-4 mb-6">
                                     <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-[20px] border border-slate-100 dark:border-white/5">
                                         <span className="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">Completion</span>
-                                        <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                        <span className="text-xl font-black text-slate-900 dark:text-white   er">
                                             {sim.completion_rate ? `${sim.completion_rate}%` : "--"}
                                         </span>
                                     </div>
                                     <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-[20px] border border-slate-100 dark:border-white/5">
                                         <span className="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">Avg. Score</span>
-                                        <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                        <span className="text-xl font-black text-slate-900 dark:text-white   er">
                                             {sim.avg_score ? `${sim.avg_score}/100` : "--"}
                                         </span>
                                     </div>

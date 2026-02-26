@@ -42,8 +42,8 @@ export function RecommendedSimulations({ recommendations, orgBranding }: Recomme
         <section className="flex flex-col gap-8">
             <div className="flex items-center justify-between border-t border-slate-200 pt-12 dark:border-white/10">
                 <div className="flex flex-col gap-1">
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Recommended for You</h2>
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-tight">Based on your skills and professional goals</p>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white   ">Recommended for You</h2>
+                    <p className="text-sm font-bold text-slate-400 uppercase   ">Based on your skills and professional goals</p>
                 </div>
                 <Link
                     href="/student/library"
@@ -91,7 +91,7 @@ export function RecommendedSimulations({ recommendations, orgBranding }: Recomme
                             {/* Content */}
                             <div className="p-6 flex-1 flex flex-col justify-between">
                                 <div>
-                                    <h3 className="font-black text-lg text-slate-900 dark:text-white tracking-tight leading-tight group-hover:text-primary transition-colors duration-300 mb-6 line-clamp-2 min-h-[3rem]">
+                                    <h3 className="font-black text-lg text-slate-900 dark:text-white    leading-tight group-hover:text-primary transition-colors duration-300 mb-6 line-clamp-2 min-h-[3rem]">
                                         {sim.title}
                                     </h3>
 
@@ -99,12 +99,12 @@ export function RecommendedSimulations({ recommendations, orgBranding }: Recomme
                                     <div className="mb-6">
                                         <div className="bg-slate-50 dark:bg-white/5 p-5 rounded-[20px] border border-slate-100 dark:border-white/5">
                                             <span className="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Partnering Organization</span>
-                                            <span className="truncate block text-xl font-black text-slate-900 dark:text-white tracking-tighter mb-1">
+                                            <span className="truncate block text-xl font-black text-slate-900 dark:text-white   er mb-1">
                                                 {orgName}
                                             </span>
                                             <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
                                                 <Clock size={12} />
-                                                <span className="text-[10px] font-bold uppercase tracking-tight">
+                                                <span className="text-[10px] font-bold uppercase   ">
                                                     Published {formatDate(sim.created_at)}
                                                 </span>
                                             </div>

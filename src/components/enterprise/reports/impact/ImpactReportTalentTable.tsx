@@ -23,7 +23,7 @@ export default function ImpactReportTalentTable({ talent, totalCandidates }: Imp
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm overflow-hidden mb-8 sm:mb-12">
             <div className="p-5 sm:p-8 border-b border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
                 <div>
-                    <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">Top Talent Highlights</h3>
+                    <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white   ">Top Talent Highlights</h3>
                     <p className="text-xs sm:text-sm text-slate-500 font-bold mt-1">Top highest scoring candidates ready for recruitment contact</p>
                 </div>
                 <button className="text-[10px] sm:text-[11px] font-black text-primary uppercase tracking-[0.15em] hover:translate-x-1 transition-transform inline-flex items-center gap-1.5 group w-fit">

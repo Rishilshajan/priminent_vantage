@@ -71,7 +71,7 @@ export function MySimulationsView({ initialEnrollments, userProfile, orgBranding
                     <div className="flex flex-col gap-8">
                         <div className="flex items-center justify-between">
                             <div className="flex flex-col gap-2">
-                                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white lg:text-4xl">
+                                <h1 className="text-3xl font-black    text-slate-900 dark:text-white lg:text-4xl">
                                     My Simulations
                                 </h1>
                                 <p className="max-w-2xl text-base font-medium text-slate-500 dark:text-slate-400 lg:text-lg">

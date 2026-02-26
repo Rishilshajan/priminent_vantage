@@ -16,7 +16,7 @@ export default function EnterpriseSetupPage() {
                     <Monitor className="size-6" />
                 </div>
                 <div className="flex flex-col">
-                    <h1 className="text-slate-900 dark:text-white text-lg font-bold leading-none tracking-tight">Priminent</h1>
+                    <h1 className="text-slate-900 dark:text-white text-lg font-bold leading-none   ">Priminent</h1>
                     <p className="text-primary text-[10px] font-black uppercase tracking-[0.2em] mt-1">Vantage</p>
                 </div>
             </div>

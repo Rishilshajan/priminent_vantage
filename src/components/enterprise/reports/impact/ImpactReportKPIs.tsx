@@ -67,7 +67,7 @@ export default function ImpactReportKPIs({ stats }: ImpactReportKPIsProps) {
                     </div>
                     <div>
                         <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">{kpi.label}</p>
-                        <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white   ">
                             {kpi.value}
                         </h3>
                     </div>

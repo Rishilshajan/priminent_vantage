@@ -57,24 +57,33 @@ const InviteInstructorModal = ({ isOpen, onClose, onInviteSuccess }: InviteInstr
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose} />
+            <div
+                className="absolute inset-0 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-200"
+                onClick={onClose}
+            />
 
             <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden relative z-10 animate-in zoom-in-95 duration-300">
-                <div className="px-8 pt-8 pb-4 flex justify-between items-start">
-                    <div>
-                        <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                            {success ? 'Invitation Created' : 'Invite New Specialist'}
-                        </h3>
-                        <p className="text-sm text-slate-500 font-medium mt-1">
-                            {success ? 'Account setup link is ready for delivery.' : 'Add professionals to your organization workflow.'}
-                        </p>
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-primary/12 via-primary/6 to-transparent" />
+                <div className="flex justify-between items-start gap-4 relative px-6 sm:px-8 pt-7 pb-5 shrink-0">
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-3">
+                            <div className="size-10 rounded-2xl bg-primary/10 border border-primary/15 grid place-items-center">
+                                <span className="material-symbols-outlined text-primary">
+                                    person_add
+                                </span>
+                            </div>
+                            <div className="min-w-0">
+                                <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+                                    {success ? "Invitation Created" : "Invite New Specialist"}
+                                </h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">
+                                    {success
+                                        ? "Account setup link is ready for delivery."
+                                        : "Add professionals to your organization workflow."}
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="size-10 flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:rotate-90 transition-all duration-300"
-                    >
-                        <X className="size-5" />
-                    </button>
                 </div>
 
                 {success ? (
@@ -128,7 +137,7 @@ const InviteInstructorModal = ({ isOpen, onClose, onInviteSuccess }: InviteInstr
                     </div>
                 ) : (
                     <form onSubmit={handleInvite}>
-                        <div className="p-8 space-y-6">
+                        <div className="px-8 py-4 space-y-6">
                             {error && (
                                 <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl flex items-center gap-3 text-red-500 animate-in shake duration-300">
                                     <AlertCircle className="size-5 shrink-0" />
@@ -201,7 +210,9 @@ const InviteInstructorModal = ({ isOpen, onClose, onInviteSuccess }: InviteInstr
                             </div>
                         </div>
 
-                        <div className="p-8 bg-slate-50/50 dark:bg-slate-950/30 flex gap-4 justify-end border-t border-slate-100 dark:border-slate-800">
+                        <hr className="border-slate-100 dark:border-slate-800" />
+
+                        <div className="px-8 py-4 bg-slate-50/50 dark:bg-slate-950/30 flex gap-4 justify-end border-t border-slate-100 dark:border-slate-800">
                             <button
                                 type="button"
                                 onClick={onClose}

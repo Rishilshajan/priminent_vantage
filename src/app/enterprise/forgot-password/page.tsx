@@ -64,7 +64,7 @@ export default function EnterpriseForgotPasswordPage() {
                         <div className="mx-auto h-16 w-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
                             <Lock className="h-8 w-8 text-primary" />
                         </div>
-                        <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                        <h2 className="text-2xl font-bold text-foreground">
                             Reset Password
                         </h2>
                         <p className="mt-2 text-muted-foreground text-sm">

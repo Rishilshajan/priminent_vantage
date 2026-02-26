@@ -84,7 +84,7 @@ export default function PrivacyView({ userProfile, orgName }: PrivacyViewProps) 
                         {/* Page Header */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                             <div>
-                                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Enterprise Data & Privacy Settings</h1>
+                                <h1 className="text-3xl font-black text-slate-900 dark:text-white   ">Enterprise Data & Privacy Settings</h1>
                                 <p className="text-slate-500 mt-1 max-w-lg">Configure global data handling, retention policies, and regulatory compliance standards.</p>
                             </div>
                             <div className="flex items-center gap-3">

@@ -19,7 +19,7 @@ export default function ImpactReportFunnel({ steps }: ImpactReportFunnelProps) {
         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
                 <div>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Candidate Funnel Visualization</h3>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white   ">Candidate Funnel Visualization</h3>
                     <p className="text-sm text-slate-500 font-bold mt-1">Tracking retention and drop-off rates through simulation milestones</p>
                 </div>
                 <div className="flex items-center gap-6">

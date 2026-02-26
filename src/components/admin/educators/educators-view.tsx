@@ -84,7 +84,7 @@ export default function EducatorsDashboardView({ profile }: { profile: any }) {
                                 <Menu className="size-6" />
                             </button>
                             <div>
-                                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-[#140d1b] dark:text-white">Educators Engagement</h1>
+                                <h1 className="text-2xl md:text-3xl font-black    text-[#140d1b] dark:text-white">Educators Engagement</h1>
                                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Track and manage educator activity and classroom engagement across the platform.</p>
                             </div>
                         </div>

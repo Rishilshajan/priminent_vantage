@@ -67,7 +67,7 @@ export function StudentHeader({ userData, orgBranding }: StudentHeaderProps) {
                             <Layers className="size-6 text-white" />
                         </div>
                     )}
-                    <span className="font-display font-black text-xl tracking-tight text-slate-900 dark:text-white uppercase">
+                    <span className="font-display font-black text-xl    text-slate-900 dark:text-white uppercase">
                         VANTAGE
                     </span>
                 </Link>

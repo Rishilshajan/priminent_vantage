@@ -84,7 +84,7 @@ export default function PresenceAndVisibility({ initialData, onBack, onNext, onC
     return (
         <section className="space-y-16">
             <div className="space-y-3 text-center lg:text-left">
-                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white md:text-4xl">Presence & Visibility</h1>
+                <h1 className="text-3xl font-black    text-slate-900 dark:text-white md:text-4xl">Presence & Visibility</h1>
                 <p className="text-base font-medium text-slate-500">How would you like to be seen by employers and the community?</p>
             </div>
 

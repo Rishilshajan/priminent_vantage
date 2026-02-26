@@ -34,10 +34,10 @@ export default function PerformanceChart({ data }: PerformanceChartProps) {
     }
 
     return (
-        <div className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] border border-white dark:border-slate-800 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col h-full transition-all hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]">
+        <div className="bg-white/70 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] border border-white dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full transition-all">
             <div className="p-8 border-b border-slate-100/50 dark:border-slate-800/50 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
                 <div>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white    flex items-center gap-2">
                         Enrollment vs Completion
                         <span className="size-2 rounded-full bg-green-500 animate-pulse"></span>
                     </h3>
