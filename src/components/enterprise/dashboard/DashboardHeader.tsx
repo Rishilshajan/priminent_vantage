@@ -107,11 +107,20 @@ export default function DashboardHeader({ orgName, userProfile }: DashboardHeade
                 <div className="flex items-center gap-3 group cursor-pointer">
                     <div className="text-right hidden sm:block">
                         <p className="text-sm font-black leading-none mb-1 text-slate-900 dark:text-white uppercase tracking-tight">{orgName}</p>
-                        <p className="text-[10px] text-primary font-black uppercase tracking-widest leading-none">Enterprise Admin</p>
+                        <p className="text-[10px] text-primary font-black uppercase tracking-widest leading-none">
+                            {userProfile?.role === 'admin' || userProfile?.role === 'super_admin' ? 'Enterprise Admin' : userProfile?.role || 'Member'}
+                        </p>
                     </div>
-                    <div className="size-9 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400">
-                        <span className="material-symbols-outlined text-[20px]">person</span>
-                    </div>
+                    {userProfile?.orgLogo || userProfile?.avatar_url ? (
+                        <div
+                            className="size-9 rounded-full bg-cover bg-center border border-slate-200 dark:border-slate-700 shadow-sm transition-transform group-hover:scale-105"
+                            style={{ backgroundImage: `url('${userProfile?.orgLogo || userProfile?.avatar_url}')` }}
+                        />
+                    ) : (
+                        <div className="size-9 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400">
+                            <span className="material-symbols-outlined text-[20px]">person</span>
+                        </div>
+                    )}
                 </div>
             </div>
         </header>

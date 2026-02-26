@@ -227,10 +227,12 @@ export const enterpriseManagementService = {
     async getUser(userId: string) {
         const supabase = await createClient();
         try {
-            const { data: userProfile } = await supabase.from('profiles').select('first_name, last_name, email, role').eq('id', userId).single();
-            const { data: member } = await supabase.from('organization_members').select('organizations(name)').eq('user_id', userId).maybeSingle();
-            const orgName = member?.organizations ? (member.organizations as any).name : "Enterprise";
-            return { userProfile, orgName };
+            const { data: userProfile } = await supabase.from('profiles').select('first_name, last_name, email, role, avatar_url').eq('id', userId).single();
+            const { data: member } = await supabase.from('organization_members').select('organizations(name, logo_url)').eq('user_id', userId).maybeSingle();
+            const org = member?.organizations as any;
+            const orgName = org?.name || "Enterprise";
+            const orgLogo = org?.logo_url || null;
+            return { userProfile, orgName, orgLogo };
         } catch (err) {
             console.error("Error in enterpriseManagementService.getUser:", err);
             throw err;
@@ -297,6 +299,76 @@ export const enterpriseManagementService = {
         } catch (err) {
             console.error("Error in enterpriseManagementService.uploadAsset:", err);
             throw err;
+        }
+    },
+
+    // Fetches all instructors associated with the enterprise organization, including their professional profiles
+    async getInstructors(userId: string) {
+        const supabase = await createClient();
+        try {
+            const { data: membership } = await supabase.from('organization_members').select('org_id').eq('user_id', userId).maybeSingle();
+            if (!membership) throw new Error("Unauthorized");
+
+            const { data: instructors, error } = await supabase
+                .from('organization_members')
+                .select(`
+                    role,
+                    joined_at,
+                    profiles!inner(
+                        id, 
+                        first_name, 
+                        last_name, 
+                        email, 
+                        avatar_url, 
+                        role,
+                        instructor_profiles(professional_title, linkedin_url, years_of_experience, bio, expertise_tags)
+                    )
+                `)
+                .eq('org_id', membership.org_id)
+                .in('role', ['instructor', 'reviewer', 'admin', 'member']);
+
+            if (error) throw error;
+
+            return (instructors as any[]).map(member => {
+                const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+                const iProfile = profile.instructor_profiles;
+                const instructorProfile = Array.isArray(iProfile) ? iProfile[0] : iProfile;
+
+                return {
+                    id: profile.id,
+                    name: `${profile.first_name} ${profile.last_name}`.trim(),
+                    email: profile.email,
+                    avatar: profile.avatar_url,
+                    role: instructorProfile?.professional_title || member.role,
+                    status: 'Active',
+                    lastActivity: member.joined_at,
+                    simulations: [],
+                    instructorProfile: instructorProfile
+                };
+            });
+        } catch (err) {
+            console.error("Error in enterpriseManagementService.getInstructors:", err);
+            throw err;
+        }
+    },
+
+    // Updates or creates an instructor's professional profile (bio, title, expertise)
+    async updateInstructorProfile(userId: string, data: { professional_title?: string, linkedin_url?: string, years_of_experience?: number, bio?: string, expertise_tags?: string[] }) {
+        const supabase = await createClient();
+        try {
+            const { error } = await supabase
+                .from('instructor_profiles')
+                .upsert({
+                    id: userId,
+                    ...data,
+                    updated_at: new Date().toISOString()
+                });
+
+            if (error) throw error;
+            return { success: true };
+        } catch (err) {
+            console.error("Error in enterpriseManagementService.updateInstructorProfile:", err);
+            return { success: false, error: (err as any).message };
         }
     }
 };

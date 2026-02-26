@@ -13,11 +13,10 @@ export const metadata = {
     title: "Enterprise Dashboard - Priminent Vantage",
 }
 
-export default async function EnterpriseDashboard({
-    searchParams
-}: {
-    searchParams: { period?: '30d' | 'all', month?: string, year?: string }
+export default async function EnterpriseDashboard(props: {
+    searchParams: Promise<{ period?: '30d' | 'all', month?: string, year?: string }>
 }) {
+    const searchParams = await props.searchParams;
     const period = searchParams.period || '30d';
     const month = searchParams.month ? parseInt(searchParams.month) : undefined;
     const year = searchParams.year ? parseInt(searchParams.year) : undefined;
@@ -44,13 +43,18 @@ export default async function EnterpriseDashboard({
     const { organization, stats, chartData, activePrograms, topInstructors, userProfile } = response.data;
     const org = (Array.isArray(organization) ? organization[0] : organization) as any;
     const orgName = org?.name || "Organization";
+    const orgLogo = org?.logo_url || null;
+
+    // Attach orgLogo to userProfile for Header's convenience if needed, 
+    // but Sidebar expects it separately now.
+    const enrichedProfile = userProfile ? { ...userProfile, orgLogo } : null;
 
     return (
         <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
-            <DashboardSidebar orgName={orgName} userProfile={userProfile} />
+            <DashboardSidebar orgName={orgName} userProfile={enrichedProfile as any} orgLogo={orgLogo} />
 
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <DashboardHeader orgName={orgName} userProfile={userProfile} />
+                <DashboardHeader orgName={orgName} userProfile={enrichedProfile} />
 
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 space-y-8 custom-scrollbar">
                     {/* Welcome Section */}

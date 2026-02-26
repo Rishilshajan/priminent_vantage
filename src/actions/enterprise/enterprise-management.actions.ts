@@ -104,3 +104,68 @@ export async function uploadOrganizationAsset(formData: FormData) {
         return { success: false as const, error: err.message || 'Upload failed' };
     }
 }
+
+// Fetches all instructors for the currently authenticated enterprise user's organization
+export async function getInstructors() {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false as const, error: "Unauthorized" };
+        const result = await enterpriseManagementService.getInstructors(user.id);
+        return { success: true as const, data: result };
+    } catch (err: any) {
+        return { success: false as const, error: err.message || "Failed to load instructors." };
+    }
+}
+
+/**
+ * Creates and sends a secure invitation link for a new instructor or role.
+ */
+export async function createInstructorInvitation(data: { email: string; role: 'enterprise_admin' | 'instructor' | 'reviewer' }) {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false as const, error: "Unauthorized" };
+
+        const { data: member } = await supabase.from('organization_members').select('org_id').eq('user_id', user.id).maybeSingle();
+        if (!member) return { success: false as const, error: "Membership not found" };
+
+        // Dynamic import to avoid circular dependencies if any
+        const { invitationService } = await import('@/lib/enterprise/invitation.service');
+        const result = await invitationService.createInvitation({
+            email: data.email,
+            orgId: member.org_id,
+            role: data.role,
+            invitedBy: user.id
+        });
+
+        if (!result.success) throw new Error(result.error);
+        return { success: true as const, data: result.data };
+    } catch (err: any) {
+        return { success: false as const, error: err.message || "Failed to create invitation." };
+    }
+}
+
+/**
+ * Verifies if an invitation token is valid.
+ */
+export async function verifyInvitationAction(token: string) {
+    try {
+        const { invitationService } = await import('@/lib/enterprise/invitation.service');
+        return await invitationService.verifyInvitation(token);
+    } catch (err: any) {
+        return { success: false as const, error: err.message || "Verification failed" };
+    }
+}
+
+/**
+ * Accepts an invitation for a specific user.
+ */
+export async function acceptInvitationAction(token: string, userId: string) {
+    try {
+        const { invitationService } = await import('@/lib/enterprise/invitation.service');
+        return await invitationService.acceptInvitation(token, userId);
+    } catch (err: any) {
+        return { success: false as const, error: err.message || "Acceptance failed" };
+    }
+}

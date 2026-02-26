@@ -18,10 +18,12 @@ interface DashboardSidebarProps {
         last_name: string;
         email: string;
         role: string;
+        avatar_url?: string | null;
     } | null;
+    orgLogo?: string | null;
 }
 
-export default function DashboardSidebar({ orgName = "Priminent", className, onLinkClick, userProfile }: DashboardSidebarProps) {
+export default function DashboardSidebar({ orgName = "Priminent", className, onLinkClick, userProfile, orgLogo }: DashboardSidebarProps) {
     const pathname = usePathname()
 
     const handleLogout = async () => {
@@ -40,7 +42,7 @@ export default function DashboardSidebar({ orgName = "Priminent", className, onL
     ]
 
     const orgItems = [
-        { label: "Departments", href: "#", icon: "corporate_fare" },
+        { label: "Instructors", href: "/enterprise/instructors", icon: "corporate_fare" },
         { label: "Settings", href: "/enterprise/settings/organization", icon: "settings" },
     ]
 
@@ -91,32 +93,53 @@ export default function DashboardSidebar({ orgName = "Priminent", className, onL
                 ))}
             </nav>
 
-            <div className="p-4 mt-auto">
-                <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 mb-2">
-                    <div className="flex items-center gap-3">
-                        <div className="size-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
-                            <span className="material-symbols-outlined text-[20px]">person</span>
+            <div className="p-4 mt-auto border-t border-slate-100 dark:border-slate-800">
+                <div className="bg-slate-50/50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 mb-4 shadow-sm">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-3">
+                            {userProfile?.avatar_url ? (
+                                <div
+                                    className="size-11 rounded-2xl bg-cover bg-center shadow-inner border border-white dark:border-slate-700"
+                                    style={{ backgroundImage: `url('${userProfile.avatar_url}')` }}
+                                />
+                            ) : (
+                                <div className="size-11 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                                    <span className="material-symbols-outlined text-[24px]">person</span>
+                                </div>
+                            )}
+                            <div className="flex flex-col overflow-hidden">
+                                <p className="text-[13px] font-black text-slate-900 dark:text-white truncate tracking-tight">
+                                    {userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : "User Profile"}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-bold truncate tracking-wide mt-0.5">
+                                    {userProfile?.email || "No email available"}
+                                </p>
+                            </div>
                         </div>
-                        <div className="flex flex-col overflow-hidden">
-                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                {userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : "User"}
-                            </p>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                                {userProfile?.email || "user@example.com"}
-                            </p>
-                            <p className="text-[9px] font-black text-primary uppercase tracking-wider mt-0.5">
-                                {orgName} • {userProfile?.role === 'admin' || userProfile?.role === 'super_admin' ? 'Enterprise Admin' : userProfile?.role || 'Member'}
-                            </p>
+
+                        <div className="flex flex-col gap-1 px-1">
+                            <div className="flex items-center gap-2">
+                                <span className="size-1.5 rounded-full bg-primary/40 shrink-0"></span>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] leading-none">
+                                    {orgName}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="size-1.5 rounded-full bg-emerald-400/40 shrink-0"></span>
+                                <p className="text-[9px] font-black text-primary uppercase tracking-[0.15em] leading-none">
+                                    {userProfile?.role === 'admin' || userProfile?.role === 'super_admin' ? 'Enterprise Admin' : userProfile?.role || 'Organization Member'}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <Button
+                <button
                     onClick={handleLogout}
-                    className="w-full h-9 text-[10px] font-black uppercase tracking-widest bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20 dark:text-red-400 dark:border-red-900/20 rounded-lg shadow-none transition-all"
+                    className="w-full h-11 text-[10px] font-black uppercase tracking-[0.2em] bg-red-50/50 hover:bg-red-50 text-red-500 border border-red-100/50 dark:bg-red-500/5 dark:hover:bg-red-500/10 dark:text-red-400 dark:border-red-500/10 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                     Sign Out
-                </Button>
+                </button>
             </div>
         </aside>
     )
