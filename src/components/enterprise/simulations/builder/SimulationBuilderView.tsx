@@ -132,7 +132,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
 
             // 5. Branding Check
             if (completed.includes('assessment') &&
-                sim.company_logo_url && sim.banner_url &&
+                (sim.company_logo_url || orgBranding?.logo_url) && sim.banner_url &&
                 hasContent(sim.about_company) &&
                 hasContent(sim.why_work_here)
             ) {
@@ -142,7 +142,7 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             // 6. Certification Check
             if (certEnabled) {
                 if (completed.includes('branding')) {
-                    if (sim.certificate_director_name) {
+                    if (sim.certificate_director_name || orgBranding?.certificate_director_name) {
                         completed.push('certification');
                     }
                 }
@@ -169,11 +169,12 @@ export default function SimulationBuilderView({ organization, user, initialSimul
             setSimulationData(sim);
 
             // Fetch Org Branding once we have the org_id from the simulation
-            if (sim.org_id && !orgBranding) {
+            // We call this every time to ensure we pick up changes from settings tabs
+            if (sim.org_id) {
                 fetchBranding(sim.org_id);
             }
         }
-    }, [simulationId, orgBranding, fetchBranding]);
+    }, [simulationId, fetchBranding, certificateEnabled]); // Removed orgBranding to prevent loop
 
     // Fetch simulation data to calculate persistence
     useEffect(() => {

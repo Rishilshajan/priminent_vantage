@@ -30,13 +30,15 @@ interface RichTextEditorProps {
     onChange: (value: string) => void;
     placeholder?: string;
     minHeight?: string;
+    simple?: boolean;
 }
 
 export default function RichTextEditor({
     value,
     onChange,
     placeholder = "Start typing...",
-    minHeight = "200px"
+    minHeight = "200px",
+    simple = false
 }: RichTextEditorProps) {
     const editorRef = useRef<HTMLDivElement>(null);
     const [isFocused, setIsFocused] = useState(false);
@@ -85,7 +87,7 @@ export default function RichTextEditor({
         checkActiveStates();
     };
 
-    const toolbarGroups: ToolbarButton[][] = [
+    const fullToolbar: ToolbarButton[][] = [
         [
             { icon: <Bold size={16} />, command: 'bold', label: 'Bold', isActive: activeFormats['bold'] },
             { icon: <Italic size={16} />, command: 'italic', label: 'Italic', isActive: activeFormats['italic'] },
@@ -109,6 +111,18 @@ export default function RichTextEditor({
             { icon: <Code size={16} />, command: 'formatBlock', value: 'pre', label: 'Code Block', isActive: activeBlock === 'pre' },
         ],
     ];
+
+    const simpleToolbar: ToolbarButton[][] = [
+        [
+            { icon: <Bold size={16} />, command: 'bold', label: 'Bold', isActive: activeFormats['bold'] },
+            { icon: <Italic size={16} />, command: 'italic', label: 'Italic', isActive: activeFormats['italic'] },
+        ],
+        [
+            { icon: <List size={16} />, command: 'insertUnorderedList', label: 'Bullet List', isActive: activeFormats['insertUnorderedList'] },
+        ],
+    ];
+
+    const toolbarGroups = simple ? simpleToolbar : fullToolbar;
 
     return (
         <div className={`

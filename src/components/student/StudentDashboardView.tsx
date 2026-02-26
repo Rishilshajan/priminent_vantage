@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Menu, X, Bell } from "lucide-react"
+import { Plus, Menu, X, Bell, Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { StudentSidebar } from "./StudentSidebar"
 import { StatsCards } from "./StatsCards"
 import { CurrentSimulations } from "./CurrentSimulations"
@@ -17,6 +18,9 @@ export default function StudentDashboardView({ profile: initialProfile }: Studen
     const [dashboardData, setDashboardData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [joinCode, setJoinCode] = useState("");
+    const [joining, setJoining] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -48,6 +52,31 @@ export default function StudentDashboardView({ profile: initialProfile }: Studen
 
     // Brand color style
     const brandColorStyle = orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {};
+
+    const handleJoinCode = async () => {
+        if (!joinCode || joinCode.length < 6) {
+            alert("Please enter a valid access code.");
+            return;
+        }
+
+        setJoining(true);
+        try {
+            const { joinByAccessCode } = await import("@/actions/student/simulation.actions");
+            const result = await joinByAccessCode(joinCode);
+
+            if (result.success) {
+                if (result.message) alert(result.message);
+                router.push(`/student/simulations/${result.simulationId}/preview`);
+            } else {
+                alert(result.error || "Failed to join simulation. Please check the code.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("An error occurred while joining.");
+        } finally {
+            setJoining(false);
+        }
+    };
 
     if (loading) {
         return <div className="flex h-screen w-full items-center justify-center bg-background-light dark:bg-background-dark">
@@ -108,16 +137,22 @@ export default function StudentDashboardView({ profile: initialProfile }: Studen
                             <div className="relative w-full sm:w-64">
                                 <input
                                     className="h-12 w-full rounded-xl border border-border-color bg-white px-4 text-sm font-medium focus:border-primary focus:ring-4 focus:ring-primary/5 dark:bg-[#1e1429] dark:border-white/10 dark:text-white outline-none transition-all shadow-sm"
-                                    placeholder="Enter class code..."
+                                    placeholder="Enter access code..."
                                     type="text"
+                                    value={joinCode}
+                                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleJoinCode()}
+                                    disabled={joining}
                                 />
                             </div>
                             <button
-                                className="flex h-12 items-center justify-center gap-3 rounded-xl bg-primary px-8 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-lg shadow-primary/40 transition-all hover:scale-[1.02] active:scale-95"
+                                onClick={handleJoinCode}
+                                disabled={joining || !joinCode}
+                                className="flex h-12 items-center justify-center gap-3 rounded-xl bg-primary px-8 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-lg shadow-primary/40 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                                 style={brandColorStyle}
                             >
-                                <Plus className="size-4" />
-                                <span>Join Code</span>
+                                {joining ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+                                <span>{joining ? "Joining..." : "Join Code"}</span>
                             </button>
                         </div>
                     </div>

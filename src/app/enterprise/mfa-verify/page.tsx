@@ -19,16 +19,48 @@ export default function MFAVerifyPage() {
 
     useEffect(() => {
         async function checkFactors() {
-            const { data, error } = await supabase.auth.mfa.listFactors();
-            if (error || !data.all || data.all.length === 0) {
+            // 1. Get user factors
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
                 router.push("/enterprise/signin");
                 return;
             }
+
+            const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+            if (factorsError || !factors.all || factors.all.length === 0) {
+                router.push("/enterprise/signin");
+                return;
+            }
+
+            // 2. Enforcement Check Fallback: If we land here but settings say NO MFA, skip it.
+            const { data: membership } = await supabase
+                .from('organization_members')
+                .select('org_id, role')
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            if (membership) {
+                const { data: settings } = await supabase
+                    .from('enterprise_security_settings')
+                    .select('enforce_mfa_admins, enforce_mfa_all')
+                    .eq('org_id', membership.org_id)
+                    .maybeSingle();
+
+                const isAdmin = ['admin', 'enterprise_admin', 'owner'].includes(membership.role);
+                const isMfaEnforced = settings?.enforce_mfa_all || (settings?.enforce_mfa_admins && isAdmin);
+
+                if (!isMfaEnforced) {
+                    console.log("[MFA] Bypassing verification as it is not enforced for this user.");
+                    router.push("/enterprise/dashboard");
+                    return;
+                }
+            }
+
             // For now, take the first active factor
-            setFactorId(data.all[0].id);
+            setFactorId(factors.all[0].id);
         }
         checkFactors();
-    }, [router, supabase.auth.mfa]);
+    }, [router, supabase]);
 
     const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();

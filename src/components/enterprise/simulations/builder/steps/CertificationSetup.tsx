@@ -51,12 +51,13 @@ export default function CertificationSetup({
         loadSimulation();
     }, [simulationId]);
 
-    // Enforce Org Defaults
+    // Sync with Org Branding
     useEffect(() => {
         if (orgBranding) {
-            if (orgBranding.certificate_director_name) setDirectorName(orgBranding.certificate_director_name);
-            if (orgBranding.certificate_director_title) setDirectorTitle(orgBranding.certificate_director_title);
-            if (orgBranding.certificate_signature_url) setSignatureUrl(orgBranding.certificate_signature_url);
+            // Only update if org has values. This ensures we prioritize org but fall back to simulation if needed.
+            setDirectorName(orgBranding.certificate_director_name || simulation?.certificate_director_name || directorName);
+            setDirectorTitle(orgBranding.certificate_director_title || simulation?.certificate_director_title || directorTitle);
+            setSignatureUrl(orgBranding.certificate_signature_url || simulation?.certificate_signature_url || signatureUrl);
         }
     }, [orgBranding]);
 
@@ -76,10 +77,10 @@ export default function CertificationSetup({
             if (result.data) {
                 setSimulation(result.data);
 
-                // Initialize with values, but orgBranding prop will override if present
-                setDirectorName(result.data.certificate_director_name || "");
-                setDirectorTitle(result.data.certificate_director_title || "");
-                setSignatureUrl(result.data.certificate_signature_url || null);
+                // Initialize with values, priority: Org Prop > Simulation DB > State Default
+                setDirectorName(orgBranding?.certificate_director_name || result.data.certificate_director_name || "");
+                setDirectorTitle(orgBranding?.certificate_director_title || result.data.certificate_director_title || "");
+                setSignatureUrl(orgBranding?.certificate_signature_url || result.data.certificate_signature_url || null);
             }
         } catch (error) {
             console.error("Failed to load simulation:", error);
@@ -93,11 +94,11 @@ export default function CertificationSetup({
 
         setSaving(true);
         // We persist data even if director name is empty, as users might clear it
-        // If Org is managed, we save the Org values (which are in state)
+        // If Org is managed, we save the Org values (prioritizing prop over state to avoid race conditions)
         const result = await updateSimulation(simulationId, {
-            certificate_director_name: directorName,
-            certificate_director_title: directorTitle,
-            certificate_signature_url: signatureUrl,
+            certificate_director_name: orgBranding?.certificate_director_name || directorName,
+            certificate_director_title: orgBranding?.certificate_director_title || directorTitle,
+            certificate_signature_url: orgBranding?.certificate_signature_url || signatureUrl,
             ...(simulation?.certificate_enabled !== undefined && { certificate_enabled: simulation.certificate_enabled })
         });
 
@@ -263,8 +264,8 @@ export default function CertificationSetup({
                                                     Priminent Vantage
                                                 </span>
                                             </div>
-                                            {simulation?.company_logo_url ? (
-                                                <img src={simulation.company_logo_url} className="h-6 md:h-10 object-contain" alt="Company Logo" />
+                                            {(orgBranding?.logo_url || simulation?.company_logo_url) ? (
+                                                <img src={orgBranding?.logo_url || simulation?.company_logo_url} className="h-6 md:h-10 object-contain" alt="Company Logo" />
                                             ) : (
                                                 <div className="px-2 py-1 md:px-3 md:py-1.5 border border-dashed border-slate-200 rounded text-[6px] md:text-[10px] font-bold text-slate-300 uppercase">
                                                     Company Logo
@@ -301,13 +302,11 @@ export default function CertificationSetup({
                                             <div className="flex justify-between items-end mb-1.5 md:mb-2 px-4 md:px-12">
                                                 {/* Left Signature - Vantage CEO */}
                                                 <div className="text-center w-24 md:w-56 space-y-0.5 md:space-y-1 relative">
-                                                    {/* Text Block */}
                                                     <div className="pb-1 md:pb-2 leading-none">
                                                         <p className="text-[7px] md:text-sm font-bold text-slate-800 uppercase tracking-wider">A. Sterling</p>
                                                         <p className="text-[6px] md:text-xs font-medium text-slate-600 uppercase tracking-wide">CEO, Priminent Vantage</p>
                                                     </div>
 
-                                                    {/* Signature Image (Simulated with Font for Vantage) */}
                                                     <div className="border-t border-slate-300 pt-0.5 md:pt-1 flex justify-center">
                                                         <div className="font-signature text-sm md:text-2xl text-slate-800 h-6 md:h-10 flex items-center justify-center transform -rotate-2">
                                                             A. Sterling
@@ -317,21 +316,19 @@ export default function CertificationSetup({
 
                                                 {/* Right Signature - Company Head */}
                                                 <div className="text-center w-24 md:w-56 space-y-0.5 md:space-y-1 relative">
-                                                    {/* Text Block */}
                                                     <div className="pb-1 md:pb-2 leading-none">
                                                         <p className="text-[7px] md:text-sm font-bold text-slate-800 uppercase tracking-wider">
-                                                            {directorName || "James Thompson"}
+                                                            {orgBranding?.certificate_director_name || directorName || "James Thompson"}
                                                         </p>
                                                         <p className="text-[6px] md:text-xs font-medium text-slate-600 uppercase tracking-wide">
-                                                            {directorTitle || "Hiring Director"}, {organizationName || "Your Company"}
+                                                            {orgBranding?.certificate_director_title || directorTitle || "Hiring Director"}, {orgBranding?.name || organizationName || "Your Company"}
                                                         </p>
                                                     </div>
 
-                                                    {/* Signature Image or Fallback */}
                                                     <div className="border-t border-slate-300 pt-0.5 md:pt-1 flex justify-center">
-                                                        {signatureUrl ? (
+                                                        {(orgBranding?.certificate_signature_url || signatureUrl) ? (
                                                             <div className="h-6 md:h-10 flex items-center justify-center">
-                                                                <img src={signatureUrl} className="max-h-full max-w-full object-contain filter grayscale contrast-125" alt="Signature" />
+                                                                <img src={orgBranding?.certificate_signature_url || signatureUrl} className="max-h-full max-w-full object-contain filter grayscale contrast-125" alt="Signature" />
                                                             </div>
                                                         ) : (
                                                             <div className="font-signature text-sm md:text-2xl text-slate-800 h-6 md:h-10 flex items-center justify-center transform -rotate-2">

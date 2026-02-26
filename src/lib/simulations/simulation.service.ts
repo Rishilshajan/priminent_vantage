@@ -164,6 +164,7 @@ export const simulationService = {
                     ...(data.certificate_director_title !== undefined && { certificate_director_title: data.certificate_director_title }),
                     ...(data.certificate_signature_url !== undefined && { certificate_signature_url: data.certificate_signature_url }),
                     ...(data.grading_criteria !== undefined && { grading_criteria: data.grading_criteria }),
+                    ...(data.access_code !== undefined && { access_code: data.access_code }),
                     updated_at: new Date().toISOString(),
                 })
                 .eq('id', simulationId)

@@ -133,7 +133,10 @@ export default function EmployerBrandingForm({
             return;
         }
         console.log("Saving Employer Branding Data:", formData);
-        const result = await updateSimulation(simulationId, formData);
+        const result = await updateSimulation(simulationId, {
+            ...formData,
+            company_logo_url: orgBranding?.logo_url || formData.company_logo_url
+        });
         if (result.error) {
             console.error("Save failed:", result.error);
             // Optionally set global error state here

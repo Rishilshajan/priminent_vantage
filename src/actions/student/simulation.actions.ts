@@ -128,7 +128,7 @@ export async function enrollInSimulation(simulationId: string) {
         revalidatePath('/student/simulations');
         revalidatePath(`/student/simulations/${simulationId}/preview`);
 
-        return { success: true as const, simulationId };
+        return { success: true as const, simulationId, message: "Successfully enrolled in simulation!" };
     } catch (error: any) {
         console.error("Enrollment failed:", error);
         return { success: false as const, error: error.message || "Failed to enroll in simulation" };
@@ -171,5 +171,49 @@ export async function getSimulationDetailsAction(simulationId: string) {
         return { success: true as const, data };
     } catch (error: any) {
         return { success: false as const, error: error.message || "Failed to fetch simulation details" };
+    }
+}
+
+export async function joinByAccessCode(accessCode: string) {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false as const, error: "Unauthorized" };
+
+        const normalizedCode = accessCode.trim().toUpperCase();
+        if (!normalizedCode) return { success: false as const, error: "Access code is required" };
+
+        // 1. Find simulation by access code
+        const { data: simulation, error: simError } = await supabase
+            .from('simulations')
+            .select('id, title, status')
+            .eq('access_code', normalizedCode)
+            .single();
+
+        if (simError || !simulation) {
+            return { success: false as const, error: "Invalid access code. Please check and try again." };
+        }
+
+        if (simulation.status !== 'published') {
+            return { success: false as const, error: "This simulation is not currently open for enrollment." };
+        }
+
+        // 2. Check if already enrolled
+        const { data: existing } = await supabase
+            .from('simulation_enrollments')
+            .select('id')
+            .eq('simulation_id', simulation.id)
+            .eq('student_id', user.id)
+            .single();
+
+        if (existing) {
+            return { success: true as const, simulationId: simulation.id, message: "You are already enrolled in this simulation." };
+        }
+
+        // 3. Use existing enrollInSimulation logic
+        return await enrollInSimulation(simulation.id);
+    } catch (error: any) {
+        console.error("Join by code failed:", error);
+        return { success: false as const, error: error.message || "Failed to join simulation" };
     }
 }

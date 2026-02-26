@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { updateSimulation, getSimulation } from "@/actions/simulations";
 import { VISIBILITY_OPTIONS } from "@/lib/simulations";
+import { Copy, Check, RefreshCw } from "lucide-react";
 
 interface VisibilityFormProps {
     simulationId: string | null;
@@ -16,7 +17,9 @@ export default function VisibilityForm({ simulationId, saveTrigger, onSaveSucces
     const [formData, setFormData] = useState({
         visibility: 'draft' as 'draft' | 'internal' | 'educator_assigned' | 'public' | 'private' | 'archived',
         analytics_tags: [] as string[],
+        access_code: null as string | null,
     });
+    const [copied, setCopied] = useState(false);
     const [newTag, setNewTag] = useState('');
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -26,6 +29,19 @@ export default function VisibilityForm({ simulationId, saveTrigger, onSaveSucces
             loadSimulation();
         }
     }, [simulationId]);
+
+    const generateAccessCode = () => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluded I, O, 0, 1 for clarity
+        return Array.from({ length: 9 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+    };
+
+    const handleCopyCode = () => {
+        if (formData.access_code) {
+            navigator.clipboard.writeText(formData.access_code);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
 
     const lastSaveTrigger = useRef(saveTrigger || 0);
 
@@ -45,6 +61,7 @@ export default function VisibilityForm({ simulationId, saveTrigger, onSaveSucces
             setFormData({
                 visibility: result.data.visibility || 'draft',
                 analytics_tags: result.data.analytics_tags || [],
+                access_code: result.data.access_code || null,
             });
         }
         setLoading(false);
@@ -124,9 +141,18 @@ export default function VisibilityForm({ simulationId, saveTrigger, onSaveSucces
                                             // Auto-save
                                             if (simulationId) {
                                                 setSaving(true);
+
+                                                // Generate access code for private if not exists
+                                                let newAccessCode = formData.access_code;
+                                                if (option.value === 'private' && !newAccessCode) {
+                                                    newAccessCode = generateAccessCode();
+                                                    handleChange('access_code', newAccessCode);
+                                                }
+
                                                 const dataToSave = {
                                                     visibility: option.value,
                                                     analytics_tags: formData.analytics_tags,
+                                                    access_code: newAccessCode
                                                 };
 
                                                 const result = await updateSimulation(simulationId, dataToSave as any);
@@ -171,6 +197,44 @@ export default function VisibilityForm({ simulationId, saveTrigger, onSaveSucces
                                     </button>
                                 ))}
                         </div>
+
+                        {/* Private Access Code Display */}
+                        {formData.visibility === 'private' && (
+                            <div className="mt-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 animate-in zoom-in-95 duration-200">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Simulation Access Code</p>
+                                        <p className="text-2xl font-mono font-black text-primary tracking-wider uppercase">
+                                            {formData.access_code || "GENERATING..."}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleCopyCode}
+                                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                        >
+                                            {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                                            {copied ? "Copied" : "Copy Code"}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newCode = generateAccessCode();
+                                                handleChange('access_code', newCode);
+                                            }}
+                                            className="p-2 text-slate-400 hover:text-primary transition-colors"
+                                            title="Regenerate Code"
+                                        >
+                                            <RefreshCw size={14} className={saving ? "animate-spin" : ""} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-2 italic font-medium">
+                                    Students will use this code on the Join Simulation page to gain access to this program.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Analytics Tags */}

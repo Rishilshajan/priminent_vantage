@@ -17,7 +17,8 @@ import {
     CheckCircle2,
     Code2,
     Terminal,
-    AlertCircle
+    AlertCircle,
+    ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,11 +48,17 @@ const ESTIMATED_TIME_OPTIONS = [
     "Custom"
 ];
 
+const DIFFICULTY_LEVELS = [
+    { value: 'beginner', label: 'Beginner' },
+    { value: 'intermediate', label: 'Intermediate' },
+    { value: 'advanced', label: 'Advanced' }
+];
+
 const DELIVERABLE_TYPES = [
-    { id: 'TEXT', label: 'Text Submission', icon: Type, description: 'Student writes a response in a text editor' },
-    { id: 'FILE_UPLOAD', label: 'File Upload', icon: FileUp, description: 'Student uploads a PDF, DOCX, or other file' },
-    { id: 'MULTIPLE_CHOICE', label: 'Multiple Choice', icon: ListChecks, description: 'Auto-graded quiz with options' },
-    { id: 'CODE_SNIPPET', label: 'Code Snippet', icon: Code2, description: 'Code editor with syntax highlighting' },
+    { id: 'text', label: 'Text Submission', icon: Type, description: 'Student writes a response in a text editor' },
+    { id: 'file_upload', label: 'File Upload', icon: FileUp, description: 'Student uploads a PDF, DOCX, or other file' },
+    { id: 'mcq', label: 'Multiple Choice', icon: ListChecks, description: 'Auto-graded quiz with options' },
+    { id: 'code_snippet', label: 'Code Editor', icon: Code2, description: 'Code editor with syntax highlighting' },
 ];
 
 interface DeliverableType {
@@ -75,12 +82,19 @@ const PROGRAMMING_LANGUAGES = [
 export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigger, onSaveSuccess }: TaskEditorProps) {
     const [formData, setFormData] = useState<Partial<SimulationTask>>({
         ...task,
-        learning_objectives: task.learning_objectives || task.what_you_learn || [],
-        attachments: task.attachments || (task.supporting_docs?.map(d => ({ file_name: d.name, file_url: d.url, file_type: 'document' })) || []),
-        estimated_time: task.estimated_time || task.estimated_duration || "30–60 mins",
-        deliverable_type: task.deliverable_type || (task.submission_type?.toUpperCase() as any) || 'TEXT',
+        description: task.description || task.introduction || "",
+        estimated_duration: task.estimated_duration || task.estimated_time || "30–60 mins",
+        submission_type: task.submission_type || (task.deliverable_type?.toLowerCase() as any) || 'text',
+        supporting_docs: task.supporting_docs || (task.attachments?.map(a => ({ name: a.file_name, url: a.file_url, type: a.file_type })) || []),
         unlock_condition: task.unlock_condition || 'SEQUENTIAL',
-        introduction: task.introduction || task.description || "",
+        what_you_do: task.what_you_do || "",
+        welcome_video_url: task.welcome_video_url || null,
+        scenario_context: task.scenario_context || "",
+        difficulty_level: task.difficulty_level || "beginner",
+        internal_notes: task.internal_notes || "",
+        dataset_url: task.dataset_url || "",
+        pdf_brief_url: task.pdf_brief_url || "",
+        submission_instructions: task.submission_instructions || "",
     });
 
     // MCQ State
@@ -94,6 +108,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
     const [saving, setSaving] = useState(false);
     const [saveSource, setSaveSource] = useState<'global' | 'local_publish' | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [uploadingVideo, setUploadingVideo] = useState(false);
     // Video Assets State
     const [videoAssets, setVideoAssets] = useState<{ title: string; url: string; type: 'upload' | 'embed' }[]>(
         task.video_assets || (task.video_url ? [{ title: 'Main Video', url: task.video_url, type: 'embed' }] : [])
@@ -117,8 +132,8 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
         // Prevent saving if already in progress or if uploading a file
         if (saving) return;
 
-        if (uploading) {
-            setError("Please wait for the file upload to complete before saving.");
+        if (uploading || uploadingVideo) {
+            setError("Please wait for all uploads to complete before saving.");
             return;
         }
 
@@ -126,15 +141,16 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
         if (options.source) setSaveSource(options.source);
         setError(null);
 
-        // Prepare final data
-        const finalData = {
+        // Prepare final data strictly matching Database/Schema columns
+        const finalData: Partial<SimulationTask> = {
             ...formData,
             status: options.status || formData.status || 'incomplete',
-            estimated_time: formData.estimated_time === 'Custom' ? `${customMinutes} mins` : formData.estimated_time,
-            video_url: videoAssets.length > 0 ? videoAssets[0].url : null, // Legacy support: keep first video as main url
+            estimated_duration: formData.estimated_duration === 'Custom' ? `${customMinutes} mins` : formData.estimated_duration,
+            video_url: videoAssets.length > 0 ? videoAssets[0].url : null,
             video_assets: videoAssets,
             quiz_data: quizData,
             code_config: codeConfig,
+            supporting_docs: formData.supporting_docs || [],
         };
 
         try {
@@ -182,6 +198,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
         }));
     };
 
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -198,20 +215,55 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
         if (!result.error && result.data) {
             setFormData(prev => ({
                 ...prev,
-                attachments: [...(prev.attachments || []), {
-                    file_name: file.name,
-                    file_url: result.data.url,
-                    file_type: file.type || 'document'
+                supporting_docs: [...(prev.supporting_docs || []), {
+                    name: file.name,
+                    url: result.data.url,
+                    type: file.type || 'document'
                 }]
             }));
         }
         setUploading(false);
     };
 
+    const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Check file size (e.g., max 300MB)
+        if (file.size > 300 * 1024 * 1024) {
+            setError("Video file is too large. Maximum size is 300MB.");
+            return;
+        }
+
+        setUploadingVideo(true);
+        const uploadData = new FormData();
+        uploadData.append('file', file);
+        uploadData.append('simulationId', task.simulation_id);
+        uploadData.append('taskId', task.id);
+        uploadData.append('assetType', 'video');
+
+        try {
+            const result = await uploadAsset(uploadData);
+
+            if (!result.error && result.data) {
+                setFormData(prev => ({
+                    ...prev,
+                    welcome_video_url: result.data.url
+                }));
+            } else {
+                setError(result.error || "Failed to upload video.");
+            }
+        } catch (err) {
+            setError("An error occurred during video upload.");
+        } finally {
+            setUploadingVideo(false);
+        }
+    };
+
     const removeAttachment = (index: number) => {
         setFormData(prev => ({
             ...prev,
-            attachments: (prev.attachments || []).filter((_, i) => i !== index)
+            supporting_docs: (prev.supporting_docs || []).filter((_, i) => i !== index)
         }));
     };
 
@@ -234,6 +286,22 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                     </button>
                 )}
             </div>
+
+            {/* Error Message */}
+            {error && (
+                <div className="mx-8 mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 rounded-xl flex items-center justify-between gap-3 text-red-600 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-3">
+                        <AlertCircle size={20} className="shrink-0" />
+                        <p className="text-sm font-medium">{error}</p>
+                    </div>
+                    <button
+                        onClick={() => setError(null)}
+                        className="p-1 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition-colors"
+                    >
+                        <X size={16} />
+                    </button>
+                </div>
+            )}
 
             {/* Content Area */}
             <div className={`flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar`}>
@@ -264,8 +332,8 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                             <div className="col-span-1">
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Estimated Time</label>
                                 <Select
-                                    value={formData.estimated_time || undefined}
-                                    onValueChange={val => setFormData(prev => ({ ...prev, estimated_time: val }))}
+                                    value={formData.estimated_duration || undefined}
+                                    onValueChange={val => setFormData(prev => ({ ...prev, estimated_duration: val }))}
                                 >
                                     <SelectTrigger className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3 h-auto">
                                         <SelectValue placeholder="Select time" />
@@ -278,7 +346,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                                 </Select>
                             </div>
 
-                            {formData.estimated_time === 'Custom' && (
+                            {formData.estimated_duration === 'Custom' && (
                                 <div className="col-span-1 animate-in fade-in slide-in-from-left-2 duration-300">
                                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Minutes</label>
                                     <input
@@ -290,6 +358,23 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                                     />
                                 </div>
                             )}
+
+                            <div className="col-span-1">
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Difficulty Level</label>
+                                <Select
+                                    value={formData.difficulty_level || "Beginner"}
+                                    onValueChange={val => setFormData(prev => ({ ...prev, difficulty_level: val }))}
+                                >
+                                    <SelectTrigger className="w-full bg-background-light dark:bg-slate-800 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-3 h-auto">
+                                        <SelectValue placeholder="Select level" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {DIFFICULTY_LEVELS.map(level => (
+                                            <SelectItem key={level.value} value={level.value}>{level.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
                             <div className="col-span-2 flex items-center gap-3 p-4 bg-primary/5 rounded-xl border border-primary/10">
                                 <input
@@ -321,14 +406,71 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                                 Student-facing introduction. Set the stage for the task.
                             </p>
                         </div>
-                        <div className="space-y-4">
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Introduction (Rich Text)</label>
-                            <RichTextEditor
-                                value={formData.introduction || ""}
-                                onChange={(val: string) => setFormData(prev => ({ ...prev, introduction: val }))}
-                                placeholder="Write a professional introduction..."
-                                minHeight="180px"
-                            />
+                        <div className="space-y-8">
+                            {/* Welcome Video Upload */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between px-1">
+                                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">Welcome Video</label>
+                                    <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 dark:bg-blue-500/10 rounded-lg border border-blue-100 dark:border-blue-500/20">
+                                        <div className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tight">AWS S3 Secure Storage</span>
+                                    </div>
+                                </div>
+                                {formData.welcome_video_url ? (
+                                    <div className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-black aspect-video max-w-md">
+                                        <video
+                                            src={formData.welcome_video_url}
+                                            controls
+                                            className="w-full h-full object-contain"
+                                        />
+                                        <button
+                                            onClick={() => setFormData(prev => ({ ...prev, welcome_video_url: null }))}
+                                            className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className="flex flex-col items-center justify-center p-8 bg-slate-50/20 dark:bg-slate-800/10 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-primary/5 hover:border-primary/50 transition-all group max-w-md">
+                                        <div className="size-12 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center text-primary shadow-lg group-hover:scale-110 transition-transform">
+                                            {uploadingVideo ? <div className="size-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <Video size={24} />}
+                                        </div>
+                                        <span className="text-xs font-bold text-slate-500 mt-4">Click to upload welcome video</span>
+                                        <span className="text-[10px] text-slate-400 mt-1 uppercase font-black">MP4, WebM (Max 300MB)</span>
+                                        <input type="file" className="hidden" accept="video/*" onChange={handleVideoUpload} disabled={uploadingVideo} />
+                                    </label>
+                                )}
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Scenario Context (Optional)</label>
+                                <RichTextEditor
+                                    value={formData.scenario_context || ""}
+                                    onChange={(val: string) => setFormData(prev => ({ ...prev, scenario_context: val }))}
+                                    placeholder="Set the workplace scene or situation..."
+                                    minHeight="140px"
+                                />
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider px-1">What students will do</label>
+                                <RichTextEditor
+                                    value={formData.what_you_do || ""}
+                                    onChange={(val: string) => setFormData(prev => ({ ...prev, what_you_do: val }))}
+                                    placeholder="Describe the main activities students will perform..."
+                                    minHeight="140px"
+                                />
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Task Description / Introduction (Rich Text)</label>
+                                <RichTextEditor
+                                    value={formData.description || ""}
+                                    onChange={(val: string) => setFormData(prev => ({ ...prev, description: val }))}
+                                    placeholder="Write a professional introduction..."
+                                    minHeight="180px"
+                                />
+                            </div>
                         </div>
                     </section>
 
@@ -408,14 +550,14 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                             <div className="space-y-4">
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider px-1">File Attachments</label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {(formData.attachments || []).map((file, idx) => (
+                                    {(formData.supporting_docs || []).map((file, idx) => (
                                         <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800 group">
                                             <div className="size-10 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center text-primary shadow-sm">
                                                 <FileUp size={20} />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{file.file_name}</p>
-                                                <p className="text-[9px] text-slate-400 uppercase font-black">{file.file_type.split('/')[1] || 'FILE'}</p>
+                                                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{file.name}</p>
+                                                <p className="text-[9px] text-slate-400 uppercase font-black">{file.type?.split('/')[1] || 'FILE'}</p>
                                             </div>
                                             <button onClick={() => removeAttachment(idx)} className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-2">
                                                 <Trash2 size={16} />
@@ -531,10 +673,10 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                                     <button
                                         key={type.id}
                                         disabled={type.disabled}
-                                        onClick={() => setFormData(prev => ({ ...prev, deliverable_type: type.id as any }))}
+                                        onClick={() => setFormData(prev => ({ ...prev, submission_type: type.id as any }))}
                                         className={`
                                             flex flex-col p-4 rounded-xl border-2 transition-all text-left
-                                            ${formData.deliverable_type === type.id
+                                            ${formData.submission_type === type.id
                                                 ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
                                                 : 'border-slate-100 dark:border-slate-800 hover:border-primary/30'
                                             }
@@ -542,8 +684,8 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                                         `}
                                     >
                                         <div className="flex items-center gap-2 mb-1">
-                                            <type.icon size={18} className={formData.deliverable_type === type.id ? 'text-primary' : 'text-slate-400'} />
-                                            <span className={`text-sm font-bold ${formData.deliverable_type === type.id ? 'text-primary' : 'text-slate-700 dark:text-slate-200'}`}>
+                                            <type.icon size={18} className={formData.submission_type === type.id ? 'text-primary' : 'text-slate-400'} />
+                                            <span className={`text-sm font-bold ${formData.submission_type === type.id ? 'text-primary' : 'text-slate-700 dark:text-slate-200'}`}>
                                                 {type.label}
                                             </span>
                                         </div>
@@ -552,8 +694,8 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                                 ))}
                             </div>
 
-                            {/* MULTIPLE CHOICE BUILDER */}
-                            {formData.deliverable_type === 'MULTIPLE_CHOICE' && (
+                            {/* MCQ BUILDER */}
+                            {formData.submission_type === 'mcq' && (
                                 <div className="space-y-4 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
                                     <div className="flex items-center justify-between mb-2">
                                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Quiz Questions</label>
@@ -653,7 +795,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                             )}
 
                             {/* CODE SNIPPET BUILDER */}
-                            {formData.deliverable_type === 'CODE_SNIPPET' && (
+                            {formData.submission_type === 'code_snippet' && (
                                 <div className="space-y-4 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
                                     <div className="flex items-center gap-2 mb-4">
                                         <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
@@ -715,13 +857,15 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
 
                     {/* SECTION 8: ACCESS & VISIBILITY */}
                     <section className="bg-white dark:bg-slate-900 p-5 md:p-8 rounded-xl border border-primary/5 shadow-sm">
-                        <div className="mb-6">
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                                Access & Visibility
-                            </h2>
-                            <p className="text-sm text-slate-500">
-                                Control how and when this task becomes available to students.
-                            </p>
+                        <div className="mb-6 flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                                    Access & Visibility
+                                </h2>
+                                <p className="text-sm text-slate-500">
+                                    Control how and when this task becomes available to students.
+                                </p>
+                            </div>
                         </div>
                         <div className="space-y-6">
                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Unlock Condition</label>
@@ -735,10 +879,10 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                                         type="button"
                                         onClick={() => setFormData(prev => ({ ...prev, unlock_condition: opt.id as any }))}
                                         className={`
-                                            flex flex-col p-4 rounded-xl border-2 transition-all text-left
+                                            flex flex-col p-5 rounded-xl border-2 transition-all text-left h-full
                                             ${formData.unlock_condition === opt.id
                                                 ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
-                                                : 'border-slate-100 dark:border-slate-800 hover:border-primary/20 bg-background-light dark:bg-slate-800/50'
+                                                : 'border-slate-100 dark:border-slate-800 hover:border-primary/30'
                                             }
                                         `}
                                     >
@@ -747,7 +891,7 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                                                 {opt.label}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-slate-500 leading-relaxed">
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-normal leading-relaxed">
                                             {opt.description}
                                         </p>
                                     </button>
@@ -755,19 +899,40 @@ export default function TaskEditor({ task, onClose, onUpdate, inline, saveTrigge
                             </div>
                         </div>
                     </section>
+
+                    {/* SECTION 9: INSTRUCTOR ONLY */}
+                    <section className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-primary/10 shadow-sm overflow-hidden relative">
+                        <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-[0.05] pointer-events-none">
+                            <ShieldCheck size={160} className="text-primary" />
+                        </div>
+                        <div className="relative z-10">
+                            <div className="mb-6">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <div className="size-2 rounded-full bg-primary" />
+                                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                                        Instructor Notes
+                                    </h2>
+                                </div>
+                                <p className="text-sm text-slate-500">
+                                    Confidential notes for administrators and instructors. Not visible to students.
+                                </p>
+                            </div>
+                            <div className="space-y-4">
+                                <textarea
+                                    value={formData.internal_notes || ""}
+                                    onChange={e => setFormData(prev => ({ ...prev, internal_notes: e.target.value }))}
+                                    className="w-full h-32 bg-slate-50 dark:bg-slate-800/50 border border-primary/10 rounded-lg focus:ring-primary focus:border-primary text-sm p-4 text-slate-600 dark:text-slate-300 font-mono transition-all"
+                                    placeholder="Enter internal implementation notes, evaluation criteria, or solution keys..."
+                                />
+                                <div className="flex items-center gap-2 text-primary/60 text-[10px] font-bold uppercase tracking-widest bg-primary/5 px-3 py-1.5 rounded-full w-fit border border-primary/10">
+                                    <AlertCircle size={12} />
+                                    <span>Private Administrator Field</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
-
-            {/* Error Message */}
-            {error && (
-                <div className="mx-8 mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 rounded-xl flex items-center gap-3 text-red-600 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <AlertCircle size={18} />
-                    <p className="text-sm font-bold">{error}</p>
-                    <button onClick={() => setError(null)} className="ml-auto p-1 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-full transition-colors">
-                        <X size={14} />
-                    </button>
-                </div>
-            )}
 
             {/* Footer */}
             <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 py-4 md:px-8 md:py-6 flex items-center justify-between sticky bottom-0 z-20 shadow-sm">

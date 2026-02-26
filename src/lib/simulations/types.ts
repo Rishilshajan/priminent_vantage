@@ -17,6 +17,7 @@ export interface Simulation {
     target_audience: string | null;
     visibility: 'draft' | 'internal' | 'educator_assigned' | 'public' | 'private' | 'archived';
     analytics_tags: string[];
+    access_code: string | null;
     certificate_enabled: boolean;
     company_logo_url: string | null;
     banner_url: string | null;
@@ -39,29 +40,37 @@ export interface Simulation {
 export interface SimulationTask {
     id: string;
     simulation_id: string;
-    order_index: number;
+    task_number: number;
     title: string;
-    introduction: string | null;
+    description: string | null;
+    scenario_context: string | null;
+    estimated_duration: string | null;
+    difficulty_level: string | null;
     instructions: string | null;
-    learning_objectives: string[] | null;
-    attachments: { file_url: string; file_name: string; file_type: string }[] | null;
+    what_you_do: string | null;
     video_url: string | null;
-    deliverable_type: 'TEXT' | 'FILE_UPLOAD' | 'MULTIPLE_CHOICE' | 'CODE_SNIPPET' | 'REFLECTION_ONLY';
-    submission_instructions: string | null;
-    internal_notes: string | null;
-    estimated_time: string | null;
-    is_required: boolean;
-    unlock_condition: 'SEQUENTIAL' | 'ALWAYS_OPEN';
+    pdf_brief_url: string | null;
+    dataset_url: string | null;
+    supporting_docs: { name: string; url: string; type: string }[] | null;
+    submission_type: 'text' | 'file_upload' | 'mcq' | 'code_snippet' | 'self_paced';
+    submission_config: any;
     status: 'incomplete' | 'ready';
+    sort_order: number;
     created_at: string;
     updated_at: string;
-    task_number?: number;
-    description?: string | null;
-    estimated_duration?: string | null;
-    submission_type?: string;
-    what_you_learn?: string[] | null;
-    supporting_docs?: { name: string; url: string }[];
-    video_assets?: { title: string; url: string; type: 'upload' | 'embed' }[];
+    submission_instructions: string | null;
+    internal_notes: string | null;
+    is_required: boolean;
+    unlock_condition: 'SEQUENTIAL' | 'ALWAYS_OPEN' | string;
+    video_assets: { title: string; url: string; type: 'upload' | 'embed' }[] | null;
+    welcome_video_url: string | null;
+    // UI/Legacy fields
+    order_index?: number;
+    introduction?: string | null;
+    learning_objectives?: string[] | null;
+    attachments?: { file_url: string; file_name: string; file_type: string }[] | null;
+    deliverable_type?: string;
+    estimated_time?: string | null;
     quiz_data?: any;
     code_config?: { language: string; starter_code?: string };
 }
@@ -101,6 +110,7 @@ export const SimulationMetadataSchema = z.object({
     target_audience: z.string().optional(),
     visibility: z.enum(['draft', 'internal', 'educator_assigned', 'public', 'private', 'archived']).default('draft'),
     analytics_tags: z.array(z.string()).default([]),
+    access_code: z.string().optional().nullable(),
     certificate_enabled: z.boolean().default(true),
     grading_criteria: z.string().optional().nullable(),
     certificate_director_name: z.string().optional().nullable(),
@@ -118,30 +128,41 @@ export const SimulationBrandingSchema = z.object({
 
 export const SimulationTaskSchema = z.object({
     title: z.string().min(1, "Title is required"),
-    introduction: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
+    scenario_context: z.string().optional().nullable(),
+    estimated_duration: z.string().optional().nullable(),
+    difficulty_level: z.string().optional().nullable(),
     instructions: z.string().optional().nullable(),
-    learning_objectives: z.array(z.string()).default([]),
-    attachments: z.array(z.object({
-        file_url: z.string(),
-        file_name: z.string(),
-        file_type: z.string()
-    })).default([]),
+    what_you_do: z.string().optional().nullable(),
     video_url: z.string().optional().nullable(),
-    deliverable_type: z.enum(['TEXT', 'FILE_UPLOAD', 'MULTIPLE_CHOICE', 'CODE_SNIPPET', 'REFLECTION_ONLY']).default('TEXT'),
+    pdf_brief_url: z.string().optional().nullable(),
+    dataset_url: z.string().optional().nullable(),
+    welcome_video_url: z.string().optional().nullable(),
+    submission_type: z.enum(['text', 'file_upload', 'mcq', 'code_snippet', 'self_paced']).default('text'),
     submission_instructions: z.string().optional().nullable(),
     internal_notes: z.string().optional().nullable(),
-    estimated_time: z.string().optional().nullable(),
     is_required: z.boolean().default(true),
-    unlock_condition: z.enum(['SEQUENTIAL', 'ALWAYS_OPEN']).default('SEQUENTIAL'),
     status: z.enum(['incomplete', 'ready']).default('incomplete'),
-    order_index: z.number().optional(),
     task_number: z.number().optional(),
     sort_order: z.number().optional(),
-    quiz_data: z.any().optional().nullable(),
-    code_config: z.object({
-        language: z.string().default('javascript'),
-        starter_code: z.string().optional()
-    }).optional().nullable(),
+    supporting_docs: z.array(z.object({
+        url: z.string(),
+        name: z.string(),
+        type: z.string().optional()
+    })).default([]),
+    video_assets: z.array(z.object({
+        title: z.string(),
+        url: z.string(),
+        type: z.enum(['upload', 'embed'])
+    })).default([]),
+    submission_config: z.any().optional().nullable(),
+    // Legacy support for older code patterns
+    introduction: z.string().optional().nullable(),
+    deliverable_type: z.string().optional().nullable(),
+    estimated_time: z.string().optional().nullable(),
+    learning_objectives: z.array(z.string()).optional().nullable(),
+    attachments: z.any().optional().nullable(),
+    unlock_condition: z.string().optional().nullable(),
 });
 
 export const INDUSTRIES = [
