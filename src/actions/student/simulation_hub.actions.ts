@@ -47,14 +47,43 @@ export async function submitTaskAction(simulationId: string, taskId: string, sub
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { success: false as const, error: "Unauthorized" };
 
-        // 1. Insert or Upsert Submission
+        // 1. Fetch Task Details to check for MCQ and calculate score
+        const { data: task } = await supabase
+            .from('simulation_tasks')
+            .select('submission_type, quiz_data')
+            .eq('id', taskId)
+            .single();
+
+        let finalSubmissionData = { ...submissionData };
+
+        if (task?.submission_type === 'mcq' && task.quiz_data) {
+            const quizData = task.quiz_data as any[];
+            let correctCount = 0;
+            const answers = submissionData.answers || submissionData;
+
+            quizData.forEach((q, idx) => {
+                if (answers[idx] === q.answer?.toString()) {
+                    correctCount++;
+                }
+            });
+
+            const score = quizData.length > 0 ? Math.round((correctCount / quizData.length) * 100) : 0;
+            finalSubmissionData = {
+                answers: answers,
+                score: score,
+                correctCount,
+                totalQuestions: quizData.length
+            };
+        }
+
+        // 2. Insert or Upsert Submission
         const { error: submissionError } = await supabase
             .from('simulation_task_submissions')
             .upsert({
                 student_id: user.id,
                 task_id: taskId,
                 simulation_id: simulationId,
-                submission_data: submissionData,
+                submission_data: finalSubmissionData,
                 status: 'submitted',
                 updated_at: new Date().toISOString()
             }, {

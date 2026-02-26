@@ -288,3 +288,18 @@ export async function resendInvitationAction(invitationId: string) {
         return { success: false, error: err.message || "Resend failed" };
     }
 }
+
+/**
+ * Fetches dashboard data for the candidates management view.
+ */
+export async function getCandidatesDashboardData() {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false as const, error: "Unauthorized" };
+        const result = await enterpriseManagementService.getCandidatesDashboardData(user.id);
+        return { success: true as const, data: result };
+    } catch (err: any) {
+        return { success: false as const, error: err.message || "Failed to load candidates dashboard data." };
+    }
+}
