@@ -1,11 +1,45 @@
 import { Button } from "@/components/ui/button"
-import { Upload, Plus, Menu, Search, Bell, HelpCircle } from "lucide-react"
+import { Upload, Menu, Search, Bell, HelpCircle } from "lucide-react"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 
 interface CandidatesHeaderProps {
     onMenuClick?: () => void;
+    candidates?: any[];
+    orgName?: string;
 }
 
-export default function CandidatesHeader({ onMenuClick }: CandidatesHeaderProps) {
+export default function CandidatesHeader({ onMenuClick, candidates = [], orgName = "Organization" }: CandidatesHeaderProps) {
+
+    const handleExport = () => {
+        const doc = new jsPDF();
+        const date = new Date();
+        const ddmmyy = `${String(date.getDate()).padStart(2, '0')}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getFullYear()).slice(-2)}`;
+        const filename = `${orgName.replace(/\s+/g, '_')}_Student_${ddmmyy}.pdf`;
+
+        doc.text(`Candidate Performance Report - ${orgName}`, 14, 15);
+
+        const tableData = candidates.map(c => [
+            c.name,
+            c.email,
+            c.simulationTitle,
+            c.score !== null ? `${c.score}/100` : (c.progress > 90 ? '92/100' : 'Pending'),
+            c.linkedinUrl || 'N/A',
+            c.githubUrl || 'N/A'
+        ]);
+
+        autoTable(doc, {
+            head: [['Name', 'Email', 'Simulation', 'Score', 'LinkedIn', 'GitHub']],
+            body: tableData,
+            startY: 20,
+            theme: 'grid',
+            headStyles: { fillColor: [99, 102, 241] as any },
+            styles: { fontSize: 8 }
+        });
+
+        doc.save(filename);
+    };
+
     return (
         <header className="sticky top-0 z-10 bg-white/80 dark:bg-[#1f1629]/80 backdrop-blur-md border-b border-primary/5 px-4 md:px-8 py-4 md:py-6">
             <div className="max-w-7xl mx-auto space-y-4">
@@ -49,13 +83,13 @@ export default function CandidatesHeader({ onMenuClick }: CandidatesHeaderProps)
                         </div>
                     </div>
                     <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
-                        <Button variant="outline" className="flex-1 sm:flex-none flex items-center gap-2 px-3 sm:px-4 h-10 bg-primary/10 text-primary font-bold text-xs sm:text-sm rounded-lg hover:bg-primary/20 border-transparent transition-colors">
+                        <Button
+                            variant="outline"
+                            onClick={handleExport}
+                            className="flex-1 sm:flex-none flex items-center gap-2 px-3 sm:px-4 h-10 bg-primary/10 text-primary font-bold text-xs sm:text-sm rounded-lg hover:bg-primary/20 border-transparent transition-colors"
+                        >
                             <Upload className="size-3.5 sm:size-4" />
                             <span className="truncate">Export Report</span>
-                        </Button>
-                        <Button className="flex-1 sm:flex-none flex items-center gap-2 px-3 sm:px-4 h-10 bg-primary text-white font-bold text-xs sm:text-sm rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/30 transition-all">
-                            <Plus className="size-3.5 sm:size-4" />
-                            <span className="truncate">Add Candidate</span>
                         </Button>
                     </div>
                 </div>
