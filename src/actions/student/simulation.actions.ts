@@ -23,7 +23,35 @@ export async function enrollInSimulation(simulationId: string) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { success: false as const, error: "Unauthorized" };
 
-        const { error } = await supabase
+        // 1. Fetch simulation and org details
+        const { data: simulation } = await supabase
+            .from('simulations')
+            .select(`
+                title,
+                org_id,
+                organizations (
+                    name,
+                    brand_color,
+                    email_footer_text,
+                    footer_text
+                )
+            `)
+            .eq('id', simulationId)
+            .single();
+
+        if (!simulation) throw new Error("Simulation not found");
+
+        // 2. Fetch student profile
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name, email')
+            .eq('id', user.id)
+            .single();
+
+        const studentName = profile ? `${profile.first_name} ${profile.last_name}` : "Student";
+
+        // 3. Insert enrollment record
+        const { error: enrollError } = await supabase
             .from('simulation_enrollments')
             .insert({
                 simulation_id: simulationId,
@@ -32,11 +60,67 @@ export async function enrollInSimulation(simulationId: string) {
                 progress_percentage: 0
             });
 
-        if (error) throw error;
+        if (enrollError) throw enrollError;
+
+        const org = Array.isArray(simulation.organizations) ? simulation.organizations[0] : (simulation.organizations as any);
+
+        // 4. Log "Congratulatory Email" to system logs (Mock sending)
+        const emailContent = `
+            Congratulations ${studentName}!
+            
+            We are happy for you to join the course: ${simulation.title}.
+            Welcome to your onboarding into this simulation.
+            
+            Best regards,
+            The ${org?.name || 'Prominent Vantage'} Team
+            
+            ${org?.email_footer_text || org?.footer_text || '© 2024 Priminent Vantage'}
+        `.trim();
+
+        await supabase.from('system_logs').insert({
+            action_code: 'COMM_EMAIL_SENT',
+            action_category: 'CONTENT',
+            actor_type: 'system',
+            actor_id: 'system',
+            actor_name: 'Simulation Engine',
+            org_id: simulation.org_id,
+            org_name: org?.name,
+            target_resource_type: 'email',
+            target_resource_id: profile?.email,
+            message: `Enrollment confirmation email sent to ${studentName}`,
+            params: {
+                simulation_id: simulationId,
+                simulation_title: simulation.title,
+                student_id: user.id,
+                email_body: emailContent
+            }
+        });
+
+        // 5. Log Enrollment Activity
+        await supabase.from('system_logs').insert({
+            action_code: 'SIM_ENROLLMENT',
+            action_category: 'CONTENT',
+            actor_type: 'user',
+            actor_id: user.id,
+            actor_name: studentName,
+            org_id: simulation.org_id,
+            org_name: org?.name,
+            target_resource_type: 'simulation',
+            target_resource_id: simulationId,
+            message: `${studentName} enrolled in ${simulation.title}`,
+            params: {
+                simulation_id: simulationId,
+                simulation_title: simulation.title
+            }
+        });
 
         revalidatePath('/student/dashboard');
-        return { success: true as const };
+        revalidatePath('/student/simulations');
+        revalidatePath(`/student/simulations/${simulationId}/preview`);
+
+        return { success: true as const, simulationId };
     } catch (error: any) {
+        console.error("Enrollment failed:", error);
         return { success: false as const, error: error.message || "Failed to enroll in simulation" };
     }
 }

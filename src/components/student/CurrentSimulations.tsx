@@ -121,12 +121,12 @@ export function CurrentSimulations({ enrollments, orgBranding }: CurrentSimulati
                                     </div>
 
                                     <Link
-                                        href={`/student/simulations/${sim.id}`}
+                                        href={`/student/simulations/${sim.id}/hub`}
                                         className="flex h-12 w-full items-center justify-center gap-3 rounded-xl bg-primary text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_4px_14px_0_rgba(127,19,236,0.39)] transition-all hover:scale-[1.02] hover:shadow-[0_6px_20px_rgba(127,19,236,0.23)] active:scale-95"
                                         style={brandColorStyle}
                                     >
                                         <Zap size={16} className="fill-current" />
-                                        Resume Task
+                                        Enter Task Hub
                                     </Link>
                                 </div>
                             </div>

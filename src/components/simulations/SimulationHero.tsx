@@ -20,7 +20,7 @@ export function SimulationHero({ simulation, orgBranding, isEnrolled }: Simulati
 
     const handleEnroll = async () => {
         if (isEnrolled) {
-            router.push(`/student/simulations`);
+            router.push(`/student/simulations/${simulation.id}/hub`);
             return;
         }
 
@@ -28,7 +28,8 @@ export function SimulationHero({ simulation, orgBranding, isEnrolled }: Simulati
         try {
             const result = await enrollInSimulation(simulation.id);
             if (result.success) {
-                router.refresh();
+                // Redirect to the new Task Hub page
+                router.push(`/student/simulations/${simulation.id}/hub`);
             } else {
                 alert(result.error || "Failed to enroll");
             }

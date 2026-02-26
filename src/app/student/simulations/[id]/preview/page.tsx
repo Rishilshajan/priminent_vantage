@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
 import { getSimulationDetailsAction } from "@/actions/student/simulation.actions"
 import { getOrganizationBranding } from "@/actions/enterprise/enterprise-management.actions"
 import { SimulationHero } from "@/components/simulations/SimulationHero"
@@ -7,8 +5,9 @@ import { SimulationDetails } from "@/components/simulations/SimulationDetails"
 import { SimulationSidebar } from "@/components/simulations/SimulationSidebar"
 import { HowItWorks } from "@/components/simulations/HowItWorks"
 import { SimulationReviews } from "@/components/simulations/SimulationReviews"
+import { StudentHeader } from "@/components/student/StudentHeader"
 import Link from "next/link"
-import { ArrowLeft, Search, Layers } from "lucide-react"
+import { ArrowLeft, Layers } from "lucide-react"
 import { Metadata } from "next"
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -31,7 +30,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     };
 }
 
-
 export default async function SimulationPreviewPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
@@ -51,60 +49,13 @@ export default async function SimulationPreviewPage({ params }: { params: Promis
 
     const { simulation, isEnrolled, user } = detailsResult.data;
     const orgBranding = {
-        brand_color: simulation.org_brand_color
+        brand_color: simulation.org_brand_color,
+        logo_url: simulation.org_logo_url
     };
-
-    const userInitials = user?.fullName
-        ? user.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase()
-        : "JD";
-
-    const brandColorText = orgBranding?.brand_color ? { color: orgBranding.brand_color } : {};
 
     return (
         <div className="min-h-screen bg-white dark:bg-[#0f172a] font-sans selection:bg-primary/10 selection:text-primary">
-            {/* Nav */}
-            <nav className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-                <div className="max-w-7xl mx-auto px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-20">
-                        <div className="flex items-center gap-3">
-                            <div className="size-10 bg-primary/10 rounded-xl flex items-center justify-center overflow-hidden border border-slate-200 dark:border-white/10" style={orgBranding?.brand_color ? { backgroundColor: `${orgBranding.brand_color}1a` } : {}}>
-                                {simulation.org_logo_url ? (
-                                    <img src={simulation.org_logo_url} alt={simulation.organization_name} className="size-full object-contain p-1.5" />
-                                ) : (
-                                    <div className="size-full flex items-center justify-center bg-primary" style={orgBranding?.brand_color ? { backgroundColor: orgBranding.brand_color } : {}}>
-                                        <Layers className="size-6 text-white" />
-                                    </div>
-                                )}
-                            </div>
-                            <span className="font-display font-black text-xl tracking-tight text-slate-900 dark:text-white uppercase text-primary" style={brandColorText}>
-                                {simulation.organization_name || "Prominent Vantage"}
-                            </span>
-                        </div>
-
-                        <div className="hidden md:flex items-center gap-10">
-                            <Link href="/student/dashboard" className="text-sm font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-colors">Dashboard</Link>
-                            <Link href="/student/simulations" className="text-sm font-black uppercase tracking-widest text-primary border-b-2 border-primary pb-1" style={orgBranding?.brand_color ? { color: orgBranding.brand_color, borderColor: orgBranding.brand_color } : {}}>Simulations</Link>
-                            <Link href="/student/dashboard" className="text-sm font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-colors">Notifications</Link>
-
-                            <div className="flex items-center gap-4 ml-6 pl-6 border-l border-slate-200 dark:border-white/10">
-                                <button className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-slate-500">
-                                    <Search className="size-5" />
-                                </button>
-                                {user?.avatarUrl ? (
-                                    <img src={user.avatarUrl} alt={user.fullName} className="size-10 rounded-full object-cover" />
-                                ) : (
-                                    <div
-                                        className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs"
-                                        style={orgBranding?.brand_color ? { color: orgBranding.brand_color, backgroundColor: `${orgBranding.brand_color}1a` } : {}}
-                                    >
-                                        {userInitials}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </nav>
+            <StudentHeader userData={{ fullName: user?.fullName || "Student", avatarUrl: user?.avatarUrl }} orgBranding={orgBranding} />
 
             {/* Back Button */}
             <div className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-white/5">

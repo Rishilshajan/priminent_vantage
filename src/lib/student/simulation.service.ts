@@ -300,14 +300,7 @@ export const simulationService = {
                         skill_type
                     ),
                     simulation_tasks (
-                        id,
-                        task_number,
-                        title,
-                        description,
-                        estimated_duration,
-                        difficulty_level,
-                        what_you_learn,
-                        what_you_do,
+                        *,
                         sort_order
                     ),
                     simulation_assets!simulation_id (
@@ -342,21 +335,28 @@ export const simulationService = {
                 .eq('id', userId)
                 .single();
 
-            // 3. Fetch organization name from public metadata as requested
+            // 3. Fetch task submissions for this student
+            const { data: submissions } = await supabase
+                .from('simulation_task_submissions')
+                .select('task_id, status')
+                .eq('student_id', userId)
+                .eq('simulation_id', simulationId);
+
+            // 4. Fetch organization name from public metadata as requested
             const { data: orgMetadata } = await supabase
                 .from('public_organization_metadata')
                 .select('name')
                 .eq('id', simulation.org_id)
                 .single();
 
-            // 4. Fetch branding from organizations table (since metadata might not have color)
+            // 5. Fetch branding from organizations table
             const { data: orgBranding } = await supabase
                 .from('organizations')
                 .select('brand_color, logo_url')
                 .eq('id', simulation.org_id)
                 .single();
 
-            // 5. Check if user is enrolled
+            // 6. Check if user is enrolled
             const { data: enrollment } = await supabase
                 .from('simulation_enrollments')
                 .select('id, status')
@@ -387,6 +387,7 @@ export const simulationService = {
                     fullName: [userProfile?.first_name, userProfile?.last_name].filter(Boolean).join(' ') || "User",
                     avatarUrl: userProfile?.avatar_url
                 },
+                submissions: submissions || [],
                 isEnrolled: !!enrollment,
                 enrollmentStatus: enrollment?.status || null
             };
