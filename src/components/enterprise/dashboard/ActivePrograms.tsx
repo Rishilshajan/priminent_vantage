@@ -39,7 +39,7 @@ export default function ActivePrograms({ programs }: ActiveProgramsProps) {
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active: {program.duration}</span>
                         </div>
                         <h4 className="font-black text-sm mb-0.5 text-slate-900 dark:text-white group-hover:text-primary transition-colors tracking-tight">{program.name}</h4>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Dept: {program.department}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Type: {program.department}</p>
 
                         <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest mb-2">
                             <span className="text-slate-500">{program.enrolled} Enrolled</span>

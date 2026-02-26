@@ -38,7 +38,7 @@ export function AuthHeader() {
     const signupHref = isEducatorPage ? '/educators/signup?next=/educators/dashboard' : '/signup';
 
     const navItems = [
-        { name: "For Students", href: "/signup" },
+        { name: "For Candidates", href: "/signup" },
         { name: "For Enterprise", href: "/enterprise" },
         { name: "For Educators", href: "/educators/signup" },
     ];

@@ -1,1 +1,1 @@
-export * from './admin.actions'
+export { getAdminProfile } from './admin.actions'

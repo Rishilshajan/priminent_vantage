@@ -4,8 +4,8 @@
  * Usage: Allows importing any auth action directly from '@/actions/auth'.
 */
 
-export * from './student.auth'
-export * from './enterprise.auth'
-export * from './educator.auth'
-export * from './shared.auth'
-export * from './login.auth'
+export { studentSignup, studentResetPassword } from './student.auth'
+export { resetEnterprisePassword, enrollMFA, verifyMFA } from './enterprise.auth'
+export { educatorSignup } from './educator.auth'
+export { signOut, signInWithGoogle } from './shared.auth'
+export { login } from './login.auth'

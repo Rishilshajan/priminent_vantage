@@ -34,7 +34,7 @@ export const enterpriseManagementService = {
     },
 
     // Returns dashboard KPIs and enrollment chart data for the enterprise's active simulations filtered by period
-    async getDashboardMetrics(userId: string, period: string = 'all') {
+    async getDashboardMetrics(userId: string, period: string = 'all', month?: number, year?: number) {
         const supabase = await createClient();
         try {
             let { data: member } = await supabase.from('organization_members').select('org_id, organizations(*)').eq('user_id', userId).maybeSingle();
@@ -45,59 +45,145 @@ export const enterpriseManagementService = {
                 if (recentOrg) member = { org_id: recentOrg.id, organizations: recentOrg } as any;
             }
 
-            if (!member) throw new Error("Organization not found");
+            if (!member || !member.organizations) {
+                return {
+                    organization: null,
+                    stats: {
+                        totalEnrollments: { value: "0", change: "N/A", trend: "neutral" },
+                        completionRate: { value: "0%", change: "N/A", trend: "neutral" },
+                        avgTimeToComplete: { value: "N/A", change: "N/A", trend: "neutral" },
+                        activeSimulations: { value: "0", change: "N/A", trend: "neutral" }
+                    },
+                    chartData: Array.from({ length: 6 }).map((_, i) => ({
+                        month: new Date(new Date().getFullYear(), new Date().getMonth() - (5 - i), 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                        enrollments: 0,
+                        completions: 0
+                    })),
+                    activePrograms: [],
+                    topInstructors: [],
+                    userProfile
+                };
+            }
             const orgId = member.org_id;
 
-            let dateFilter = null;
-            if (period === '30d') {
+            // We'll calculate the 'end date' for our 6-month window based on month/year or 'now'
+            const endDate = (month !== undefined && year !== undefined)
+                ? new Date(year, month + 1, 0) // Last day of selected month
+                : new Date();
+
+            // Build the base query for enrollments
+            let enrollmentsQuery = supabase
+                .from('simulation_enrollments')
+                .select(`
+                    id, status, enrolled_at, completed_at, simulation_id,
+                    simulations!inner(id, title, industry, duration, org_id)
+                `)
+                .eq('simulations.org_id', orgId);
+
+            // Apply period filter if month/year are not provided
+            if (month === undefined && year === undefined && period === '30d') {
                 const thirtyDaysAgo = new Date();
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                dateFilter = thirtyDaysAgo.toISOString();
+                enrollmentsQuery = enrollmentsQuery.gte('enrolled_at', thirtyDaysAgo.toISOString());
             }
 
-            const { data: simulations } = await supabase.from('simulations').select('id, title, industry, status, duration, created_at, simulation_enrollments(count)').eq('org_id', orgId).eq('status', 'published').order('updated_at', { ascending: false });
+            const { data: enrollmentsData, error: enrollmentsError } = await enrollmentsQuery;
+            if (enrollmentsError) throw enrollmentsError;
 
-            const { data: orgSims } = await supabase.from('simulations').select('id').eq('org_id', orgId);
-            const simIds = orgSims?.map(s => s.id) || [];
+            const { data: simulations } = await supabase
+                .from('simulations')
+                .select(`
+                    *,
+                    simulation_enrollments(count)
+                `)
+                .eq('org_id', orgId)
+                .eq('status', 'published')
+                .order('updated_at', { ascending: false });
 
-            let enrollmentsData: any[] = [];
-            if (simIds.length > 0) {
-                let query = supabase.from('simulation_enrollments').select('id, status, enrolled_at, completed_at, simulation_id').in('simulation_id', simIds);
-                if (dateFilter) query = query.gte('enrolled_at', dateFilter);
-                const { data } = await query;
-                enrollmentsData = data || [];
+            // --- CALCULATIONS ---
+
+            // If filtering by specific month/year, we should show stats for THAT month
+            const filterDataForStats = (data: any[]) => {
+                if (month !== undefined && year !== undefined) {
+                    return data.filter(e => {
+                        const d = new Date(e.enrolled_at);
+                        return d.getMonth() === month && d.getFullYear() === year;
+                    });
+                }
+                return data; // If no specific month/year, use the data already filtered by 'period'
+            };
+
+            const statsEnrollments = filterDataForStats(enrollmentsData || []);
+            const totalEnrollmentsCount = statsEnrollments.length;
+            const completedEnrollments = statsEnrollments.filter(e => e.status === 'completed' && e.completed_at && e.enrolled_at);
+            const completionRateValue = totalEnrollmentsCount > 0
+                ? Math.round((completedEnrollments.length / totalEnrollmentsCount) * 100)
+                : 0;
+
+            let avgTime = "N/A";
+            if (completedEnrollments.length > 0) {
+                const totalDays = completedEnrollments.reduce((acc, curr) => {
+                    const start = new Date(curr.enrolled_at);
+                    const end = new Date(curr.completed_at);
+                    return acc + (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+                }, 0);
+                avgTime = (totalDays / completedEnrollments.length).toFixed(1) + " Days";
             }
 
-            const totalEnrollmentsCount = enrollmentsData.length;
-            const completedCount = enrollmentsData.filter(e => e.status === 'completed').length;
-            const completionRateValue = totalEnrollmentsCount > 0 ? ((completedCount / totalEnrollmentsCount) * 100).toFixed(1) : "0.0";
+            // Generate real chart data for the last 6 months relative to endDate
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const chartDataList: { month: string; enrollments: number; completions: number }[] = [];
+
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(endDate.getFullYear(), endDate.getMonth() - i, 1);
+                const label = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+
+                const monthEnrollments = (enrollmentsData || []).filter(e => {
+                    const enrollDate = new Date(e.enrolled_at);
+                    return enrollDate.getMonth() === d.getMonth() && enrollDate.getFullYear() === d.getFullYear();
+                });
+
+                const monthCompletions = (enrollmentsData || []).filter(e => {
+                    if (e.status !== 'completed' || !e.completed_at) return false;
+                    const completeDate = new Date(e.completed_at);
+                    return completeDate.getMonth() === d.getMonth() && completeDate.getFullYear() === d.getFullYear();
+                });
+
+                chartDataList.push({
+                    month: label,
+                    enrollments: monthEnrollments.length,
+                    completions: monthCompletions.length
+                });
+            }
 
             return {
                 organization: member.organizations,
                 stats: {
-                    totalEnrollments: { value: totalEnrollmentsCount.toLocaleString(), change: period === '30d' ? "Last 30 Days" : "All Time", trend: "neutral" },
+                    totalEnrollments: { value: totalEnrollmentsCount.toLocaleString(), change: month !== undefined ? `${monthNames[month]} ${year}` : (period === '30d' ? "Last 30 Days" : "All Time"), trend: "neutral" },
                     completionRate: { value: `${completionRateValue}%`, change: "Avg.", trend: "neutral" },
-                    avgTimeToComplete: { value: "4.2 Days", change: "Avg.", trend: "neutral" },
-                    skillScore: { value: "4.8/5.0", change: "+0.8", trend: "up" }
+                    avgTimeToComplete: { value: avgTime, change: "Avg.", trend: "neutral" },
+                    activeSimulations: { value: (simulations?.length || 0).toString(), change: "Published", trend: "up" }
                 },
-                chartData: [
-                    { month: "Jan", enrollments: Math.floor(totalEnrollmentsCount * 0.1), completions: Math.floor(completedCount * 0.1) },
-                    { month: "Feb", enrollments: Math.floor(totalEnrollmentsCount * 0.15), completions: Math.floor(completedCount * 0.15) },
-                    { month: "Mar", enrollments: Math.floor(totalEnrollmentsCount * 0.12), completions: Math.floor(completedCount * 0.12) },
-                    { month: "Apr", enrollments: Math.floor(totalEnrollmentsCount * 0.2), completions: Math.floor(completedCount * 0.2) },
-                    { month: "May", enrollments: Math.floor(totalEnrollmentsCount * 0.18), completions: Math.floor(completedCount * 0.18) },
-                    { month: "Jun", enrollments: Math.floor(totalEnrollmentsCount * 0.25), completions: Math.floor(completedCount * 0.25) },
-                ],
-                activePrograms: simulations?.slice(0, 5).map(sim => ({
-                    id: sim.id,
-                    name: sim.title,
-                    department: sim.industry || "General",
-                    status: "STABLE",
-                    duration: sim.duration || "N/A",
-                    enrolled: (sim.simulation_enrollments?.[0]?.count || 0).toLocaleString(),
-                    rate: Math.floor(Math.random() * 30) + 70,
-                    color: "primary"
-                })) || [],
+                chartData: chartDataList,
+                activePrograms: simulations?.slice(0, 4).map(sim => {
+                    // For active programs, we want to show stats based on ALL enrollments for that simulation,
+                    // not just the filtered ones for the dashboard stats.
+                    const simEnrollments = (enrollmentsData || []).filter(e => e.simulation_id === sim.id);
+                    const completed = simEnrollments.filter(e => e.status === 'completed').length;
+                    const total = simEnrollments.length;
+                    const rateValue = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+                    return {
+                        id: sim.id,
+                        name: sim.title,
+                        department: sim.industry || "General",
+                        status: "STABLE",
+                        duration: sim.duration || "N/A",
+                        enrolled: total.toLocaleString(),
+                        rate: rateValue,
+                        color: "primary"
+                    };
+                }) || [],
                 topInstructors: [
                     { id: '1', name: 'Sarah Wilson', role: 'Senior Engineer', score: 98, initials: 'SW' },
                     { id: '2', name: 'James Rodriguez', role: 'Product Lead', score: 95, initials: 'JR' },

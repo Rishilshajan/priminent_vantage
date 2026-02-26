@@ -13,7 +13,7 @@ interface StatsCardsProps {
         totalEnrollments: StatItem;
         completionRate: StatItem;
         avgTimeToComplete: StatItem;
-        skillScore: StatItem;
+        activeSimulations: StatItem;
     };
 }
 
@@ -21,37 +21,37 @@ export default function StatsCards({ stats }: StatsCardsProps) {
     const cards = [
         {
             label: "Total Enrollments",
-            value: stats.totalEnrollments.value,
-            change: stats.totalEnrollments.change,
-            trend: stats.totalEnrollments.trend,
+            value: stats?.totalEnrollments?.value || "0",
+            change: stats?.totalEnrollments?.change || "",
+            trend: stats?.totalEnrollments?.trend || "neutral",
             icon: "how_to_reg",
             bgColor: "bg-blue-50 dark:bg-blue-500/10",
             textColor: "text-blue-600"
         },
         {
             label: "Completion Rate",
-            value: stats.completionRate.value,
-            change: stats.completionRate.change,
-            trend: stats.completionRate.trend,
+            value: stats?.completionRate?.value || "0%",
+            change: stats?.completionRate?.change || "",
+            trend: stats?.completionRate?.trend || "neutral",
             icon: "history_edu",
             bgColor: "bg-purple-50 dark:bg-primary/10",
             textColor: "text-primary"
         },
         {
             label: "Avg. Time to Complete",
-            value: stats.avgTimeToComplete.value,
-            change: stats.avgTimeToComplete.change,
-            trend: stats.avgTimeToComplete.trend,
+            value: stats?.avgTimeToComplete?.value || "N/A",
+            change: stats?.avgTimeToComplete?.change || "",
+            trend: stats?.avgTimeToComplete?.trend || "neutral",
             icon: "hourglass_empty",
             bgColor: "bg-amber-50 dark:bg-amber-500/10",
             textColor: "text-amber-600"
         },
         {
-            label: "Skill Acquisition Score",
-            value: stats.skillScore.value,
-            change: stats.skillScore.change,
-            trend: stats.skillScore.trend,
-            icon: "verified_user",
+            label: "Active Simulations",
+            value: stats?.activeSimulations?.value || "0",
+            change: stats?.activeSimulations?.change || "",
+            trend: stats?.activeSimulations?.trend || "neutral",
+            icon: "rocket_launch",
             bgColor: "bg-emerald-50 dark:bg-emerald-500/10",
             textColor: "text-emerald-600"
         }

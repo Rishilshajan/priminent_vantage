@@ -13,12 +13,18 @@ export const metadata = {
     title: "Enterprise Dashboard - Priminent Vantage",
 }
 
-export default async function EnterpriseDashboardPage(props: { searchParams: Promise<{ period?: string }> }) {
-    const searchParams = await props.searchParams;
-    const period = searchParams.period || 'all';
-    const result = await getDashboardMetrics(period);
+export default async function EnterpriseDashboard({
+    searchParams
+}: {
+    searchParams: { period?: '30d' | 'all', month?: string, year?: string }
+}) {
+    const period = searchParams.period || '30d';
+    const month = searchParams.month ? parseInt(searchParams.month) : undefined;
+    const year = searchParams.year ? parseInt(searchParams.year) : undefined;
 
-    if (result.error || !result.data) {
+    const response = await getDashboardMetrics(period, month, year);
+
+    if (!response.success || !response.data) {
         return (
             <div className="flex h-screen items-center justify-center p-8 bg-slate-50 dark:bg-slate-950">
                 <div className="text-center space-y-4 max-w-md">
@@ -26,16 +32,16 @@ export default async function EnterpriseDashboardPage(props: { searchParams: Pro
                         <span className="material-symbols-outlined text-3xl">error</span>
                     </div>
                     <h1 className="text-xl font-black text-slate-900 dark:text-white">Failed to load dashboard</h1>
-                    <p className="text-sm text-slate-500">{result.error || "An unexpected error occurred."}</p>
+                    <p className="text-sm text-slate-500">{response.error || "Could not retrieve organization data."}</p>
                     <Button asChild className="bg-primary text-white font-bold h-11 px-8 rounded-xl shadow-xl shadow-primary/20">
-                        <a href="/enterprise/setup">Return to Setup</a>
+                        <a href="/enterprise/setup">Complete Setup</a>
                     </Button>
                 </div>
             </div>
         )
     }
 
-    const { organization, stats, chartData, activePrograms, topInstructors, userProfile } = result.data;
+    const { organization, stats, chartData, activePrograms, topInstructors, userProfile } = response.data;
     const org = (Array.isArray(organization) ? organization[0] : organization) as any;
     const orgName = org?.name || "Organization";
 

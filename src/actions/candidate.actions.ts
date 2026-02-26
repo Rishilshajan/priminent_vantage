@@ -1,3 +1,6 @@
 "use server";
 
-export * from "./candidate/index";
+export {
+    getCandidateStats,
+    getCandidateActivity,
+} from "./candidate/candidate.actions";

@@ -13,12 +13,12 @@ export async function getEnterpriseStats() {
 }
 
 // Fetches key performance metrics for the enterprise dashboard filtered by time period
-export async function getDashboardMetrics(period: string = 'all') {
+export async function getDashboardMetrics(period: '30d' | 'all' = 'all', month?: number, year?: number) {
     const supabase = await createClient();
     try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { success: false as const, error: "Unauthorized" };
-        const result = await enterpriseManagementService.getDashboardMetrics(user.id, period);
+        const result = await enterpriseManagementService.getDashboardMetrics(user.id, period, month, year);
         return { success: true as const, data: result };
     } catch (err: any) {
         return { success: false as const, error: err.message || "Failed to load dashboard metrics." };
