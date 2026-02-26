@@ -19,8 +19,7 @@ export function StudentSidebar({ user, isOpen, onClose }: StudentSidebarProps) {
         { icon: LayoutDashboard, label: "Dashboard", href: "/student/dashboard" },
         { icon: Rocket, label: "My Simulations", href: "/student/simulations" },
         { icon: Award, label: "Skills & Certifications", href: "/student/skills" },
-        { icon: Compass, label: "Simulation Library", href: "/student/library" },
-        { icon: BarChart3, label: "Reports", href: "/student/reports" },
+        { icon: Compass, label: "Simulation Library", href: "/student/library" }
     ]
 
     return (

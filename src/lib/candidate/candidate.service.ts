@@ -111,5 +111,119 @@ export const candidateService = {
             console.error("Error fetching candidate activity:", error);
             throw error;
         }
+    },
+
+    async getSkillsAndCertifications(userId: string) {
+        const supabase = await createClient();
+
+        try {
+            // 1. Fetch skills
+            const { data: skills, error: skillsError } = await supabase
+                .from('candidate_skills')
+                .select('*')
+                .eq('user_id', userId)
+                .order('proficiency_level', { ascending: false });
+
+            if (skillsError) throw skillsError;
+
+            // 2. Fetch certificates with simulation and organization details
+            const { data: certificates, error: certError } = await supabase
+                .from('simulation_certificates')
+                .select(`
+                    *,
+                    simulations (
+                        title,
+                        organizations (
+                            name,
+                            logo_url
+                        )
+                    )
+                `)
+                .eq('student_id', userId)
+                .order('issued_at', { ascending: false });
+
+            if (certError) throw certError;
+
+            // 3. Fetch profile
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('first_name, last_name, email, avatar_url')
+                .eq('id', userId)
+                .single();
+
+            if (profileError) throw profileError;
+
+            return {
+                skills: skills || [],
+                certificates: certificates || [],
+                profile
+            };
+        } catch (error) {
+            console.error("Error fetching skills and certifications:", error);
+            throw error;
+        }
+    },
+
+    async getStudentFullProfile(userId: string) {
+        const supabase = await createClient();
+
+        try {
+            // 1. Fetch Profile
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (profileError) throw profileError;
+
+            // 2. Fetch Skills
+            const { data: skills, error: skillsError } = await supabase
+                .from('candidate_skills')
+                .select('*')
+                .eq('user_id', userId)
+                .order('proficiency_level', { ascending: false });
+
+            // 3. Fetch Certificates with details
+            const { data: certificates, error: certError } = await supabase
+                .from('simulation_certificates')
+                .select(`
+                    *,
+                    simulations (
+                        title,
+                        organizations (
+                            name,
+                            logo_url
+                        )
+                    )
+                `)
+                .eq('student_id', userId)
+                .order('issued_at', { ascending: false });
+
+            // 4. Fetch Experience
+            const { data: experience, error: expError } = await supabase
+                .from('candidate_experience')
+                .select('*')
+                .eq('user_id', userId)
+                .order('start_date', { ascending: false });
+
+            // 5. Fetch Education
+            const { data: education, error: eduError } = await supabase
+                .from('candidate_education')
+                .select('*')
+                .eq('user_id', userId)
+                .order('graduation_year', { ascending: false });
+
+            return {
+                profile,
+                skills: skills || [],
+                certificates: certificates || [],
+                experience: experience || [],
+                education: education || []
+            };
+        } catch (error) {
+            console.error("Error fetching student full profile:", error);
+            throw error;
+        }
     }
 }
