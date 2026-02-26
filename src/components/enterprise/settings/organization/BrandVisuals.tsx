@@ -8,7 +8,7 @@ interface BrandVisualsProps {
 }
 
 export default function BrandVisuals({
-    footerText = "© 2024 Priminent Vantage. Confidentially Transmitted.",
+    footerText = "© 2026 Priminent Vantage. Confidentially Transmitted.",
     onFooterTextChange
 }: BrandVisualsProps) {
     return (

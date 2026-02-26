@@ -10,6 +10,11 @@ export interface EmailOptions {
     html: string;
     from?: string;
     replyTo?: string;
+    attachments?: {
+        content: string | Buffer;
+        filename: string;
+        content_type?: string;
+    }[];
 }
 
 export const mailService = {
@@ -20,7 +25,8 @@ export const mailService = {
             subject,
             html,
             from = 'Priminent Vantage <onboarding@resend.dev>',
-            replyTo
+            replyTo,
+            attachments
         } = options;
 
         try {
@@ -30,6 +36,7 @@ export const mailService = {
                 subject,
                 html,
                 replyTo,
+                attachments,
             });
 
             if (error) {

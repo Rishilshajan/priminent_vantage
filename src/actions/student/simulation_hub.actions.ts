@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { notificationService } from "@/lib/enterprise/notification.service";
 
 export async function submitTaskAction(simulationId: string, taskId: string, submissionData: any) {
     const supabase = await createClient();
@@ -67,6 +68,22 @@ export async function submitTaskAction(simulationId: string, taskId: string, sub
                 progress_percentage: progress
             }
         });
+
+        // 5. Trigger Completion Notification if applicable
+        if (progress === 100) {
+            // Fetch names for notification
+            const { data: profile } = await supabase.from('profiles').select('first_name, last_name').eq('id', user.id).single();
+            const { data: sim } = await supabase.from('simulations').select('title, org_id').eq('id', simulationId).single();
+
+            if (profile && sim) {
+                await notificationService.triggerEventNotification(
+                    'completion',
+                    sim.org_id,
+                    `${profile.first_name} ${profile.last_name}`,
+                    sim.title
+                );
+            }
+        }
 
         revalidatePath(`/student/simulations/${simulationId}/hub`);
         revalidatePath('/student/dashboard');

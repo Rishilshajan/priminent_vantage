@@ -91,11 +91,6 @@ export default function BrandingView({ userProfile, orgName, initialBranding }: 
                         {/* Page Header */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                             <div>
-                                <nav className="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
-                                    <Link href="/enterprise/settings/organization" className="hover:text-primary transition-colors">Organization</Link>
-                                    <ChevronRight className="size-3" />
-                                    <span className="text-slate-600 dark:text-slate-300">Branding & Identity</span>
-                                </nav>
                                 <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Organization Branding</h1>
                                 <p className="text-slate-500 mt-1 max-w-lg">Customize your corporate identity across simulations, emails, and candidate certificates.</p>
                             </div>

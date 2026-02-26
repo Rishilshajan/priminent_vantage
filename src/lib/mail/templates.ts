@@ -111,5 +111,59 @@ export const emailTemplates = {
                 <p style="font-size: 10px; color: #94a3b8; text-align: center;">&copy; 2026 Priminent Vantage. All rights reserved.</p>
             </div>
         `
-    })
+    }),
+
+    /**
+     * Weekly Organization Summary
+     */
+    weeklySummary: (orgName: string, dateRange: string) => ({
+        subject: `Weekly Performance Summary: ${orgName} (${dateRange})`,
+        html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #334155; line-height: 1.6;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <h1 style="color: #7c3aed; font-size: 24px; font-weight: bold; margin: 0;">Weekly Summary</h1>
+                    <p style="color: #64748b; font-size: 14px; margin-top: 8px;">${orgName} • Performance Insights</p>
+                </div>
+                <p>Hello,</p>
+                <p>Please find the attached weekly performance summary for <strong>${orgName}</strong>. This report contains a high-level overview of candidate progress, simulation engagement, and recruitment funnel performance for the period of <strong>${dateRange}</strong>.</p>
+                <div style="background-color: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 12px; padding: 24px; margin: 24px 0;">
+                    <p style="margin: 0; font-size: 14px; color: #5b21b6; text-align: center;"><strong>Note:</strong> A detailed PDF report is attached to this email for your review.</p>
+                </div>
+                <p style="font-size: 12px; color: #64748b;">If you wish to change your notification preferences, please visit your organization settings.</p>
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0;" />
+                <p style="font-size: 10px; color: #94a3b8; text-align: center;">&copy; 2026 Priminent Vantage. All rights reserved.</p>
+            </div>
+        `
+    }),
+
+    /**
+     * Simulation Event Alerts (Enrollment/Completion)
+     */
+    simulationAlert: (type: 'enrollment' | 'completion', candidateName: string, simulationName: string) => {
+        const isEnrollment = type === 'enrollment';
+        return {
+            subject: isEnrollment
+                ? `New Enrollment: ${candidateName} started ${simulationName}`
+                : `Simulation Completed: ${candidateName} finished ${simulationName}`,
+            html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #334155; line-height: 1.6;">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <h1 style="color: #0f172a; font-size: 20px; font-weight: bold; margin: 0;">${isEnrollment ? 'New Enrollment Alert' : 'Simulation Completion Alert'}</h1>
+                    </div>
+                    <p>Hello,</p>
+                    <p>This is an automated notification regarding a candidate activity:</p>
+                    <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0; border: 1px solid #e2e8f0;">
+                        <p style="margin: 0 0 8px 0;"><strong>Candidate:</strong> ${candidateName}</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Simulation:</strong> ${simulationName}</p>
+                        <p style="margin: 0;"><strong>Event:</strong> ${isEnrollment ? 'Started engagement' : 'Successfully completed'}</p>
+                    </div>
+                    <div style="text-align: center; margin-top: 24px;">
+                        <a href="${process.env.NEXT_PUBLIC_APP_URL}/enterprise/analytics" style="color: #7c3aed; font-weight: bold; text-decoration: none; font-size: 14px;">View Analytics Dashboard &rarr;</a>
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0;" />
+                    <p style="font-size: 10px; color: #94a3b8; text-align: center;">&copy; 2026 Priminent Vantage. All rights reserved.</p>
+                </div>
+            `
+        };
+    }
 };

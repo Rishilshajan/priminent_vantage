@@ -3,6 +3,8 @@
 import { simulationService } from "@/lib/student/simulation.service";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { notificationService } from "@/lib/enterprise/notification.service";
+import { logServerEvent } from "@/lib/logger/server";
 
 export async function getStudentDashboardData() {
     const supabase = await createClient();
@@ -113,6 +115,14 @@ export async function enrollInSimulation(simulationId: string) {
                 simulation_title: simulation.title
             }
         });
+
+        // 6. Trigger Admin Notification
+        await notificationService.triggerEventNotification(
+            'enrollment',
+            simulation.org_id,
+            studentName,
+            simulation.title
+        );
 
         revalidatePath('/student/dashboard');
         revalidatePath('/student/simulations');
