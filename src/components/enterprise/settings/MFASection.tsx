@@ -1,11 +1,24 @@
 "use client"
 
-import { ShieldCheck } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 
-export default function MFASection() {
+interface MFASectionProps {
+    enforceAdmins: boolean;
+    enforceAll: boolean;
+    onEnforceAdminsChange: (value: boolean) => void;
+    onEnforceAllChange: (value: boolean) => void;
+    disabled?: boolean;
+}
+
+export default function MFASection({
+    enforceAdmins,
+    enforceAll,
+    onEnforceAdminsChange,
+    onEnforceAllChange,
+    disabled
+}: MFASectionProps) {
     return (
-        <section className="bg-white dark:bg-[#1f1629] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <section className="bg-white dark:bg-[#1f1629] rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3 bg-slate-50/30 dark:bg-slate-800/20">
                 <span className="material-symbols-outlined text-primary text-2xl">verified_user</span>
                 <h2 className="font-bold text-slate-900 dark:text-white">Multi-Factor Authentication (MFA)</h2>
@@ -16,14 +29,22 @@ export default function MFASection() {
                         <p className="text-sm font-bold text-slate-900 dark:text-white">Enforce MFA for Admins</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Mandatory secondary verification for all accounts with super-admin or manager privileges. Strongly recommended for platform security.</p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch
+                        checked={enforceAdmins}
+                        onCheckedChange={onEnforceAdminsChange}
+                        disabled={disabled}
+                    />
                 </div>
                 <div className="p-6 flex items-center justify-between gap-8">
                     <div className="flex-1">
                         <p className="text-sm font-bold text-slate-900 dark:text-white">Enforce MFA for All Users</p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Requires every user in the 'Priminent Vantage' workspace to configure MFA upon their next login session.</p>
                     </div>
-                    <Switch />
+                    <Switch
+                        checked={enforceAll}
+                        onCheckedChange={onEnforceAllChange}
+                        disabled={disabled}
+                    />
                 </div>
             </div>
         </section>

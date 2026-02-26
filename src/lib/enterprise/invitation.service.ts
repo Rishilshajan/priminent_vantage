@@ -103,7 +103,7 @@ export const invitationService = {
 
         const { data: invitation, error } = await supabase
             .from('instructor_invitations')
-            .select('*, organizations(name)')
+            .select('*, organizations(name, enterprise_security_settings(*))')
             .eq('token', token)
             .eq('status', 'pending')
             .gt('expires_at', new Date().toISOString())

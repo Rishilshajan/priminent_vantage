@@ -165,9 +165,22 @@ export async function createInstructorInvitation(data: { email: string; firstNam
             };
         }
 
-        // 3. Fetch organization's default password
-        const { data: org } = await supabase.from('organizations').select('default_password').eq('id', member.org_id).maybeSingle();
-        const defaultPassword = org?.default_password || "Vantage2024!";
+        // 3. Fetch organization's security policy
+        const { data: policy } = await supabase
+            .from('enterprise_security_settings')
+            .select('*')
+            .eq('org_id', member.org_id)
+            .maybeSingle();
+
+        const defaultPolicy = {
+            min_password_length: 12,
+            require_special_symbols: true,
+            require_numeric_digits: true,
+            require_mixed_case: false
+        };
+
+        const { passwordPolicyUtils } = await import('@/lib/utils/password-policy');
+        const generatedPassword = passwordPolicyUtils.generateSecurePassword(policy || defaultPolicy);
 
         // Dynamic import to avoid circular dependencies
         const { invitationService } = await import('@/lib/enterprise/invitation.service');
@@ -178,7 +191,7 @@ export async function createInstructorInvitation(data: { email: string; firstNam
             orgId: member.org_id,
             role: data.role,
             invitedBy: user.id,
-            defaultPassword
+            defaultPassword: generatedPassword
         });
 
         if (!result.success) throw new Error(result.error);
@@ -187,7 +200,7 @@ export async function createInstructorInvitation(data: { email: string; firstNam
             success: true as const,
             data: {
                 ...result.data,
-                defaultPassword
+                defaultPassword: generatedPassword
             }
         };
     } catch (err: any) {

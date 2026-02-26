@@ -30,11 +30,6 @@ export default function PrivacyView({ userProfile, orgName }: PrivacyViewProps) 
                         {/* Page Header */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                             <div>
-                                <nav className="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
-                                    <Link href="/enterprise/settings" className="hover:text-primary transition-colors">Settings</Link>
-                                    <ChevronRight className="size-3" />
-                                    <span className="text-slate-600 dark:text-slate-300">Data & Privacy</span>
-                                </nav>
                                 <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Enterprise Data & Privacy Settings</h1>
                                 <p className="text-slate-500 mt-1 max-w-lg">Configure global data handling, retention policies, and regulatory compliance standards.</p>
                             </div>

@@ -234,19 +234,81 @@ export function AcceptInvitationView({ token }: AcceptInvitationViewProps) {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Create Password</label>
+                                <div className="flex items-center justify-between ml-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Create Password</label>
+                                    {password && (
+                                        <span className={`text-[10px] font-bold uppercase tracking-widest ${(() => {
+                                            const policy = invitation.organizations?.enterprise_security_settings?.[0] || {
+                                                min_password_length: 12,
+                                                require_special_symbols: true,
+                                                require_numeric_digits: true,
+                                                require_mixed_case: false
+                                            };
+                                            const { passwordPolicyUtils } = require('@/lib/utils/password-policy');
+                                            return passwordPolicyUtils.validatePassword(password, policy).isValid ? 'text-emerald-500' : 'text-rose-500';
+                                        })()
+                                            }`}>
+                                            {(() => {
+                                                const policy = invitation.organizations?.enterprise_security_settings?.[0] || {
+                                                    min_password_length: 12,
+                                                    require_special_symbols: true,
+                                                    require_numeric_digits: true,
+                                                    require_mixed_case: false
+                                                };
+                                                const { passwordPolicyUtils } = require('@/lib/utils/password-policy');
+                                                const result = passwordPolicyUtils.validatePassword(password, policy);
+                                                return result.isValid ? 'Strong Password' : 'Weak Password';
+                                            })()}
+                                        </span>
+                                    )}
+                                </div>
                                 <Input
                                     required
                                     type="password"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="h-12 px-5 bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 rounded-2xl font-bold placeholder:font-medium focus:ring-4 focus:ring-primary/5 transition-all"
+                                    className={`h-12 px-5 bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 rounded-2xl font-bold placeholder:font-medium focus:ring-4 transition-all ${password ? (
+                                        (() => {
+                                            const policy = invitation.organizations?.enterprise_security_settings?.[0] || {
+                                                min_password_length: 12,
+                                                require_special_symbols: true,
+                                                require_numeric_digits: true,
+                                                require_mixed_case: false
+                                            };
+                                            const { passwordPolicyUtils } = require('@/lib/utils/password-policy');
+                                            return passwordPolicyUtils.validatePassword(password, policy).isValid ? 'focus:ring-emerald-500/10 border-emerald-500/20' : 'focus:ring-rose-500/10 border-rose-500/20';
+                                        })()
+                                    ) : 'focus:ring-primary/5'
+                                        }`}
                                 />
+                                {password && (() => {
+                                    const policy = invitation.organizations?.enterprise_security_settings?.[0] || {
+                                        min_password_length: 12,
+                                        require_special_symbols: true,
+                                        require_numeric_digits: true,
+                                        require_mixed_case: false
+                                    };
+                                    const { passwordPolicyUtils } = require('@/lib/utils/password-policy');
+                                    const result = passwordPolicyUtils.validatePassword(password, policy);
+                                    return !result.isValid && (
+                                        <p className="text-[10px] text-rose-500 font-bold mt-1 ml-1 leading-tight">{result.error}</p>
+                                    );
+                                })()}
                             </div>
 
                             <Button
-                                disabled={verifying}
+                                disabled={verifying || (() => {
+                                    if (!password) return true;
+                                    const policy = invitation.organizations?.enterprise_security_settings?.[0] || {
+                                        min_password_length: 12,
+                                        require_special_symbols: true,
+                                        require_numeric_digits: true,
+                                        require_mixed_case: false
+                                    };
+                                    const { passwordPolicyUtils } = require('@/lib/utils/password-policy');
+                                    return !passwordPolicyUtils.validatePassword(password, policy).isValid;
+                                })()}
                                 className="w-full h-14 bg-primary hover:bg-primary/95 text-white rounded-2xl shadow-xl shadow-primary/20 transition-all font-black uppercase tracking-[0.2em] text-xs"
                             >
                                 {verifying ? (
