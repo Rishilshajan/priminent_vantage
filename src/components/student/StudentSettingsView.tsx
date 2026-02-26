@@ -196,14 +196,7 @@ export function StudentSettingsView({ data, organizationBranding }: StudentSetti
     ];
 
     return (
-        <div className="relative flex h-screen w-full overflow-hidden bg-slate-50/50 dark:bg-background-dark font-display">
-            {/* Background Grid Pattern */}
-            <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.01]"
-                style={{
-                    backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)`,
-                    backgroundSize: '40px 40px'
-                }}
-            />
+        <div className="relative flex h-screen w-full overflow-hidden  bg-[#F7F6F8] dark:bg-background-dark font-display">
 
             {/* Mobile Header */}
             <div className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-white/80 px-4 backdrop-blur-md dark:bg-[#1e1429]/80 lg:hidden">
@@ -232,7 +225,7 @@ export function StudentSettingsView({ data, organizationBranding }: StudentSetti
                 <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-8 p-6 pb-20 lg:p-10">
 
                     {/* Top Profile Banner (New Redesign) */}
-                    <div className="relative overflow-hidden rounded-[40px] bg-white p-8 shadow-2xl shadow-slate-200/40 dark:bg-[#1e1429] dark:shadow-none lg:p-12">
+                    <div className="relative overflow-hidden rounded-[40px] bg-white p-8 shadow-sm shadow-slate-200 dark:bg-[#1e1429] dark:shadow-none lg:p-12">
                         <div className="absolute right-8 top-8 hidden lg:block">
                         </div>
 
@@ -617,9 +610,9 @@ export function StudentSettingsView({ data, organizationBranding }: StudentSetti
                             <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
                                 {/* Profile Summary Card */}
                                 <div className="flex flex-col gap-6 lg:col-span-2">
-                                    <div className="flex flex-col gap-8 rounded-[40px] bg-white p-8 shadow-2xl shadow-slate-200/40 dark:bg-[#1e1429] dark:shadow-none lg:p-12">
+                                    <div className="flex flex-col gap-8 rounded-[40px] bg-white p-8 shadow-sm shadow-slate-200 dark:bg-[#1e1429] dark:shadow-none lg:p-12">
                                         <div className="flex items-center gap-4">
-                                            <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-white" style={brandColorStyle}>
+                                            <div className="flex size-10 items-center justify-center rounded-xl bg-primary-purple text-white" style={brandColorStyle}>
                                                 <PieChart size={20} />
                                             </div>
                                             <h2 className="text-2xl font-black    text-slate-900 dark:text-white">Profile Summary</h2>
@@ -659,7 +652,7 @@ export function StudentSettingsView({ data, organizationBranding }: StudentSetti
                                 </div>
 
                                 {/* Quick Stats Card */}
-                                <div className="flex flex-col gap-8 rounded-[40px] bg-white p-8 shadow-2xl shadow-slate-200/40 dark:bg-[#1e1429] dark:shadow-none lg:p-12 lg:col-span-1">
+                                <div className="flex flex-col gap-8 rounded-[40px] bg-white p-8 shadow-sm shadow-slate-200 dark:bg-[#1e1429] dark:shadow-none lg:p-12 lg:col-span-1">
                                     <div className="flex items-center gap-4">
                                         <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-white" style={brandColorStyle}>
                                             <Layers size={20} />

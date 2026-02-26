@@ -106,7 +106,7 @@ export function StudentSidebar({ user, isOpen, onClose }: StudentSidebarProps) {
 
                     <button
                         onClick={async () => await signOut()}
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-text-main transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 mt-1"
+                        className="flex w-full bg-red-50 items-center gap-3 rounded-lg px-3 py-2.5 text-text-main transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 mt-1"
                     >
                         <LogOut className="size-5" />
                         <span className="text-sm font-medium">Log Out</span>
