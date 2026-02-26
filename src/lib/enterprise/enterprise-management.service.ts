@@ -256,7 +256,7 @@ export const enterpriseManagementService = {
         const supabase = await createClient();
         try {
             const { data: member } = await supabase.from('organization_members').select('org_id, role').eq('user_id', userId).maybeSingle();
-            if (!member || !['admin', 'billing'].includes(member.role)) throw new Error("Unauthorized");
+            if (!member || !['enterprise_admin', 'owner', 'admin', 'billing'].includes(member.role)) throw new Error("Unauthorized");
 
             const { data: profile } = await supabase.from('profiles').select('first_name, last_name').eq('id', userId).single();
             const updatedBy = profile ? `${profile.first_name} ${profile.last_name}`.trim() : userId;
@@ -275,7 +275,7 @@ export const enterpriseManagementService = {
         const supabase = await createClient();
         try {
             const { data: member } = await supabase.from('organization_members').select('org_id, role').eq('user_id', userId).maybeSingle();
-            if (!member || !['admin', 'owner'].includes(member.role)) throw new Error("Access denied");
+            if (!member || !['enterprise_admin', 'owner', 'admin'].includes(member.role)) throw new Error("Access denied");
 
             const folderMap: Record<string, string> = { logo: 'organization-logos', signature: 'organization-signatures' };
             const folder = folderMap[assetType] || 'organization-misc';

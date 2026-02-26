@@ -9,7 +9,6 @@ export default function SettingsNav() {
     const navItems = [
         { label: "Organization", href: "/enterprise/settings/organization", icon: "domain" },
         { label: "Security", href: "/enterprise/settings", icon: "shield_person" },
-        { label: "Team & Access", href: "/enterprise/settings/team", icon: "group_add" },
         { label: "Notifications", href: "/enterprise/settings/notifications", icon: "notifications_active" },
         { label: "Data & Privacy", href: "/enterprise/settings/privacy", icon: "lock" },
     ]

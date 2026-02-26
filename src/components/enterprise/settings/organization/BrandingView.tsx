@@ -23,7 +23,6 @@ import { updateOrganizationBranding } from "@/actions/enterprise/enterprise-mana
 
 export default function BrandingView({ userProfile, orgName, initialBranding }: BrandingViewProps) {
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
-    const [brandColor, setBrandColor] = useState("#7F13EC");
     const [footerText, setFooterText] = useState("");
     const [senderName, setSenderName] = useState("");
     const [emailFooter, setEmailFooter] = useState("");
@@ -38,7 +37,6 @@ export default function BrandingView({ userProfile, orgName, initialBranding }: 
     useEffect(() => {
         if (initialBranding) {
             setLogoUrl(initialBranding.logo_url || null);
-            setBrandColor(initialBranding.brand_color || "#7F13EC");
             setFooterText(initialBranding.footer_text || "");
             setSenderName(initialBranding.email_sender_name || "");
             setEmailFooter(initialBranding.email_footer_text || "");
@@ -55,7 +53,6 @@ export default function BrandingView({ userProfile, orgName, initialBranding }: 
         try {
             const result = await updateOrganizationBranding({
                 logo_url: logoUrl,
-                brand_color: brandColor,
                 footer_text: footerText,
                 email_sender_name: senderName,
                 email_footer_text: emailFooter,
@@ -122,9 +119,7 @@ export default function BrandingView({ userProfile, orgName, initialBranding }: 
                                 onLogoChange={setLogoUrl}
                             />
                             <BrandVisuals
-                                brandColor={brandColor}
                                 footerText={footerText}
-                                onBrandColorChange={setBrandColor}
                                 onFooterTextChange={setFooterText}
                             />
                             <EmailBranding
