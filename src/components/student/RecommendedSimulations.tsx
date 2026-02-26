@@ -18,20 +18,7 @@ export function RecommendedSimulations({ recommendations, orgBranding }: Recomme
     const brandColorText = orgBranding?.brand_color ? { color: orgBranding.brand_color } : {};
 
     const handleEnroll = async (simId: string) => {
-        setEnrollingId(simId);
-        try {
-            const result = await enrollInSimulation(simId);
-            if (result.success) {
-                router.refresh(); // Refresh to update dashboard data
-            } else {
-                alert(result.error || "Failed to enroll");
-            }
-        } catch (err) {
-            console.error("Enrollment error:", err);
-            alert("An unexpected error occurred");
-        } finally {
-            setEnrollingId(null);
-        }
+        router.push(`/student/simulations/${simId}/preview`);
     }
 
     if (!recommendations || recommendations.length === 0) {
@@ -142,7 +129,7 @@ export function RecommendedSimulations({ recommendations, orgBranding }: Recomme
                                         ) : (
                                             <>
                                                 <Zap size={16} className="fill-current" />
-                                                Enroll Now
+                                                View Simulation
                                             </>
                                         )}
                                     </button>

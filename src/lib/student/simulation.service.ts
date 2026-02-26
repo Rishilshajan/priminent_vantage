@@ -284,5 +284,115 @@ export const simulationService = {
             console.error("Error fetching my simulations:", error);
             throw error;
         }
+    },
+
+    async getSimulationDetails(userId: string, simulationId: string) {
+        const supabase = await createClient();
+
+        try {
+            // 1. Fetch simulation details with skills and tasks
+            const { data: simulation, error } = await supabase
+                .from('simulations')
+                .select(`
+                    *,
+                    simulation_skills (
+                        skill_name,
+                        skill_type
+                    ),
+                    simulation_tasks (
+                        id,
+                        task_number,
+                        title,
+                        description,
+                        estimated_duration,
+                        difficulty_level,
+                        what_you_learn,
+                        what_you_do,
+                        sort_order
+                    ),
+                    simulation_assets!simulation_id (
+                        id,
+                        asset_type,
+                        file_url,
+                        file_name,
+                        task_id
+                    ),
+                    simulation_reviews (
+                        id,
+                        rating,
+                        content,
+                        profiles (
+                            first_name,
+                            last_name,
+                            avatar_url,
+                            user_type,
+                            last_role
+                        )
+                    )
+                `)
+                .eq('id', simulationId)
+                .single();
+
+            if (error) throw error;
+
+            // 2. Fetch current user profile for the header
+            const { data: userProfile } = await supabase
+                .from('profiles')
+                .select('first_name, last_name, avatar_url')
+                .eq('id', userId)
+                .single();
+
+            // 3. Fetch organization name from public metadata as requested
+            const { data: orgMetadata } = await supabase
+                .from('public_organization_metadata')
+                .select('name')
+                .eq('id', simulation.org_id)
+                .single();
+
+            // 4. Fetch branding from organizations table (since metadata might not have color)
+            const { data: orgBranding } = await supabase
+                .from('organizations')
+                .select('brand_color, logo_url')
+                .eq('id', simulation.org_id)
+                .single();
+
+            // 5. Check if user is enrolled
+            const { data: enrollment } = await supabase
+                .from('simulation_enrollments')
+                .select('id, status')
+                .eq('student_id', userId)
+                .eq('simulation_id', simulationId)
+                .single();
+
+            return {
+                simulation: {
+                    ...simulation,
+                    organization_name: orgMetadata?.name || "Global tech Partner",
+                    org_brand_color: orgBranding?.brand_color || '#7F13EC',
+                    org_logo_url: orgBranding?.logo_url,
+                    skills: simulation.simulation_skills || [],
+                    tasks: simulation.simulation_tasks?.sort((a: any, b: any) => a.sort_order - b.sort_order) || [],
+                    intro_video_url: simulation.simulation_assets?.find((a: any) => a.asset_type === 'video' && !a.task_id)?.file_url || simulation.intro_video_url,
+                    assets: simulation.simulation_assets || [],
+                    reviews: simulation.simulation_reviews?.map((r: any) => ({
+                        id: r.id,
+                        student_name: [r.profiles?.first_name, r.profiles?.last_name].filter(Boolean).join(' '),
+                        student_role: r.profiles?.last_role || r.profiles?.user_type || "Student",
+                        rating: r.rating,
+                        content: r.content,
+                        avatar_url: r.profiles?.avatar_url
+                    })) || []
+                },
+                user: {
+                    fullName: [userProfile?.first_name, userProfile?.last_name].filter(Boolean).join(' ') || "User",
+                    avatarUrl: userProfile?.avatar_url
+                },
+                isEnrolled: !!enrollment,
+                enrollmentStatus: enrollment?.status || null
+            };
+        } catch (error) {
+            console.error("Error fetching simulation details:", error);
+            throw error;
+        }
     }
 };

@@ -126,7 +126,7 @@ export function SimulationCard({
                     </div>
 
                     <Link
-                        href={`/student/simulation/${simulation.id}`}
+                        href={`/student/simulations/${simulation.id}/preview`}
                         className="flex size-9 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition-all hover:scale-110 hover:bg-primary dark:bg-white/10 dark:hover:bg-primary lg:size-10"
                         style={brandColorStyle}
                     >

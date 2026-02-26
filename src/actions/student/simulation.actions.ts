@@ -66,3 +66,16 @@ export async function getMySimulationsAction() {
         return { success: false as const, error: error.message || "Failed to fetch your simulations" };
     }
 }
+
+export async function getSimulationDetailsAction(simulationId: string) {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false as const, error: "Unauthorized" };
+
+        const data = await simulationService.getSimulationDetails(user.id, simulationId);
+        return { success: true as const, data };
+    } catch (error: any) {
+        return { success: false as const, error: error.message || "Failed to fetch simulation details" };
+    }
+}
