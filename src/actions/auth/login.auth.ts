@@ -43,6 +43,12 @@ export async function login(formData: FormData) {
         if (profile) {
             actorName = `${profile.first_name} ${profile.last_name || ''}`.trim()
 
+            // Update logged_in timestamp
+            await supabase
+                .from('profiles')
+                .update({ logged_in: new Date().toISOString() })
+                .eq('id', user.id)
+
             if (profile.role === 'enterprise') {
                 const { data: orgMember } = await supabase
                     .from('organization_members')

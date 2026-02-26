@@ -3,9 +3,12 @@ import { randomBytes } from 'crypto'
 
 export interface InvitationData {
     email: string;
+    firstName?: string;
+    lastName?: string;
     orgId: string;
     role: 'enterprise_admin' | 'instructor' | 'reviewer';
     invitedBy: string;
+    defaultPassword?: string;
 }
 
 export const invitationService = {
@@ -20,11 +23,14 @@ export const invitationService = {
             .from('instructor_invitations')
             .insert({
                 email: data.email.toLowerCase(),
+                first_name: data.firstName,
+                last_name: data.lastName,
                 token,
                 org_id: data.orgId,
                 role: data.role,
                 invited_by: data.invitedBy,
-                status: 'pending'
+                status: 'pending',
+                // Note: We'll store the default password if provided, or handle it via org lookups
             })
             .select()
             .single()
@@ -34,9 +40,51 @@ export const invitationService = {
             return { success: false, error: error.message }
         }
 
-        // TODO: Integrate with real email service (e.g. Resend) to send the invite link
-        // For now, we return the token/url for testing
-        const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/enterprise/invitation/accept?token=${token}`
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        const inviteUrl = `${baseUrl}/enterprise/invitation/accept?token=${token}`
+
+        // 1. Fetch Organization Details for Email
+        const { data: org } = await supabase
+            .from('organizations')
+            .select('name')
+            .eq('id', data.orgId)
+            .single();
+
+        // 2. Send Invitation Email via Resend
+        try {
+            const { mailService } = await import('@/lib/mail/mail.service');
+            const { logServerEvent } = await import('@/lib/logger/server');
+
+            await mailService.sendEmail({
+                to: data.email,
+                ... (await import('@/lib/mail/templates')).emailTemplates.specialistInvitation(
+                    org?.name || 'Your Organization',
+                    data.role,
+                    inviteUrl,
+                    data.defaultPassword
+                )
+            });
+
+            // 3. Log Success
+            await logServerEvent({
+                level: 'SUCCESS',
+                action: { code: 'SPECIALIST_INVITE_SENT', category: 'SYSTEM' },
+                message: `Invitation sent to ${data.email} for role ${data.role}`,
+                organization: { org_id: data.orgId, org_name: org?.name },
+                params: { email: data.email, role: data.role }
+            });
+
+        } catch (emailErr) {
+            console.error('Failed to send invitation email:', emailErr);
+            // We still return success since the record was created, but log the failure
+            const { logServerEvent } = await import('@/lib/logger/server');
+            await logServerEvent({
+                level: 'ERROR',
+                action: { code: 'SPECIALIST_INVITE_EMAIL_FAILED', category: 'SYSTEM' },
+                message: `Failed to send invitation email to ${data.email}`,
+                params: { error: emailErr, email: data.email }
+            });
+        }
 
         return {
             success: true,
@@ -96,10 +144,13 @@ export const invitationService = {
             .eq('id', userId)
             .single()
 
-        if (profile && (profile.role === 'student' || profile.role === 'learner')) {
+        if (profile) {
             await supabase
                 .from('profiles')
-                .update({ role: invitation.role === 'enterprise_admin' ? 'enterprise_admin' : 'instructor' })
+                .update({
+                    role: invitation.role === 'enterprise_admin' ? 'enterprise_admin' : 'instructor',
+                    logged_in: new Date().toISOString()
+                })
                 .eq('id', userId)
         }
 
@@ -112,6 +163,71 @@ export const invitationService = {
             })
             .eq('id', invitation.id)
 
+        // 5. Log Success
+        const { logServerEvent } = await import('@/lib/logger/server');
+        await logServerEvent({
+            level: 'SUCCESS',
+            action: { code: 'SPECIALIST_INVITE_ACCEPTED', category: 'SYSTEM' },
+            message: `Invitation accepted by ${invitation.email}`,
+            params: { email: invitation.email, role: invitation.role, user_id: userId }
+        });
+
         return { success: true }
+    },
+
+    /**
+     * Resends an invitation email.
+     */
+    async resendInvitation(invitationId: string) {
+        const supabase = await createClient();
+        try {
+            const { data: invitation, error: fetchError } = await supabase
+                .from('instructor_invitations')
+                .select('*, organizations(name, default_password)')
+                .eq('id', invitationId)
+                .single();
+
+            if (fetchError || !invitation) throw new Error("Invitation not found");
+
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+            const inviteUrl = `${baseUrl}/enterprise/invitation/accept?token=${invitation.token}`;
+
+            const { mailService } = await import('@/lib/mail/mail.service');
+            const { emailTemplates } = await import('@/lib/mail/templates');
+
+            await mailService.sendEmail({
+                to: invitation.email,
+                ...emailTemplates.specialistInvitation(
+                    invitation.organizations?.name || 'Your Organization',
+                    invitation.role,
+                    inviteUrl,
+                    invitation.organizations?.default_password
+                )
+            });
+
+            return { success: true };
+        } catch (err) {
+            console.error("Error in invitationService.resendInvitation:", err);
+            return { success: false, error: (err as any).message };
+        }
+    },
+
+    /**
+     * Deletes a pending invitation.
+     */
+    async deleteInvitation(invitationId: string) {
+        const supabase = await createClient();
+        try {
+            const { error } = await supabase
+                .from('instructor_invitations')
+                .delete()
+                .eq('id', invitationId);
+
+            if (error) throw error;
+            return { success: true };
+        } catch (err) {
+            console.error("Error in invitationService.deleteInvitation:", err);
+            return { success: false, error: (err as any).message };
+        }
     }
 }

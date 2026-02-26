@@ -23,6 +23,12 @@ export async function GET(request: Request) {
                     .eq('id', user.id)
                     .single()
 
+                // Update logged_in timestamp
+                await supabase
+                    .from('profiles')
+                    .update({ logged_in: new Date().toISOString() })
+                    .eq('id', user.id)
+
                 // Redirect based on role if no 'next' is specified
                 if (profile?.role === 'admin' || profile?.role === 'super_admin') {
                     redirectUrl = '/admin/dashboard'

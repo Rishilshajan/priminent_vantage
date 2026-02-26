@@ -118,29 +118,78 @@ export async function getInstructors() {
     }
 }
 
+// Fetches aggregate stats specifically for the instructor management section
+export async function getInstructorStats() {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false as const, error: "Unauthorized" };
+        const result = await enterpriseManagementService.getInstructorStats(user.id);
+        return { success: true as const, data: result };
+    } catch (err: any) {
+        return { success: false as const, error: err.message || "Failed to load instructor stats." };
+    }
+}
+
 /**
  * Creates and sends a secure invitation link for a new instructor or role.
  */
-export async function createInstructorInvitation(data: { email: string; role: 'enterprise_admin' | 'instructor' | 'reviewer' }) {
+export async function createInstructorInvitation(data: { email: string; firstName?: string; lastName?: string; role: 'enterprise_admin' | 'instructor' | 'reviewer' }) {
     const supabase = await createClient();
     try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { success: false as const, error: "Unauthorized" };
 
+        // 1. Fetch current user's organization and email
         const { data: member } = await supabase.from('organization_members').select('org_id').eq('user_id', user.id).maybeSingle();
-        if (!member) return { success: false as const, error: "Membership not found" };
+        if (!member) return { success: false as const, error: "Cloud organization membership not found" };
 
-        // Dynamic import to avoid circular dependencies if any
+        // 2. Domain Validation: Specialist email must match inviter's company domain
+        const inviterEmail = user.email || "";
+        const inviterDomain = inviterEmail.split('@')[1];
+        const inviteeDomain = data.email.split('@')[1];
+
+        if (!inviterDomain || !inviteeDomain || inviterDomain.toLowerCase() !== inviteeDomain.toLowerCase()) {
+            const { logServerEvent } = await import('@/lib/logger/server');
+            await logServerEvent({
+                level: 'WARNING',
+                action: { code: 'INVALID_INVITE_DOMAIN', category: 'SECURITY' },
+                message: `Domain mismatch in invitation: ${data.email} by ${user.email}`,
+                actor: { id: user.id, name: user.user_metadata?.full_name },
+                params: { targetEmail: data.email, sourceEmail: user.email }
+            });
+
+            return {
+                success: false as const,
+                error: `Invalid email. Please use a company email ending in @${inviterDomain}`
+            };
+        }
+
+        // 3. Fetch organization's default password
+        const { data: org } = await supabase.from('organizations').select('default_password').eq('id', member.org_id).maybeSingle();
+        const defaultPassword = org?.default_password || "Vantage2024!";
+
+        // Dynamic import to avoid circular dependencies
         const { invitationService } = await import('@/lib/enterprise/invitation.service');
         const result = await invitationService.createInvitation({
             email: data.email,
+            firstName: data.firstName,
+            lastName: data.lastName,
             orgId: member.org_id,
             role: data.role,
-            invitedBy: user.id
+            invitedBy: user.id,
+            defaultPassword
         });
 
         if (!result.success) throw new Error(result.error);
-        return { success: true as const, data: result.data };
+
+        return {
+            success: true as const,
+            data: {
+                ...result.data,
+                defaultPassword
+            }
+        };
     } catch (err: any) {
         return { success: false as const, error: err.message || "Failed to create invitation." };
     }
@@ -167,5 +216,62 @@ export async function acceptInvitationAction(token: string, userId: string) {
         return await invitationService.acceptInvitation(token, userId);
     } catch (err: any) {
         return { success: false as const, error: err.message || "Acceptance failed" };
+    }
+}
+
+/**
+ * Deletes a specialist (either an active member or a pending invitation).
+ */
+export async function deleteSpecialistAction(id: string, isInvitation: boolean) {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, error: "Unauthorized" };
+
+        const { data: member } = await supabase.from('organization_members').select('org_id').eq('user_id', user.id).maybeSingle();
+        if (!member) return { success: false, error: "Organization not found" };
+
+        if (isInvitation) {
+            const { invitationService } = await import('@/lib/enterprise/invitation.service');
+            return await invitationService.deleteInvitation(id);
+        } else {
+            return await enterpriseManagementService.deleteInstructor(id, member.org_id);
+        }
+    } catch (err: any) {
+        return { success: false, error: err.message || "Deletion failed" };
+    }
+}
+
+/**
+ * Updates an active specialist's role.
+ */
+export async function updateSpecialistRoleAction(userId: string, role: 'admin' | 'member' | 'reviewer' | 'instructor') {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, error: "Unauthorized" };
+
+        const { data: member } = await supabase.from('organization_members').select('org_id').eq('user_id', user.id).maybeSingle();
+        if (!member) return { success: false, error: "Organization not found" };
+
+        return await enterpriseManagementService.updateInstructorRole(userId, member.org_id, role);
+    } catch (err: any) {
+        return { success: false, error: err.message || "Role update failed" };
+    }
+}
+
+/**
+ * Resends a specialist invitation.
+ */
+export async function resendInvitationAction(invitationId: string) {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false, error: "Unauthorized" };
+
+        const { invitationService } = await import('@/lib/enterprise/invitation.service');
+        return await invitationService.resendInvitation(invitationId);
+    } catch (err: any) {
+        return { success: false, error: err.message || "Resend failed" };
     }
 }

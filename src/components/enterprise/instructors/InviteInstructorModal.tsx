@@ -12,11 +12,14 @@ interface InviteInstructorModalProps {
 
 const InviteInstructorModal = ({ isOpen, onClose, onInviteSuccess }: InviteInstructorModalProps) => {
     const [email, setEmail] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [role, setRole] = useState<'instructor' | 'enterprise_admin' | 'reviewer'>('instructor');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+    const [invitedUser, setInvitedUser] = useState<{ email: string; password?: string } | null>(null);
 
     if (!isOpen) return null;
 
@@ -27,10 +30,12 @@ const InviteInstructorModal = ({ isOpen, onClose, onInviteSuccess }: InviteInstr
         setSuccess(false);
 
         try {
-            const result = await createInstructorInvitation({ email, role });
+            const result = await createInstructorInvitation({ email, firstName, lastName, role });
             if (result.success) {
                 setSuccess(true);
-                setInviteUrl((result.data as any).inviteUrl);
+                const data = result.data as any;
+                setInviteUrl(data.inviteUrl);
+                setInvitedUser({ email: data.email, password: data.defaultPassword });
                 onInviteSuccess?.();
                 // Optionally auto-close after delay
                 // setTimeout(onClose, 3000);
@@ -84,25 +89,38 @@ const InviteInstructorModal = ({ isOpen, onClose, onInviteSuccess }: InviteInstr
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Copy Secure Link</label>
-                            <div className="flex gap-2">
-                                <input
-                                    readOnly
-                                    value={inviteUrl || ''}
-                                    className="flex-grow px-4 h-12 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl text-[10px] font-mono font-bold text-slate-500 overflow-hidden text-ellipsis"
-                                />
-                                <button
-                                    onClick={copyToClipboard}
-                                    className="px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all"
-                                >
-                                    Copy
-                                </button>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-4 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Email</label>
+                                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{invitedUser?.email}</p>
+                                </div>
+                                <div className="p-4 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Generated Password</label>
+                                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate font-mono tracking-wider">{invitedUser?.password}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Copy Secure Link</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        readOnly
+                                        value={inviteUrl || ''}
+                                        className="flex-grow px-4 h-12 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl text-[10px] font-mono font-bold text-slate-500 overflow-hidden text-ellipsis"
+                                    />
+                                    <button
+                                        onClick={copyToClipboard}
+                                        className="px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all"
+                                    >
+                                        Copy
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                         <button
-                            onClick={() => { setSuccess(false); setEmail(''); }}
+                            onClick={() => { setSuccess(false); setEmail(''); setFirstName(''); setLastName(''); }}
                             className="w-full h-14 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                         >
                             Invite Another
@@ -117,6 +135,31 @@ const InviteInstructorModal = ({ isOpen, onClose, onInviteSuccess }: InviteInstr
                                     <p className="text-xs font-bold uppercase tracking-widest">{error}</p>
                                 </div>
                             )}
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2 group">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">First Name</label>
+                                    <input
+                                        required
+                                        className="w-full px-4 h-14 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-300 outline-none"
+                                        placeholder="Jane"
+                                        type="text"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2 group">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Last Name</label>
+                                    <input
+                                        required
+                                        className="w-full px-4 h-14 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-300 outline-none"
+                                        placeholder="Doe"
+                                        type="text"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                    />
+                                </div>
+                            </div>
 
                             <div className="space-y-2 group">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Specialist Email</label>
@@ -146,8 +189,8 @@ const InviteInstructorModal = ({ isOpen, onClose, onInviteSuccess }: InviteInstr
                                             type="button"
                                             onClick={() => setRole(opt.id as any)}
                                             className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${role === opt.id
-                                                    ? 'border-primary bg-primary/5 text-primary'
-                                                    : 'border-slate-100 dark:border-slate-800 text-slate-400 hover:border-slate-200'
+                                                ? 'border-primary bg-primary/5 text-primary'
+                                                : 'border-slate-100 dark:border-slate-800 text-slate-400 hover:border-slate-200'
                                                 }`}
                                         >
                                             <opt.icon className="size-5" />

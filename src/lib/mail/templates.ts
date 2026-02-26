@@ -84,5 +84,32 @@ export const emailTemplates = {
                 </div>
             `
         };
-    }
+    },
+
+    /**
+     * Specialist Invitation Template
+     */
+    specialistInvitation: (orgName: string, role: string, inviteUrl: string, defaultPassword?: string) => ({
+        subject: `Invitation: Join ${orgName} on Priminent Vantage`,
+        html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #334155; line-height: 1.6;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <h1 style="color: #0d9488; font-size: 24px; font-weight: bold; margin: 0;">Specialist Invitation</h1>
+                    <p style="color: #64748b; font-size: 14px; margin-top: 8px;">Priminent Vantage Enterprise Control Plane</p>
+                </div>
+                <p>Hello,</p>
+                <p>You have been invited to join <strong>${orgName}</strong> as a <strong>${role.replace('_', ' ')}</strong> on Priminent Vantage.</p>
+                <div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; margin: 24px 0; border: 1px solid #e2e8f0;">
+                    <p style="margin: 0 0 12px 0; font-size: 13px; color: #64748b; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;">Your Onboarding Credentials</p>
+                    <p style="margin: 0; font-size: 14px; color: #0f172a;">Password: <code style="background-color: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #0d9488;">${defaultPassword || 'Provided by Administrator'}</code></p>
+                </div>
+                <div style="text-align: center; margin: 32px 0;">
+                    <a href="${inviteUrl}" style="background-color: #0d9488; color: #ffffff; padding: 14px 28px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);">Accept Invitation & Join</a>
+                </div>
+                <p style="font-size: 12px; color: #64748b;">If you have any questions, please contact your organization administrator.</p>
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0;" />
+                <p style="font-size: 10px; color: #94a3b8; text-align: center;">&copy; 2026 Priminent Vantage. All rights reserved.</p>
+            </div>
+        `
+    })
 };

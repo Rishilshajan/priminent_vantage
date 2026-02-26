@@ -1,129 +1,190 @@
-import React from 'react';
-import { Shield, MessageCircle, UserMinus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, Mail, Trash2, Edit2, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { deleteSpecialistAction, updateSpecialistRoleAction, resendInvitationAction } from '@/actions/enterprise/enterprise-management.actions';
 
-const instructors = [
-    {
-        id: '1',
-        name: 'Dr. Elena Rodriguez',
-        role: 'Senior Engineering Lead',
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuByTe8o5bmsXo_08mfFzoqGyt6CXcwlu-vE19PpMVCWfTXQHy9OF3Kc44KqnwKLWGzipnnKu8SP5HHPwoGzsh1EpqdunBIscKuJulYnZ90oCrKn2yqMPZP-ob-DBTvyB_a1E0vrpamQIOWoYhgsKEQ0wyu0Lbsm5r8Q_dnoErT-U7PsuAxRaxxrETfhKU3s_9QVcOYg1BZtb3BaalApaO7rV3wLv0fhEfEhjksjCzaIYSQYCqMyQUHLLMVTGbaFdkKjZLEbQct8nrg',
-        simulations: ['Cloud Arch', 'Cyber Ops'],
-        status: 'Active',
-        lastActivity: 'Oct 24, 2023'
-    },
-    {
-        id: '2',
-        name: 'Marcus Chen',
-        role: 'VP of Product Innovation',
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA7y21oWu19Jb1_-LyG_SjIpTp9pKF_Df9OGtq4KOINRy7cZTsYnEwO1G80xqL4YxGe7E-SmV8JhnYc_l0uG_5OQSBVq6kZFzoAU0ZKUr5rzYgp-bqBrphzcau6ce-z_HP9OvKSx1D8H101Yb3C_ZpvD0yaqDsyyO327kGrUwKEAnpUaahJf_98TFSzETxevcRH3WViBJs6-ZOsv9FCY6R6DTcCuvLSZhS-H1pTssbZQHMaE9uFcDvIoEmjd4zYPyQnKjmEByEnORk',
-        simulations: ['Strategy Sim'],
-        status: 'On Leave',
-        lastActivity: 'Sep 12, 2023'
-    },
-    {
-        id: '3',
-        name: 'Sarah Jenkins',
-        role: 'L&D Specialist',
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJV-MxPP8Dk-6jPlIANOAkK-qOVsHlWssg00KhP8nyUY6gKKvhrysCZMpyAWhEks94tN7OxAhRas5F1HAE3TzJiyOwG4vuQE25bS4oztZaWkpaSlPDJv3kzgNbsfxb2oxtk8VzTXCn3088ciZ_7fBS8mJ4OVJpghRkLsqs1hwkzPztKhzXgOmP9MH-Dq_6lTah0Z3lZyNBNWhvgWMDZ-yphBXr1to_cOVtt2TvlgTR1adJbycbg-Twakk5MhF5z9jnuAyyp3ncpA0',
-        simulations: ['Leadership 101', 'Team Dyn'],
-        status: 'Active',
-        lastActivity: 'Oct 29, 2023'
-    },
-    {
-        id: '4',
-        name: 'David Vance',
-        role: 'Agile Transformation Coach',
-        avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBeH-I422w8f-0SjhO4ZdVFCXbCfAKwoUTyOKbisOszGqRFYRk_d1Z_LEGvhlqHY_JIFIj7OY5EQGGgWvMKrqh2JVBoRWvpfYR9HxaumfPD794iGfg-25qCy_A_KF9Veie2AbVOBr1BT7vurB5wt_MPV_tku14qoQnGUfG0p0S-TEpQEgZyGMViJD-JkkQfQhKeoiUVH2AO7ogUp7rn62QszzUizkMfcx1BegxuSYUkwPQnqxJLspBPTnSh4hyZlY6RCh1_zxFAAT4',
-        simulations: [],
-        status: 'Inactive',
-        lastActivity: 'Aug 05, 2023'
-    }
-];
+interface InstructorsTableProps {
+    instructors: any[];
+    onRefresh: () => void;
+}
 
-const InstructorsTable = ({ instructors = [] }: { instructors?: any[] }) => {
+const InstructorsTable = ({ instructors, onRefresh }: InstructorsTableProps) => {
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [isInvitationDelete, setIsInvitationDelete] = useState(false);
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingSpecialist, setEditingSpecialist] = useState<any>(null);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    // Pagination Logic
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+    const totalPages = Math.ceil(instructors.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const currentItems = instructors.slice(startIndex, startIndex + itemsPerPage);
+
+    const handlePrevious = () => setCurrentPage(prev => Math.max(1, prev - 1));
+    const handleNext = () => setCurrentPage(prev => Math.min(totalPages, prev + 1));
+
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(totalPages);
+        } else if (totalPages === 0) {
+            setCurrentPage(1);
+        }
+    }, [instructors.length, totalPages, currentPage]);
+
+    const handleDelete = async () => {
+        if (!deletingId) return;
+        setIsDeleting(true);
+        try {
+            const res = await deleteSpecialistAction(deletingId, isInvitationDelete);
+            if (res.success) {
+                onRefresh();
+                setDeletingId(null);
+            } else {
+                alert(res.error || "Failed to delete");
+            }
+        } catch (err) {
+            console.error("Delete error:", err);
+            alert("An unexpected error occurred during deletion.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleUpdateRole = async (newRole: any) => {
+        if (!editingSpecialist) return;
+        setIsUpdating(true);
+        try {
+            const res = await updateSpecialistRoleAction(editingSpecialist.id, newRole);
+            if (res.success) {
+                onRefresh();
+                setIsEditModalOpen(false);
+            } else {
+                alert(res.error || "Failed to update role");
+            }
+        } catch (err) {
+            console.error("Update role error:", err);
+            alert("An unexpected error occurred while updating role.");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleResend = async () => {
+        if (!editingSpecialist) return;
+        setIsUpdating(true);
+        try {
+            const res = await resendInvitationAction(editingSpecialist.id);
+            if (res.success) {
+                alert("Invitation resent successfully!");
+                setIsEditModalOpen(false);
+            } else {
+                alert(res.error || "Failed to resend");
+            }
+        } catch (err) {
+            console.error("Resend error:", err);
+            alert("An unexpected error occurred while resending invitation.");
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
     return (
         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/20 flex justify-between items-center">
                 <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Management Directory</h3>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg">{instructors.length} Total</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                    {instructors.length} Total
+                </span>
             </div>
+
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
                             <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Instructor</th>
-                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Assignments</th>
                             <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest uppercase">Status</th>
                             <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Last Activity</th>
                             <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                        {instructors.length === 0 ? (
+                        {currentItems.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                                <td colSpan={4} className="px-6 py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
                                     No instructors found
                                 </td>
                             </tr>
                         ) : (
-                            instructors.map((instructor) => (
-                                <tr key={instructor.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors group cursor-pointer">
+                            currentItems.map((instructor) => (
+                                <tr key={instructor.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors group">
                                     <td className="px-6 py-5">
                                         <div className="flex items-center gap-3">
-                                            {instructor.avatar ? (
+                                            {instructor.isInvitation ? (
+                                                <div className="size-10 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-100 dark:border-blue-500/20 shrink-0">
+                                                    <Mail className="size-5" />
+                                                </div>
+                                            ) : instructor.avatar ? (
                                                 <div
                                                     className="size-10 rounded-2xl bg-cover bg-center shadow-inner border border-slate-100 dark:border-slate-800 group-hover:scale-105 transition-transform shrink-0"
                                                     style={{ backgroundImage: `url('${instructor.avatar}')` }}
                                                 />
                                             ) : (
                                                 <div className="size-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-xs uppercase shadow-inner border border-primary/20 group-hover:scale-105 transition-transform shrink-0">
-                                                    {instructor.name.split(' ').map((n: any) => n[0]).join('').toUpperCase()}
+                                                    {(instructor.name || "U").split(' ').map((n: any) => n[0]).join('').toUpperCase()}
                                                 </div>
                                             )}
                                             <div className="min-w-0">
-                                                <p className="text-[13px] font-black text-slate-900 dark:text-white tracking-tight leading-none group-hover:text-primary transition-colors truncate">{instructor.name}</p>
-                                                <p className="text-[9px] text-slate-400 font-bold mt-1.5 uppercase tracking-widest truncate">{instructor.role}</p>
+                                                <div className="flex items-center gap-2 mb-1.5">
+                                                    <p className="text-[13px] font-black text-slate-900 dark:text-white tracking-tight leading-none group-hover:text-primary transition-colors truncate">{instructor.name}</p>
+                                                    {instructor.isInvitation && (
+                                                        <span className="px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-500/10 text-blue-500 text-[8px] font-black uppercase tracking-widest border border-blue-100 dark:border-blue-500/20">Invite</span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest truncate">{instructor.role}</p>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {instructor.simulations && instructor.simulations.length > 0 ? (
-                                                instructor.simulations.slice(0, 2).map((sim: any, i: number) => (
-                                                    <span key={i} className="px-2 py-0.5 rounded text-[8px] font-black bg-primary/5 text-primary border border-primary/10 uppercase tracking-widest">
-                                                        {sim}
-                                                    </span>
-                                                ))
-                                            ) : (
-                                                <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Unassigned</span>
-                                            )}
-                                            {instructor.simulations && instructor.simulations.length > 2 && (
-                                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest self-center">+{instructor.simulations.length - 2}</span>
-                                            )}
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${instructor.status === 'Active'
                                             ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
-                                            : instructor.status === 'On Leave'
-                                                ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
-                                                : 'bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                                            : instructor.status === 'Pending'
+                                                ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
+                                                : instructor.status === 'On Leave'
+                                                    ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
+                                                    : 'bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                                             }`}>
-                                            <span className={`size-1 rounded-full ${instructor.status === 'Active' ? 'bg-emerald-500' : instructor.status === 'On Leave' ? 'bg-amber-500' : 'bg-slate-400'
+                                            <span className={`size-1 rounded-full ${instructor.status === 'Active' ? 'bg-emerald-500' : instructor.status === 'Pending' ? 'bg-blue-500' : instructor.status === 'On Leave' ? 'bg-amber-500' : 'bg-slate-400'
                                                 }`}></span>
                                             {instructor.status}
                                         </span>
                                     </td>
                                     <td className="px-6 py-5 text-[11px] font-bold text-slate-400 tracking-tight">
-                                        {instructor.lastActivity ? new Date(instructor.lastActivity).toLocaleDateString() : 'Never'}
+                                        {instructor.lastActivity ? new Date(instructor.lastActivity).toLocaleDateString() : 'No Activity'}
                                     </td>
                                     <td className="px-6 py-5 text-right">
                                         <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button className="size-8 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-primary transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700 shadow-sm" title="Permissions">
-                                                <span className="material-symbols-outlined text-[18px]">security</span>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingSpecialist(instructor);
+                                                    setIsEditModalOpen(true);
+                                                }}
+                                                className="size-8 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-primary transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700 shadow-sm"
+                                                title="Edit specialist"
+                                            >
+                                                <Edit2 className="size-[16px]" />
                                             </button>
-                                            <button className="size-8 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-primary transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700 shadow-sm" title="Message">
-                                                <span className="material-symbols-outlined text-[18px]">chat_bubble</span>
+                                            <button
+                                                onClick={() => {
+                                                    setDeletingId(instructor.id);
+                                                    setIsInvitationDelete(!!instructor.isInvitation);
+                                                }}
+                                                className="size-8 flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 rounded-xl text-slate-400 hover:text-rose-500 transition-all border border-transparent hover:border-rose-100 dark:hover:border-rose-900/30 shadow-sm"
+                                                title="Delete"
+                                            >
+                                                <Trash2 className="size-[16px]" />
                                             </button>
                                         </div>
                                     </td>
@@ -133,15 +194,130 @@ const InstructorsTable = ({ instructors = [] }: { instructors?: any[] }) => {
                     </tbody>
                 </table>
             </div>
+
             <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/20">
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                    Showing {instructors.length} Specialists
+                    Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, instructors.length)} of {instructors.length} Specialists
                 </p>
                 <div className="flex gap-2">
-                    <button className="h-9 px-4 border border-slate-100 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-primary transition-all shadow-sm">Previous</button>
-                    <button className="h-9 px-4 border border-slate-100 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-primary transition-all shadow-sm">Next</button>
+                    <button
+                        onClick={handlePrevious}
+                        disabled={currentPage === 1}
+                        className="h-9 px-4 border border-slate-100 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-primary transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                        Previous
+                    </button>
+                    <button
+                        onClick={handleNext}
+                        disabled={currentPage === totalPages || totalPages === 0}
+                        className="h-9 px-4 border border-slate-100 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-primary transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                        Next
+                    </button>
                 </div>
             </div>
+
+            {/* Deletion Confirmation Modal */}
+            {deletingId && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/20 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[32px] p-8 shadow-2xl border border-slate-100 dark:border-slate-800 scale-in-center">
+                        <div className="size-16 rounded-3xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center text-rose-500 mb-6 mx-auto">
+                            <AlertTriangle className="size-8" />
+                        </div>
+                        <h3 className="text-xl font-black text-center text-slate-900 dark:text-white mb-2 tracking-tight">Remove Specialist?</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 text-center mb-8 leading-relaxed font-medium">
+                            This will permanently remove the specialist from your organization. This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setDeletingId(null)}
+                                className="flex-1 h-12 rounded-2xl border border-slate-100 dark:border-slate-800 text-[11px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                                className="flex-1 h-12 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                {isDeleting ? <Loader2 className="size-4 animate-spin" /> : 'Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Specialist Modal */}
+            {isEditModalOpen && editingSpecialist && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/20 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[40px] p-10 shadow-2xl border border-slate-100 dark:border-slate-800 scale-in-center">
+                        <div className="flex justify-between items-start mb-8">
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Edit Specialist</h3>
+                                <p className="text-[10px] font-black text-slate-400 mt-2 uppercase tracking-widest">Update Role or Re-invite</p>
+                            </div>
+                            <button
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="size-10 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 transition-colors"
+                            >
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="p-4 rounded-3xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800 flex items-center gap-4">
+                                <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm">
+                                    {editingSpecialist.name.split(' ').map((n: any) => n[0]).join('').toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight leading-none mb-1.5 truncate">{editingSpecialist.name}</p>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">{editingSpecialist.email}</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Specialist Role</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {['instructor', 'reviewer', 'admin'].map((role) => (
+                                        <button
+                                            key={role}
+                                            onClick={() => handleUpdateRole(role)}
+                                            disabled={isUpdating || editingSpecialist.isInvitation}
+                                            className={`h-14 rounded-2xl border transition-all text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${editingSpecialist.role.toLowerCase() === role
+                                                ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20'
+                                                : 'border-slate-100 dark:border-slate-800 text-slate-500 hover:border-primary/30'
+                                                } ${editingSpecialist.isInvitation ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            {editingSpecialist.role.toLowerCase() === role && <CheckCircle2 className="size-4" />}
+                                            {role}
+                                        </button>
+                                    ))}
+                                </div>
+                                {editingSpecialist.isInvitation && (
+                                    <p className="text-[9px] text-amber-500 font-bold italic px-2">Role updates are disabled for pending invitations. Delete and re-invite to change role.</p>
+                                )}
+                            </div>
+
+                            {editingSpecialist.isInvitation && (
+                                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                                    <button
+                                        onClick={handleResend}
+                                        disabled={isUpdating}
+                                        className="w-full h-14 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-500 text-[11px] font-black uppercase tracking-widest hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-all flex items-center justify-center gap-3"
+                                    >
+                                        {isUpdating ? <Loader2 className="size-4 animate-spin" /> : (
+                                            <>
+                                                <Mail className="size-4" />
+                                                Regenerate & Resend Email
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

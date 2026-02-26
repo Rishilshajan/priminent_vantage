@@ -49,6 +49,8 @@ export function AcceptInvitationView({ token }: AcceptInvitationViewProps) {
         verifyToken();
     }, [token]);
 
+    const [success, setSuccess] = useState(false);
+
     const handleAccept = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!token || !invitation) return;
@@ -82,7 +84,9 @@ export function AcceptInvitationView({ token }: AcceptInvitationViewProps) {
             const acceptResult = await acceptInvitationAction(token, userId);
 
             if (acceptResult.success) {
-                router.push('/enterprise/dashboard');
+                setSuccess(true);
+                // Optionally auto-redirect after a delay
+                setTimeout(() => router.push('/enterprise/dashboard'), 3000);
             } else {
                 setError(acceptResult.error || 'Failed to link account to organization');
             }
@@ -92,6 +96,36 @@ export function AcceptInvitationView({ token }: AcceptInvitationViewProps) {
             setVerifying(false);
         }
     };
+
+    if (success) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
+                <div className="max-w-md w-full bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl text-center space-y-8 animate-in zoom-in-95 duration-500">
+                    <div className="size-20 bg-emerald-500 rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-emerald-500/20">
+                        <CheckCircle2 className="size-10 text-white" />
+                    </div>
+                    <div className="space-y-3">
+                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Successfully Joined!</h1>
+                        <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                            Welcome to <span className="text-slate-900 dark:text-white font-black">{invitation.organizations?.name}</span>.
+                            Your account is now active and ready.
+                        </p>
+                    </div>
+                    <div className="pt-4">
+                        <Button
+                            onClick={() => router.push('/enterprise/dashboard')}
+                            className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:opacity-90 transition-all shadow-xl"
+                        >
+                            Go to Dashboard
+                        </Button>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-6">
+                            Auto-redirecting in a few seconds...
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (loading) {
         return (

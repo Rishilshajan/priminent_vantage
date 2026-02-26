@@ -309,7 +309,7 @@ export const enterpriseManagementService = {
             const { data: membership } = await supabase.from('organization_members').select('org_id').eq('user_id', userId).maybeSingle();
             if (!membership) throw new Error("Unauthorized");
 
-            const { data: instructors, error } = await supabase
+            const { data: instructors, error: instructorError } = await supabase
                 .from('organization_members')
                 .select(`
                     role,
@@ -321,31 +321,55 @@ export const enterpriseManagementService = {
                         email, 
                         avatar_url, 
                         role,
+                        logged_in,
                         instructor_profiles(professional_title, linkedin_url, years_of_experience, bio, expertise_tags)
                     )
                 `)
                 .eq('org_id', membership.org_id)
                 .in('role', ['instructor', 'reviewer', 'admin', 'member']);
 
-            if (error) throw error;
+            if (instructorError) throw instructorError;
 
-            return (instructors as any[]).map(member => {
+            // 2. Fetch Pending Invitations
+            const { data: pendingInvites, error: inviteError } = await supabase
+                .from('instructor_invitations')
+                .select('*')
+                .eq('org_id', membership.org_id)
+                .eq('status', 'pending');
+
+            if (inviteError) throw inviteError;
+
+            const activeMembers = (instructors as any[]).map(member => {
                 const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
                 const iProfile = profile.instructor_profiles;
                 const instructorProfile = Array.isArray(iProfile) ? iProfile[0] : iProfile;
 
                 return {
-                    id: profile.id,
-                    name: `${profile.first_name} ${profile.last_name}`.trim(),
-                    email: profile.email,
-                    avatar: profile.avatar_url,
+                    id: profile?.id,
+                    name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Unknown Specialist',
+                    email: profile?.email,
+                    avatar: profile?.avatar_url,
                     role: instructorProfile?.professional_title || member.role,
                     status: 'Active',
-                    lastActivity: member.joined_at,
+                    lastActivity: profile?.logged_in,
                     simulations: [],
                     instructorProfile: instructorProfile
                 };
             });
+
+            const invitationMembers = (pendingInvites || []).map(invite => ({
+                id: invite.id,
+                name: `${invite.first_name || ''} ${invite.last_name || ''}`.trim() || 'Pending Account',
+                email: invite.email,
+                avatar: null,
+                role: invite.role,
+                status: 'Pending',
+                lastActivity: invite.created_at,
+                simulations: [],
+                isInvitation: true
+            }));
+
+            return [...invitationMembers, ...activeMembers];
         } catch (err) {
             console.error("Error in enterpriseManagementService.getInstructors:", err);
             throw err;
@@ -368,6 +392,91 @@ export const enterpriseManagementService = {
             return { success: true };
         } catch (err) {
             console.error("Error in enterpriseManagementService.updateInstructorProfile:", err);
+            return { success: false, error: (err as any).message };
+        }
+    },
+
+    // Fetches aggregate statistics for the specialist management section
+    async getInstructorStats(userId: string) {
+        const supabase = await createClient();
+        try {
+            const { data: member } = await supabase.from('organization_members').select('org_id').eq('user_id', userId).maybeSingle();
+            if (!member) throw new Error("Organization not found");
+            const orgId = member.org_id;
+
+            const { count: totalSpecialists } = await supabase
+                .from('organization_members')
+                .select('*', { count: 'exact', head: true })
+                .eq('org_id', orgId)
+                .in('role', ['instructor', 'reviewer', 'admin', 'enterprise_admin']);
+
+            const { count: pendingInvites } = await supabase
+                .from('instructor_invitations')
+                .select('*', { count: 'exact', head: true })
+                .eq('org_id', orgId)
+                .eq('status', 'pending');
+
+            const { count: activeSimulations } = await supabase
+                .from('simulations')
+                .select('*', { count: 'exact', head: true })
+                .eq('org_id', orgId)
+                .eq('status', 'published');
+
+            return {
+                totalSpecialists: totalSpecialists || 0,
+                pendingInvitations: pendingInvites || 0,
+                activePrograms: activeSimulations || 0
+            };
+        } catch (err) {
+            throw err;
+        }
+    },
+
+    /**
+     * Updates a specialist's role within the organization.
+     */
+    async updateInstructorRole(userId: string, orgId: string, role: 'admin' | 'member' | 'reviewer' | 'instructor') {
+        const supabase = await createClient();
+        try {
+            const { error } = await supabase
+                .from('organization_members')
+                .update({ role, updated_at: new Date().toISOString() })
+                .eq('user_id', userId)
+                .eq('org_id', orgId);
+
+            if (error) throw error;
+            return { success: true };
+        } catch (err) {
+            console.error("Error in enterpriseManagementService.updateInstructorRole:", err);
+            return { success: false, error: (err as any).message };
+        }
+    },
+
+    /**
+     * Removes a specialist from the organization.
+     */
+    async deleteInstructor(userId: string, orgId: string) {
+        const supabase = await createClient();
+        try {
+            // Remove from organization_members
+            const { error: memberError } = await supabase
+                .from('organization_members')
+                .delete()
+                .eq('user_id', userId)
+                .eq('org_id', orgId);
+
+            if (memberError) throw memberError;
+
+            // Note: We don't delete the base profile as it might be used elsewhere, 
+            // but we could delete instructor_profiles if explicitly requested.
+            await supabase
+                .from('instructor_profiles')
+                .delete()
+                .eq('id', userId);
+
+            return { success: true };
+        } catch (err) {
+            console.error("Error in enterpriseManagementService.deleteInstructor:", err);
             return { success: false, error: (err as any).message };
         }
     }

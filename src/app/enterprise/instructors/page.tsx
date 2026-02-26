@@ -7,8 +7,10 @@ import InstructorsStats from "@/components/enterprise/instructors/InstructorsSta
 import InstructorsFilter from "@/components/enterprise/instructors/InstructorsFilter";
 import InstructorsTable from "@/components/enterprise/instructors/InstructorsTable";
 import InviteInstructorModal from "@/components/enterprise/instructors/InviteInstructorModal";
-import { getInstructors, getEnterpriseUser, getOrganizationBranding } from '@/actions/enterprise/enterprise-management.actions';
+import { getInstructors, getEnterpriseUser, getInstructorStats } from '@/actions/enterprise/enterprise-management.actions';
 import { Loader2 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function InstructorsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,8 +18,12 @@ export default function InstructorsPage() {
     const [loading, setLoading] = useState(true);
     const [userProfile, setUserProfile] = useState<any>(null);
     const [orgName, setOrgName] = useState("Enterprise");
+    const [stats, setStats] = useState<any>(null);
 
     const [orgLogo, setOrgLogo] = useState<string | null>(null);
+
+    const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("All");
 
     const fetchInstructors = async () => {
         try {
@@ -30,6 +36,23 @@ export default function InstructorsPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchStats = async () => {
+        try {
+            const result = await getInstructorStats();
+            if (result.success) {
+                setStats(result.data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch stats:", err);
+        }
+    };
+
+    const fetchData = async () => {
+        setLoading(true);
+        await Promise.all([fetchInstructors(), fetchStats()]);
+        setLoading(false);
     };
 
     const fetchUserContext = async () => {
@@ -46,9 +69,66 @@ export default function InstructorsPage() {
     };
 
     useEffect(() => {
-        fetchInstructors();
+        fetchData();
         fetchUserContext();
     }, []);
+
+    // Filter Logic
+    const filteredInstructors = instructors.filter(instructor => {
+        const matchesSearch = instructor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            instructor.email.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === "All" || instructor.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    const handleExport = () => {
+        if (filteredInstructors.length === 0) return;
+
+        const doc = new jsPDF();
+
+        // Add Title
+        doc.setFontSize(18);
+        doc.text('Specialist Directory', 14, 22);
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+
+        // Add metadata
+        const date = new Date();
+        const dateStr = date.toLocaleDateString();
+        doc.text(`Generated on: ${dateStr}`, 14, 30);
+        doc.text(`Organization: ${orgName}`, 14, 36);
+
+        // Generate Table
+        const tableData = filteredInstructors.map(i => [
+            i.name,
+            i.email,
+            i.role,
+            i.status
+        ]);
+
+        autoTable(doc, {
+            startY: 45,
+            head: [['Name', 'Email', 'Role', 'Status']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold' },
+            styles: { fontSize: 9, cellPadding: 5 },
+            columnStyles: {
+                0: { cellWidth: 40 },
+                1: { cellWidth: 60 },
+                2: { cellWidth: 40 },
+                3: { cellWidth: 30 }
+            }
+        });
+
+        // Format filename: Instructos_ddmmyy
+        const d = date.getDate().toString().padStart(2, '0');
+        const m = (date.getMonth() + 1).toString().padStart(2, '0');
+        const y = date.getFullYear().toString().slice(-2);
+        const fileName = `Instructos_${d}${m}${y}.pdf`;
+
+        doc.save(fileName);
+    };
 
     // Enriched profile for Header
     const enrichedProfile = userProfile ? { ...userProfile, orgLogo } : null;
@@ -85,17 +165,22 @@ export default function InstructorsPage() {
                     </div>
 
                     {/* Stats Grid */}
-                    <InstructorsStats />
+                    <InstructorsStats stats={stats} />
 
                     {/* Filter & Table Section */}
                     <div className="space-y-0">
-                        <InstructorsFilter />
+                        <InstructorsFilter
+                            onSearchChange={setSearchTerm}
+                            onStatusFilterChange={setStatusFilter}
+                            currentStatus={statusFilter}
+                            onExport={handleExport}
+                        />
                         {loading ? (
                             <div className="h-64 flex items-center justify-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800">
                                 <Loader2 className="animate-spin text-primary size-8" />
                             </div>
                         ) : (
-                            <InstructorsTable instructors={instructors} />
+                            <InstructorsTable instructors={filteredInstructors} onRefresh={fetchData} />
                         )}
                     </div>
 
