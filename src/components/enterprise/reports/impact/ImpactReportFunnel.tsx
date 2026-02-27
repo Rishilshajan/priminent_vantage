@@ -36,7 +36,12 @@ export default function ImpactReportFunnel({ steps }: ImpactReportFunnelProps) {
 
             {/* Funnel Container */}
             <div className="relative pt-4 pb-4 sm:pb-16">
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 sm:gap-1 sm:h-32">
+                <div
+                    className="grid grid-cols-1 gap-4 sm:gap-1 sm:h-32"
+                    style={{
+                        gridTemplateColumns: steps.length > 0 ? `repeat(${steps.length}, minmax(0, 1fr))` : 'repeat(5, minmax(0, 1fr))'
+                    }}
+                >
                     {steps.map((step, index) => {
                         const opacity = 100 - (index * 15)
                         const isFirst = index === 0
@@ -75,15 +80,15 @@ export default function ImpactReportFunnel({ steps }: ImpactReportFunnelProps) {
             </div>
 
             <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-white/5 px-4 py-2 rounded-xl border border-slate-100 dark:border-white/5">
+                {/* <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-white/5 px-4 py-2 rounded-xl border border-slate-100 dark:border-white/5">
                     <Info className="size-4 text-amber-500 shrink-0" />
                     <span className="text-[11px] font-bold italic">
-                        * Significant drop-off observed at Task 3 (Financial Modeling phase).
+                        * Distribution analysis identifies potential bottlenecks in the {steps.length > 2 ? steps[2].label : 'simulation'} phase.
                     </span>
-                </div>
-                <button className="text-[11px] font-black text-primary uppercase tracking-[0.1em] hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                </div> */}
+                {/* <button className="text-[11px] font-black text-primary uppercase tracking-[0.1em] hover:translate-x-1 transition-transform inline-flex items-center gap-1">
                     View Detailed Funnel Breakdown <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </button>
+                </button> */}
             </div>
         </div>
     )

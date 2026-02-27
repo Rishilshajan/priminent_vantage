@@ -62,7 +62,7 @@ export default function ImpactReportHeatmap({ skills }: ImpactReportHeatmapProps
                     <span className="material-symbols-outlined text-amber-500 text-lg">info</span>
                 </div>
                 <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-bold">
-                    Candidates struggle most with <span className="text-primary">DCF Valuation</span> and <span className="text-primary">Market Research</span>, suggesting a need for additional preparatory resources in these areas.
+                    Candidates show varying levels of mastery across competencies. {skills.length > 2 ? `Current data highlights ${skills[0].name} as a strong area for this cohort.` : ''}
                 </p>
             </div>
         </div>
