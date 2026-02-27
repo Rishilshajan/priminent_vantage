@@ -260,6 +260,7 @@ export function SimulationHubView({ simulation, userData, orgBranding, submissio
                             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                                 Phase {activeTaskIndex + 1} • Step {subStep + 1} of 4
                             </div>
+<<<<<<< Updated upstream
                         </div>
                     </div>
 
@@ -272,6 +273,31 @@ export function SimulationHubView({ simulation, userData, orgBranding, submissio
                                 subStep={subStep}
                             />
                         )}
+=======
+
+                            <h1 className="text-4xl lg:text-5xl font-display font-black text-slate-900 dark:text-white    leading-tight mb-6">
+                                {activeTask.title}
+                            </h1>
+
+                            <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl font-medium leading-relaxed">
+                                {activeTask.description || "The task objective will be revealed in the briefing documentation below."}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="max-w-4xl mx-auto py-12 px-8 space-y-20 pb-32">
+                        {/* Project Introduction */}
+                        <section className="space-y-6 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[32px] p-8 lg:p-10">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="h-1 w-8 rounded-full" style={brandColorBg} />
+                                <h2 className="font-display text-2xl font-black   ">Project Introduction</h2>
+                            </div>
+                            <div className="prose prose-slate dark:prose-invert max-w-none">
+                                <div className="text-base text-slate-600 dark:text-slate-400 leading-relaxed font-medium"
+                                    dangerouslySetInnerHTML={{ __html: activeTask.introduction || activeTask.description }}
+                                />
+                            </div>
+>>>>>>> Stashed changes
 
                         {subStep === 1 && (
                             <BackgroundInfo activeTask={activeTask} />
@@ -281,6 +307,7 @@ export function SimulationHubView({ simulation, userData, orgBranding, submissio
                             <Resources activeTask={activeTask} />
                         )}
 
+<<<<<<< Updated upstream
                         {subStep === 3 && (
                             <ImplementationTask
                                 activeTask={activeTask}
@@ -305,6 +332,69 @@ export function SimulationHubView({ simulation, userData, orgBranding, submissio
                                 onClick={handleBack}
                                 disabled={activeTaskIndex === 0 && subStep === 0}
                                 className="flex items-center gap-3 px-8 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-black dark:hover:text-white transition-all disabled:opacity-20"
+=======
+                        <div className="flex flex-col gap-8">
+                            <section className="space-y-6 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[32px] p-8 lg:p-10">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="h-1 w-8 rounded-full bg-slate-200 dark:bg-slate-800" />
+                                    <h2 className="font-display text-2xl font-black   ">What you'll learn</h2>
+                                </div>
+                                <div className="grid gap-6">
+                                    {(activeTask.learning_objectives || activeTask.what_you_learn || []).map((objective: any, i: number) => (
+                                        <div key={i} className="flex gap-4 group">
+                                            <div className="flex-shrink-0 size-8 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20 group-hover:scale-110 transition-transform">
+                                                <CheckCircle2 className="size-4 text-green-500" />
+                                            </div>
+                                            <p className="text-base text-slate-600 dark:text-slate-400 font-medium leading-relaxed pt-0.5">
+                                                {objective.text || objective}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+
+                            <section className="space-y-6 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[32px] p-8 lg:p-10">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="h-1 w-8 rounded-full bg-slate-200 dark:bg-slate-800" />
+                                    <h2 className="font-display text-2xl font-black   ">What you'll do</h2>
+                                </div>
+                                <div className="prose prose-slate dark:prose-invert max-w-none">
+                                    <div className="text-base text-slate-600 dark:text-slate-400 leading-relaxed font-medium"
+                                        dangerouslySetInnerHTML={{ __html: activeTask.what_you_do || activeTask.instructions }}
+                                    />
+                                </div>
+                            </section>
+                        </div>
+
+                        {/* Deliverable Section */}
+                        <section className="space-y-8 pt-12 border-t border-slate-100 dark:border-slate-800">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                <div>
+                                    <h2 className="font-display text-2xl font-black    mb-2">Your Deliverable</h2>
+                                    <p className="text-sm text-slate-500 font-medium font-mono uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-full inline-block">
+                                        Type: {activeTask.deliverable_type || activeTask.submission_type || 'Self-Paced'}
+                                    </p>
+                                </div>
+
+                                {getTaskStatus(activeTask.id, activeTaskIndex) !== 'completed' && (
+                                    <div className="flex gap-4">
+                                        {activeTask.pdf_brief_url && (
+                                            <button className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 text-sm font-bold hover:bg-slate-200 transition-colors">
+                                                <Presentation className="size-4" /> Download Brief
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div
+                                className={cn(
+                                    "bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[32px] p-8 lg:p-12 text-center group transition-all",
+                                    isSubmitting && "opacity-50 cursor-wait",
+                                    !activeTask.deliverable_type || activeTask.deliverable_type === 'file' ? "cursor-pointer hover:border-primary/50" : ""
+                                )}
+                                style={brandColorBorder}
+>>>>>>> Stashed changes
                             >
                                 <Undo2 className="size-4" /> Back
                             </button>
