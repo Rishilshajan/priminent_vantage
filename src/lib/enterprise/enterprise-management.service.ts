@@ -697,5 +697,275 @@ export const enterpriseManagementService = {
             console.error("Error in enterpriseManagementService.getCandidatesDashboardData:", err);
             throw err;
         }
+    },
+
+    // Fetches comprehensive analytics data for the Enterprise Analytics Dashboard
+    async getAnalyticsData(userId: string) {
+        const supabase = await createClient();
+        try {
+            const { data: membership } = await supabase
+                .from('organization_members')
+                .select('org_id, organizations(*)')
+                .eq('user_id', userId)
+                .maybeSingle();
+
+            if (!membership) throw new Error("Organization not found");
+            const orgId = membership.org_id;
+
+            // 1. Define periods
+            const now = new Date();
+            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+            // 2. Fetch all enrollments for this org (for stats and trends)
+            const { data: enrollments } = await supabase
+                .from('simulation_enrollments')
+                .select(`
+                    id, student_id, enrolled_at, completed_at, status, progress_percentage,
+                    simulations!inner(id, org_id)
+                `)
+                .eq('simulations.org_id', orgId)
+                .gte('enrolled_at', sixtyDaysAgo.toISOString());
+
+            // 3. Fetch all tasks and submissions for scores (last 60 days)
+            const simIds = Array.from(new Set(enrollments?.map((e: any) => {
+                const sim = Array.isArray(e.simulations) ? e.simulations[0] : e.simulations;
+                return sim?.id;
+            }).filter(Boolean) || []));
+
+            const { data: tasks } = await supabase
+                .from('simulation_tasks')
+                .select('id, simulation_id, task_number, title')
+                .in('simulation_id', simIds);
+
+            const { data: submissions } = await supabase
+                .from('simulation_task_submissions')
+                .select('student_id, simulation_id, task_id, submission_data, created_at')
+                .in('simulation_id', simIds)
+                .gte('created_at', sixtyDaysAgo.toISOString());
+
+            // 4. Fetch candidate skills (for those enrolled in last 60 days)
+            const studentIds = Array.from(new Set(enrollments?.map(e => e.student_id).filter(Boolean)));
+            const { data: allSkills } = await supabase
+                .from('candidate_skills')
+                .select('*')
+                .in('user_id', studentIds);
+
+            // --- CALCULATIONS ---
+
+            const getStatsForPeriod = (start: Date, end: Date) => {
+                const periodEnrollments = enrollments?.filter(e => {
+                    const d = new Date(e.enrolled_at);
+                    return d >= start && d < end;
+                }) || [];
+
+                const periodCompletions = periodEnrollments.filter(e => e.status === 'completed').length;
+                const periodCompletionRate = periodEnrollments.length > 0 ? (periodCompletions / periodEnrollments.length) * 100 : 0;
+
+                const periodSubmissions = submissions?.filter(s => {
+                    const d = new Date(s.created_at);
+                    return d >= start && d < end;
+                }) || [];
+                const periodScores = periodSubmissions
+                    .map(s => s.submission_data?.score)
+                    .filter(score => score !== undefined && score !== null);
+                const periodAvgScore = periodScores.length > 0 ? periodScores.reduce((a, b) => a + b, 0) / periodScores.length : 0;
+
+                // Skills are harder to tie to a period, but we can look at skills of students who enrolled in this period
+                const periodStudentIds = new Set(periodEnrollments.map(e => e.student_id));
+                const periodSkills = allSkills?.filter(s => periodStudentIds.has(s.user_id)) || [];
+                const periodUniqueSkills = new Set(periodSkills.map(s => s.skill_name)).size;
+
+                return {
+                    total: periodEnrollments.length,
+                    completionRate: periodCompletionRate,
+                    avgScore: periodAvgScore,
+                    skillsValidated: periodUniqueSkills,
+                    scores: periodScores
+                };
+            };
+
+            const currentStats = getStatsForPeriod(thirtyDaysAgo, now);
+            const previousStats = getStatsForPeriod(sixtyDaysAgo, thirtyDaysAgo);
+
+            const calculateChange = (current: number, previous: number) => {
+                if (previous === 0) return { change: current > 0 ? "+100%" : "0%", trend: current > 0 ? "up" : "neutral" };
+                const pct = ((current - previous) / previous) * 100;
+                return {
+                    change: `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`,
+                    trend: pct > 0 ? "up" : pct < 0 ? "down" : "neutral"
+                };
+            };
+
+            // 5. Engagement Trends (Last 30 days)
+            const trends = [];
+            for (let i = 0; i < 30; i++) {
+                const date = new Date(thirtyDaysAgo);
+                date.setDate(date.getDate() + i);
+                const dateStr = date.toISOString().split('T')[0];
+
+                const dayEnrollments = enrollments?.filter(e => e.enrolled_at.startsWith(dateStr)).length || 0;
+                const dayCompletions = enrollments?.filter(e => e.completed_at?.startsWith(dateStr)).length || 0;
+
+                trends.push({
+                    date: dateStr,
+                    label: date.toLocaleDateString('en-US', { month: 'short', day: '2-digit' }),
+                    enrollments: dayEnrollments,
+                    completions: dayCompletions
+                });
+            }
+
+            // 6. Score Distribution (Current Period)
+            const distribution = Array(10).fill(0);
+            currentStats.scores.forEach(s => {
+                const bin = Math.min(Math.floor(s / 10), 9);
+                distribution[bin]++;
+            });
+
+            // 8. Geographic & Institution Distribution
+            const { data: profiles } = await supabase
+                .from('profiles')
+                .select('id, country, city')
+                .in('id', studentIds);
+
+            const { data: educations } = await supabase
+                .from('candidate_education')
+                .select('user_id, institution')
+                .in('user_id', studentIds);
+
+            const countryNames: Record<string, string> = {
+                'IN': 'India',
+                'US': 'United States',
+                'UK': 'United Kingdom',
+                'AE': 'UAE',
+                'SG': 'Singapore'
+            };
+
+            const geoData = (profiles || []).reduce((acc: any, p) => {
+                const rawKey = p.country || 'Unknown';
+                const key = countryNames[rawKey] || rawKey;
+                if (!acc[key]) acc[key] = { name: key, count: 0, totalScore: 0, scoredCount: 0 };
+                acc[key].count++;
+
+                const studentSubmissions = submissions?.filter(s => s.student_id === p.id);
+                if (studentSubmissions && studentSubmissions.length > 0) {
+                    const studentAvg = studentSubmissions.reduce((sum, s) => sum + (s.submission_data?.score || 0), 0) / studentSubmissions.length;
+                    acc[key].totalScore += studentAvg;
+                    acc[key].scoredCount++;
+                }
+                return acc;
+            }, {});
+
+            const institutionData = (educations || []).reduce((acc: any, edu) => {
+                const key = edu.institution || 'Unknown';
+                if (!acc[key]) acc[key] = { name: key, count: 0, totalScore: 0, scoredCount: 0 };
+                acc[key].count++;
+
+                const studentSubmissions = submissions?.filter(s => s.student_id === edu.user_id);
+                if (studentSubmissions && studentSubmissions.length > 0) {
+                    const studentAvg = studentSubmissions.reduce((sum, s) => sum + (s.submission_data?.score || 0), 0) / studentSubmissions.length;
+                    acc[key].totalScore += studentAvg;
+                    acc[key].scoredCount++;
+                }
+                return acc;
+            }, {});
+
+            const finalGeoDistribution = Object.values(geoData).map((d: any) => ({
+                name: d.name,
+                count: d.count,
+                avgScore: d.scoredCount > 0 ? (d.totalScore / d.scoredCount).toFixed(1) : "0.0"
+            }));
+
+            const finalInstitutionDistribution = Object.values(institutionData).map((d: any) => ({
+                name: d.name,
+                count: d.count,
+                avgScore: d.scoredCount > 0 ? (d.totalScore / d.scoredCount).toFixed(1) : "0.0"
+            })).sort((a, b) => b.count - a.count);
+
+            const enrollChange = calculateChange(currentStats.total, previousStats.total);
+            const rateChange = calculateChange(currentStats.completionRate, previousStats.completionRate);
+            const scoreChange = calculateChange(currentStats.avgScore, previousStats.avgScore);
+            const skillsChange = calculateChange(currentStats.skillsValidated, previousStats.skillsValidated);
+
+            return {
+                stats: {
+                    totalEnrollments: { value: currentStats.total.toLocaleString(), change: enrollChange.change, trend: enrollChange.trend },
+                    completionRate: { value: `${currentStats.completionRate.toFixed(1)}%`, change: rateChange.change, trend: rateChange.trend },
+                    avgScore: { value: `${currentStats.avgScore.toFixed(0)}/100`, change: scoreChange.change, trend: scoreChange.trend },
+                    skillsValidated: { value: currentStats.skillsValidated.toString(), change: skillsChange.change, trend: skillsChange.trend }
+                },
+                trends,
+                scoreDistribution: distribution.map((count, i) => ({
+                    bin: `${i * 10}-${(i + 1) * 10}`,
+                    count
+                })),
+                geoDistribution: finalGeoDistribution,
+                institutionDistribution: finalInstitutionDistribution,
+                topSkills: (() => {
+                    const freq: Record<string, { count: number; proficiencies: string[] }> = {};
+                    (allSkills || []).forEach(s => {
+                        if (!freq[s.skill_name]) freq[s.skill_name] = { count: 0, proficiencies: [] };
+                        freq[s.skill_name].count++;
+                        if (s.proficiency_level) freq[s.skill_name].proficiencies.push(s.proficiency_level);
+                    });
+                    const total = studentIds.length || 1;
+                    return Object.entries(freq)
+                        .map(([name, data]) => ({
+                            name,
+                            count: data.count,
+                            pct: Math.round((data.count / total) * 100),
+                            level: data.proficiencies.includes('Advanced') ? 'Advanced' :
+                                data.proficiencies.includes('Intermediate') ? 'Intermediate' : 'Beginner'
+                        }))
+                        .sort((a, b) => b.count - a.count)
+                        .slice(0, 8);
+                })(),
+                progressionFunnel: (() => {
+                    const cEnroll = enrollments?.filter(e => {
+                        const d = new Date(e.enrolled_at);
+                        return d >= thirtyDaysAgo;
+                    }) || [];
+
+                    const enrolledStudents = new Set(cEnroll.map(e => e.student_id));
+                    const total = enrolledStudents.size;
+
+                    // Find all unique task numbers across simulations
+                    const uniqueTaskNums = Array.from(new Set(tasks?.map(t => t.task_number))).sort((a, b) => a - b);
+
+                    const steps = [
+                        { label: 'Enrolled', count: total, pct: 100 }
+                    ];
+
+                    uniqueTaskNums.forEach(taskNum => {
+                        const targetTaskIds = new Set(tasks?.filter(t => t.task_number === taskNum).map(t => t.id) || []);
+                        const uniqueStudents = new Set(
+                            submissions?.filter(s => {
+                                const d = new Date(s.created_at);
+                                return d >= thirtyDaysAgo && targetTaskIds.has(s.task_id);
+                            }).map(s => s.student_id)
+                        );
+                        const count = Array.from(uniqueStudents).filter(sid => enrolledStudents.has(sid)).length;
+                        steps.push({
+                            label: `Task ${taskNum}`,
+                            count,
+                            pct: total > 0 ? Math.round((count / total) * 100) : 0
+                        });
+                    });
+
+                    const completedCount = cEnroll.filter(e => e.status === 'completed').length;
+                    steps.push({
+                        label: 'Completed',
+                        count: completedCount,
+                        pct: total > 0 ? Math.round((completedCount / total) * 100) : 0
+                    });
+
+                    return steps;
+                })(),
+                organization: membership.organizations
+            };
+        } catch (err) {
+            console.error("Error in getAnalyticsData:", err);
+            throw err;
+        }
     }
 };

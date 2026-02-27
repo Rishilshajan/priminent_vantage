@@ -1,66 +1,114 @@
 "use client"
 
-export default function AnalyticsStats() {
+import { TrendingUp, TrendingDown, Users, CheckCircle2, Award, Zap } from "lucide-react"
+
+interface AnalyticsStatsProps {
+    stats?: {
+        totalEnrollments: { value: string; change: string; trend: string };
+        completionRate: { value: string; change: string; trend: string };
+        avgScore: { value: string; change: string; trend: string };
+        skillsValidated: { value: string; change: string; trend: string };
+    };
+}
+
+export default function AnalyticsStats({ stats }: AnalyticsStatsProps) {
+    const items = [
+        {
+            label: "Total Enrollments",
+            value: stats?.totalEnrollments.value || "0",
+            change: stats?.totalEnrollments.change || "0%",
+            trend: stats?.totalEnrollments.trend || "neutral",
+            icon: Users,
+            color: "from-blue-500 to-indigo-600",
+            bg: "bg-blue-500/10"
+        },
+        {
+            label: "Completion Rate",
+            value: stats?.completionRate.value || "0%",
+            change: stats?.completionRate.change || "0%",
+            trend: stats?.completionRate.trend || "neutral",
+            icon: CheckCircle2,
+            color: "from-emerald-500 to-teal-600",
+            bg: "bg-emerald-500/10"
+        },
+        {
+            label: "Avg. Candidate Score",
+            value: stats?.avgScore.value || "0/100",
+            change: stats?.avgScore.change || "0%",
+            trend: stats?.avgScore.trend || "neutral",
+            icon: Award,
+            color: "from-amber-500 to-orange-600",
+            bg: "bg-amber-500/10"
+        },
+        {
+            label: "Skills Validated",
+            value: stats?.skillsValidated.value || "0",
+            change: stats?.skillsValidated.change || "0%",
+            trend: stats?.skillsValidated.trend || "neutral",
+            icon: Zap,
+            color: "from-purple-500 to-fuchsia-600",
+            bg: "bg-purple-500/10"
+        }
+    ]
+
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <div className="bg-white dark:bg-[#1f1629] border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-4 md:p-5">
-                <div className="flex justify-between items-center mb-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Enrollments</p>
-                    <span className="text-[10px] font-semibold text-green-600 bg-green-50 dark:bg-green-500/10 dark:text-green-400 px-1.5 py-0.5 rounded">+12.4%</span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                    <h3 className="text-2xl font-bold text-slate-800 dark:text-white">12,450</h3>
-                </div>
-                <div className="mt-4 flex items-end gap-[2px] h-8">
-                    <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-[30%]"></div>
-                    <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-[50%]"></div>
-                    <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-[40%]"></div>
-                    <div className="flex-1 bg-slate-100 dark:bg-slate-800 h-[70%]"></div>
-                    <div className="flex-1 bg-slate-200 dark:bg-slate-700 h-[60%]"></div>
-                    <div className="flex-1 bg-primary h-[90%] opacity-20"></div>
-                    <div className="flex-1 bg-primary h-[85%] opacity-40"></div>
-                    <div className="flex-1 bg-primary h-[100%]"></div>
-                </div>
-            </div>
+            {items.map((item, i) => (
+                <div key={i} className="group relative bg-white dark:bg-[#1f1629] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md hover:-translate-y-1">
+                    {/* Decorative Gradient Background */}
+                    <div className={`absolute top-0 right-0 w-32 h-30 bg-gradient-to-br ${item.color} opacity-[0.03] rounded-bl-[100px] transition-opacity group-hover:opacity-[0.05]`}></div>
 
-            <div className="bg-white dark:bg-[#1f1629] border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-4 md:p-5">
-                <div className="flex justify-between items-center mb-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Completion Rate</p>
-                    <span className="text-[10px] font-semibold text-green-600 bg-green-50 dark:bg-green-500/10 dark:text-green-400 px-1.5 py-0.5 rounded">+3.1%</span>
-                </div>
-                <h3 className="text-2xl font-bold text-slate-800 dark:text-white">68.2%</h3>
-                <div className="mt-4 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-primary h-full rounded-full" style={{ width: "68.2%" }}></div>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-2 font-medium">Goal: 75.0%</p>
-            </div>
+                    <div className="p-5 md:p-6 relative z-10">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className={`p-2.5 rounded-xl ${item.bg}`}>
+                                <item.icon className={`size-5 bg-gradient-to-br ${item.color} bg-clip-text text-transparent`} />
+                                <style jsx>{`
+                                    .size-5 {
+                                        color: transparent;
+                                        background-image: linear-gradient(to bottom right, var(--tw-gradient-from), var(--tw-gradient-to));
+                                        -webkit-background-clip: text;
+                                        background-clip: text;
+                                    }
+                                `}</style>
+                                {/* Fallback if clip-text fails on icons */}
+                                <item.icon className="size-5 text-indigo-500 dark:text-indigo-400 opacity-80" />
+                            </div>
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold ${item.trend === 'up' ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400' :
+                                item.trend === 'down' ? 'text-rose-600 bg-rose-50 dark:bg-rose-500/10 dark:text-rose-400' :
+                                    'text-slate-500 bg-slate-50 dark:bg-slate-500/10 dark:text-slate-400'
+                                }`}>
+                                {item.trend === 'up' ? <TrendingUp className="size-3" /> : item.trend === 'down' ? <TrendingDown className="size-3" /> : null}
+                                {item.change}
+                            </div>
+                        </div>
 
-            <div className="bg-white dark:bg-[#1f1629] border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-4 md:p-5">
-                <div className="flex justify-between items-center mb-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg. Candidate Score</p>
-                    <span className="text-[10px] font-semibold text-red-500 bg-red-50 dark:bg-red-500/10 dark:text-red-400 px-1.5 py-0.5 rounded">-0.8%</span>
-                </div>
-                <h3 className="text-2xl font-bold text-slate-800 dark:text-white">
-                    74<span className="text-slate-400 text-lg font-normal">/100</span>
-                </h3>
-                <div className="mt-4 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
-                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">Above Industry Average</span>
-                </div>
-            </div>
+                        <div>
+                            <h3 className="text-2xl md:text-3xl font-black text-[#140d1b] dark:text-white tracking-tight">
+                                {item.value}
+                            </h3>
+                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">{item.label}</p>
+                        </div>
 
-            <div className="bg-white dark:bg-[#1f1629] border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-4 md:p-5">
-                <div className="flex justify-between items-center mb-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Skills Validated</p>
-                    <span className="text-[10px] font-semibold text-green-600 bg-green-50 dark:bg-green-500/10 dark:text-green-400 px-1.5 py-0.5 rounded">+8.2%</span>
+                        {/* Visual indicator (mini-sparkline style) */}
+                        <div className="mt-4 flex items-end gap-1 h-6">
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map((bar) => (
+                                <div
+                                    key={bar}
+                                    className={`flex-1 rounded-t-sm transition-all duration-500 group-hover:opacity-100 ${i === 0 ? 'bg-blue-400/30' :
+                                        i === 1 ? 'bg-emerald-400/30' :
+                                            i === 2 ? 'bg-amber-400/30' :
+                                                'bg-purple-400/30'
+                                        }`}
+                                    style={{
+                                        height: `${20 + Math.random() * 80}%`,
+                                        transitionDelay: `${bar * 50}ms`
+                                    }}
+                                ></div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
-                <h3 className="text-2xl font-bold text-slate-800 dark:text-white">42</h3>
-                <div className="mt-4 flex flex-wrap gap-1">
-                    <span className="px-1.5 py-0.5 bg-slate-50 dark:bg-slate-800 text-[9px] font-medium text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700 rounded">Python</span>
-                    <span className="px-1.5 py-0.5 bg-slate-50 dark:bg-slate-800 text-[9px] font-medium text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700 rounded">Cloud Arch</span>
-                    <span className="px-1.5 py-0.5 bg-slate-50 dark:bg-slate-800 text-[9px] font-medium text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-700 rounded">+39 more</span>
-                </div>
-            </div>
+            ))}
         </div>
     )
 }
