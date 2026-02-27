@@ -9,8 +9,19 @@ import { EnrollmentChart } from "./enrollment-chart"
 import { TopPartners } from "./top-partners"
 import { Search, Download, Bell, Menu } from "lucide-react"
 
-export default function ReportsDashboardView({ profile }: { profile: any }) {
+export default function ReportsDashboardView({ profile, initialData }: { profile: any, initialData: any }) {
     const [sidebarOpen, setSidebarOpen] = useState(false)
+    const data = initialData || {
+        stats: {
+            totalPartners: { value: "0", trend: "+0%", isUp: true },
+            activeUsers: { value: "0", trend: "+0%", isUp: true },
+            redemptions: { value: "0", trend: "+0%", isUp: true },
+            avgSims: { value: "0", trend: "+0%", isUp: true }
+        },
+        industryDistribution: [],
+        engagementDetails: [],
+        topPartners: []
+    };
 
     return (
         <div className="flex h-screen overflow-hidden bg-slate-50/30 dark:bg-black/20">
@@ -57,12 +68,12 @@ export default function ReportsDashboardView({ profile }: { profile: any }) {
                 </header>
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 bg-[#f7f6f8] dark:bg-[#191022]">
-                    <ReportsStats />
+                    <ReportsStats stats={data.stats} />
                     <ReportsFilters />
-                    <EngagementTable />
+                    <EngagementTable data={data.engagementDetails} />
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <EnrollmentChart />
-                        <TopPartners />
+                        <EnrollmentChart data={data.industryDistribution} />
+                        <TopPartners data={data.topPartners} />
                     </div>
 
                     <footer className="text-center text-[#734c9a] dark:text-[#a682cc] text-sm pt-4 pb-2">

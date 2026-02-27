@@ -80,13 +80,13 @@ export function StudentSidebar({ user, isOpen, onClose }: StudentSidebarProps) {
                     </nav>
                 </div>
                 <div className="flex flex-col gap-2 p-6 border-t border-border-color dark:border-white/10">
-                    <Link
+                    {/* <Link
                         href="/student/settings"
                         className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-text-main transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
                     >
                         <Settings className="size-5" />
                         <span className="text-sm font-medium">Settings</span>
-                    </Link>
+                    </Link> */}
                     <div className="mt-2 flex items-center gap-3 px-3 py-2">
                         <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 ring-2 ring-primary/20 bg-slate-200">
                             {/* Avatar Placeholder if no image */}
