@@ -303,3 +303,18 @@ export async function getCandidatesDashboardData() {
         return { success: false as const, error: err.message || "Failed to load candidates dashboard data." };
     }
 }
+
+/**
+ * Fetches detailed profile and history for a specific candidate.
+ */
+export async function getCandidateDetailAction(studentId: string) {
+    const supabase = await createClient();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { success: false as const, error: "Unauthorized" };
+        const result = await enterpriseManagementService.getCandidateDetail(studentId);
+        return { success: true as const, data: result };
+    } catch (err: any) {
+        return { success: false as const, error: err.message || "Failed to load candidate details." };
+    }
+}

@@ -1,7 +1,8 @@
 "use client"
 
-import { Download, Users } from "lucide-react"
+import { Download, Users, UserCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
@@ -249,9 +250,11 @@ export default function CandidatesTable({ candidates = [] }: CandidatesTableProp
                                             >
                                                 <Download className="size-3.5 md:size-4" />
                                             </Button>
-                                            <Button variant="ghost" className="h-7 md:h-8 px-2 md:px-3 py-1 text-[10px] md:text-xs font-bold text-primary bg-primary/10 rounded hover:bg-primary transition-all hover:text-white">
-                                                View Profile
-                                            </Button>
+                                            <Link href={`/enterprise/candidates/${candidate.studentId || candidate.id}`}>
+                                                <Button variant="ghost" className="h-7 md:h-8 px-2 md:px-3 py-1 text-[10px] md:text-xs font-bold text-primary bg-primary/10 rounded hover:bg-primary transition-all hover:text-white">
+                                                    View Profile
+                                                </Button>
+                                            </Link>
                                         </div>
                                     </td>
                                 </tr>

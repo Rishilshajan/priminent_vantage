@@ -2,6 +2,7 @@
 
 import { ArrowRight, Search, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface Talent {
     id: string
@@ -88,9 +89,11 @@ export default function ImpactReportTalentTable({ talent, totalCandidates }: Imp
                                     <p className="text-xs font-bold text-slate-500">{candidate.completionDate}</p>
                                 </td>
                                 <td className="px-5 sm:px-8 py-4 sm:py-6 text-right">
-                                    <Button variant="outline" className="h-8 sm:h-9 px-4 sm:px-5 rounded-lg border-primary/20 text-primary text-[9px] sm:text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all active:scale-95">
-                                        View Profile
-                                    </Button>
+                                    <Link href={`/enterprise/candidates/${candidate.id}`}>
+                                        <Button variant="outline" className="h-8 sm:h-9 px-4 sm:px-5 rounded-lg border-primary/20 text-primary text-[9px] sm:text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all active:scale-95">
+                                            View Profile
+                                        </Button>
+                                    </Link>
                                 </td>
                             </tr>
                         ))}

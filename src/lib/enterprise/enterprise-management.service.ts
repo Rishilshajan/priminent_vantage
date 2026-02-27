@@ -958,13 +958,114 @@ export const enterpriseManagementService = {
                         count: completedCount,
                         pct: total > 0 ? Math.round((completedCount / total) * 100) : 0
                     });
-
                     return steps;
                 })(),
                 organization: membership.organizations
             };
         } catch (err) {
-            console.error("Error in getAnalyticsData:", err);
+            console.error("Error in getCandidatesDashboardData:", err);
+            throw err;
+        }
+    },
+
+    async getCandidateDetail(studentId: string) {
+        const supabase = await createClient();
+        try {
+            // 1. Fetch Profile
+            const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', studentId)
+                .single();
+            if (profileError) throw profileError;
+
+            // 2. Fetch Education, Experience, and Skills
+            const { data: education } = await supabase
+                .from('candidate_education')
+                .select('*')
+                .eq('user_id', studentId)
+                .order('graduation_year', { ascending: false });
+
+            const { data: experience } = await supabase
+                .from('candidate_experience')
+                .select('*')
+                .eq('user_id', studentId)
+                .order('start_date', { ascending: false });
+
+            const { data: skills } = await supabase
+                .from('candidate_skills')
+                .select('*')
+                .eq('user_id', studentId);
+
+            // 3. Fetch Simulation Performance History
+            const { data: enrollments } = await supabase
+                .from('simulation_enrollments')
+                .select(`
+                    id, 
+                    status, 
+                    progress_percentage, 
+                    enrolled_at, 
+                    completed_at,
+                    simulation_id,
+                    simulations(id, title, banner_url)
+                `)
+                .eq('student_id', studentId)
+                .order('enrolled_at', { ascending: false });
+
+            // 4. Fetch Submissions for scores
+            const { data: submissions } = await supabase
+                .from('simulation_task_submissions')
+                .select('simulation_id, submission_data')
+                .eq('student_id', studentId);
+
+            // Calculate simulation-specific scores
+            const simulationPerformances = (enrollments || []).map(e => {
+                const simSubmissions = (submissions || []).filter(s => s.simulation_id === e.simulation_id);
+                const scores = simSubmissions
+                    .map(s => s.submission_data?.score)
+                    .filter(score => typeof score === 'number');
+                const avgScore = scores.length > 0
+                    ? Math.round(scores.reduce((a, b: number) => a + b, 0) / scores.length)
+                    : null;
+
+                return {
+                    id: e.id,
+                    simulationId: e.simulation_id,
+                    title: (e.simulations as any)?.title || 'Unknown Simulation',
+                    bannerUrl: (e.simulations as any)?.banner_url,
+                    status: e.status,
+                    progress: e.progress_percentage,
+                    score: avgScore,
+                    enrolledAt: e.enrolled_at,
+                    completedAt: e.completed_at
+                };
+            });
+
+            return {
+                profile: {
+                    id: profile.id,
+                    name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email || 'Unknown',
+                    email: profile.email,
+                    avatar: profile.avatar_url,
+                    phone: profile.phone_number,
+                    location: profile.city && profile.country ? `${profile.city}, ${profile.country}` : (profile.city || profile.country || 'N/A'),
+                    linkedinUrl: profile.linkedin_url,
+                    githubUrl: profile.github_url,
+                    portfolioUrl: profile.portfolio_url,
+                    resumeUrl: profile.resume_url,
+                    yearsOfExperience: profile.years_of_experience,
+                    highestQualification: profile.highest_qualification,
+                    previousRole: profile.previous_role,
+                    previousIndustry: profile.previous_industry,
+                    certifications: profile.certifications || []
+                },
+                education: education || [],
+                experience: experience || [],
+                skills: skills || [],
+                simulations: simulationPerformances
+            };
+        } catch (err) {
+            console.error("Error in getCandidateDetail:", err);
             throw err;
         }
     }
